@@ -1,0 +1,42 @@
+#!/bin/bash -ex
+cd `dirname $0`
+
+if [ "$IP" == "" ]; then
+  IP=`doctl compute droplet list spanish --format PublicIPv4 --no-header`
+  if [ "$IP" == "" ]; then
+    echo 1>&2 "Can't find IP address for spanish"
+    exit 1
+  fi
+
+  ssh -i ~/.ssh/digitalocean root@$IP 'bash -exs' <<EOF
+    apt-get update
+    apt-get install -y golang
+
+    useradd --create-home web || true
+
+    mkdir -p /home/web/.ssh
+    chmod 0700 /home/web/.ssh
+    chown web:web /home/web/.ssh
+
+    cp /root/.ssh/authorized_keys /home/web/.ssh
+    chmod 0600 /home/web/.ssh/authorized_keys
+    chown web:web /home/web/.ssh/authorized_keys
+EOF
+fi
+
+ssh -i ~/.ssh/digitalocean web@$IP 'bash -exs' <<EOF
+  mkdir -p /home/web/gopath/src/com/danstutzman/language-learning-go
+EOF
+
+rsync -v -r -e "ssh -i /Users/dan/.ssh/digitalocean" \
+  src/ \
+  web@$IP:/home/web/gopath/src/com/danstutzman/language-learning-go
+
+ssh -i ~/.ssh/digitalocean web@$IP 'bash -exs' <<EOF
+  rm -vf /home/web/gopath/bin/language-learning-go
+
+  cd /home/web/gopath/src/com/danstutzman/language-learning-go
+  GOPATH=/home/web/gopath go install -v .
+
+  /home/web/gopath/bin/language-learning-go
+EOF
