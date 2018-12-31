@@ -43,6 +43,7 @@ EOF
 
 ssh -i ~/.ssh/digitalocean root@$IP 'bash -exs' <<EOF
   ln -s /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go/init/language-learning-go.service /etc/systemd/system/language-learning-go.service || true
+  setcap CAP_NET_BIND_SERVICE=+eip /home/web/gopath/bin/language-learning-go
   systemctl daemon-reload
   systemctl enable language-learning-go
   systemctl restart language-learning-go

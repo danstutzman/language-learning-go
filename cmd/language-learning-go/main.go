@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +12,9 @@ func main() {
 	if httpPort == "" {
 		log.Fatal("HTTP_PORT can not be blank")
 	}
+
+	tlsCertPath := os.Getenv("TLS_CERT_PATH")
+	tlsKeyPath := os.Getenv("TLS_KEY_PATH")
 
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -38,5 +40,17 @@ func main() {
 		Addr:    ":" + httpPort,
 		Handler: serveMux,
 	}
-	log.Fatal(server.ListenAndServe())
+	if tlsCertPath != "" && tlsKeyPath != "" {
+		log.Printf("Serving HTTP with TLS on port %s...", httpPort)
+		err := server.ListenAndServeTLS(tlsCertPath, tlsKeyPath)
+		if err != nil {
+			log.Fatalf("Error from ListenAndServe: %s", err)
+		}
+	} else {
+		log.Printf("Serving HTTP on port %s...", httpPort)
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Fatalf("Error from ListenAndServe: %s", err)
+		}
+	}
 }
