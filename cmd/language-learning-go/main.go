@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -15,7 +16,22 @@ func main() {
 
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, you've requested: %s\n", r.URL.Path)
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+
+		path := r.URL.Path
+		if path == "/" {
+			http.ServeFile(w, r, "web/index.html")
+		} else if path == "/index.html" {
+			http.ServeFile(w, r, "web/index.html")
+		} else if path == "/favicon.ico" {
+			http.ServeFile(w, r, "web/favicon.ico")
+		} else if path == "/service-worker.js" {
+			http.ServeFile(w, r, "web/service-worker.js")
+		} else if strings.HasPrefix(path, "/static/") {
+			http.ServeFile(w, r, "web"+path)
+		} else {
+			http.NotFound(w, r)
+		}
 	})
 
 	server := &http.Server{
