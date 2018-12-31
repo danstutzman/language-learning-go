@@ -1,0 +1,14 @@
+[Unit]
+Description=language-learning-go service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=web
+Environment=HTTP_PORT=8080
+ExecStart=/home/web/gopath/bin/language-learning-go
+
+[Install]
+WantedBy=multi-user.target

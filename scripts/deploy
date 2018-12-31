@@ -21,6 +21,7 @@ if [ "$IP" == "" ]; then
     cp /root/.ssh/authorized_keys /home/web/.ssh
     chmod 0600 /home/web/.ssh/authorized_keys
     chown web:web /home/web/.ssh/authorized_keys
+
 EOF
 fi
 
@@ -38,6 +39,13 @@ ssh -i ~/.ssh/digitalocean web@$IP 'bash -exs' <<EOF
   cd /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
   GOPATH=/home/web/gopath go vet bitbucket.org/danstutzman/language-learning-go/...
   GOPATH=/home/web/gopath go install -v bitbucket.org/danstutzman/language-learning-go/...
+EOF
 
-  /home/web/gopath/bin/language-learning-go
+ssh -i ~/.ssh/digitalocean root@$IP 'bash -exs' <<EOF
+  ln -s /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go/init/language-learning-go.service /etc/systemd/system/language-learning-go.service || true
+  systemctl daemon-reload
+  systemctl enable language-learning-go
+  systemctl restart language-learning-go
+  sleep 1
+  journalctl -u language-learning-go.service --no-pager -n 10
 EOF
