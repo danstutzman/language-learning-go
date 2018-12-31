@@ -1,5 +1,5 @@
 #!/bin/bash -ex
-cd `dirname $0`
+cd `dirname $0`/..
 
 if [ "$IP" == "" ]; then
   IP=`doctl compute droplet list spanish --format PublicIPv4 --no-header`
@@ -25,18 +25,19 @@ EOF
 fi
 
 ssh -i ~/.ssh/digitalocean web@$IP 'bash -exs' <<EOF
-  mkdir -p /home/web/gopath/src/com/danstutzman/language-learning-go
+  mkdir -p /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
 EOF
 
-rsync -v -r -e "ssh -i /Users/dan/.ssh/digitalocean" \
-  src/ \
-  web@$IP:/home/web/gopath/src/com/danstutzman/language-learning-go
+rsync -v -r -e "ssh -i /Users/dan/.ssh/digitalocean" --delete \
+  ./ \
+  web@$IP:/home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
 
 ssh -i ~/.ssh/digitalocean web@$IP 'bash -exs' <<EOF
   rm -vf /home/web/gopath/bin/language-learning-go
 
-  cd /home/web/gopath/src/com/danstutzman/language-learning-go
-  GOPATH=/home/web/gopath go install -v .
+  cd /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
+  GOPATH=/home/web/gopath go vet bitbucket.org/danstutzman/language-learning-go/...
+  GOPATH=/home/web/gopath go install -v bitbucket.org/danstutzman/language-learning-go/...
 
   /home/web/gopath/bin/language-learning-go
 EOF
