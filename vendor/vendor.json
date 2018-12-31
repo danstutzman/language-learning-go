@@ -3,6 +3,13 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "BvsSbkCO3byXuDItrNiFBPAiCIU=",
+			"path": "github.com/nytimes/gziphandler",
+			"revision": "253f1acb9d9f896d86c313a3dc994c0b114f0e12",
+			"revisionTime": "2018-08-20T18:28:13Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "wRhNUFKjZsR7+vNxxmiW9LH2AU8=",
 			"path": "github.com/shurcool/httpgzip",
 			"revision": "b1c53ac65af9fd3d354d6f9ad30a0cca35e173ed",
