@@ -3,6 +3,25 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "gPowz5SHTxjYhSUi+vFq20ww4Zg=",
+			"path": "github.com/PuerkitoBio/goquery",
+			"revision": "2d2796f41742ece03e8086188fa4db16a3a0b458",
+			"revisionTime": "2018-11-15T20:42:34Z"
+		},
+		{
+			"checksumSHA1": "7DQlhUmi8waYHuk3kvrWiTLVygM=",
+			"path": "github.com/andybalholm/cascadia",
+			"revision": "680b6a57bda4f657485ad44bdea42342ead737bc",
+			"revisionTime": "2018-10-12T15:44:24Z"
+		},
+		{
+			"checksumSHA1": "mzgeQADADhrCGOAcDRnbV24p7H0=",
+			"path": "github.com/mattn/go-sqlite3",
+			"revision": "87ac1cb49789a0ef6b0d7be6b7aa458a9b90d7ae",
+			"revisionTime": "2018-12-18T03:04:05Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "BvsSbkCO3byXuDItrNiFBPAiCIU=",
 			"path": "github.com/nytimes/gziphandler",
 			"revision": "253f1acb9d9f896d86c313a3dc994c0b114f0e12",
@@ -15,6 +34,18 @@
 			"revision": "b1c53ac65af9fd3d354d6f9ad30a0cca35e173ed",
 			"revisionTime": "2018-05-14T15:57:59Z",
 			"tree": true
+		},
+		{
+			"checksumSHA1": "UrM9Sbp5q0sBFxqb5iMhqiPpXII=",
+			"path": "golang.org/x/net/html",
+			"revision": "927f97764cc334a6575f4b7a1584a147864d5723",
+			"revisionTime": "2018-12-19T06:27:23Z"
+		},
+		{
+			"checksumSHA1": "xwhqe/igHQrY3IhqDwzo6j7qpm8=",
+			"path": "golang.org/x/net/html/atom",
+			"revision": "927f97764cc334a6575f4b7a1584a147864d5723",
+			"revisionTime": "2018-12-19T06:27:23Z"
 		},
 		{
 			"checksumSHA1": "pCY4YtdNKVBYRbNvODjx8hj0hIs=",
