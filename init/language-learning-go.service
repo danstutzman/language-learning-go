@@ -7,9 +7,10 @@ Type=simple
 Restart=always
 RestartSec=1
 User=web
-Environment=HTTP_PORT=443
-Environment=TLS_CERT_PATH=/home/web/certs/spanish-danstutzman-com.cert.pem
-Environment=TLS_KEY_PATH=/home/web/certs/spanish-danstutzman-com.key.pem
+Environment=HTTP_PORT=80
+Environment=HTTPS_PORT=443
+Environment=HTTPS_CERT_PATH=/home/web/certs/spanish-danstutzman-com.cert.pem
+Environment=HTTPS_KEY_PATH=/home/web/certs/spanish-danstutzman-com.key.pem
 WorkingDirectory=/home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
 ExecStart=/home/web/gopath/bin/language-learning-go
 
