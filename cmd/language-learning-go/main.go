@@ -1,11 +1,24 @@
 package main
 
 import (
+	"fmt"
+	"github.com/nytimes/gziphandler"
+	"github.com/shurcool/httpgzip"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 )
+
+var withoutGz = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=\"utf-8\"")
+	fmt.Fprintf(w, "Hello, you've requested: %s\n", r.URL.Path)
+})
+var withGz = gziphandler.GzipHandler(withoutGz)
+
+var fileServer = httpgzip.FileServer(
+	http.Dir("web"),
+	httpgzip.FileServerOptions{IndexHTML: true})
 
 func main() {
 	httpPort := os.Getenv("HTTP_PORT")
@@ -83,19 +96,10 @@ func serveHttps(httpsPort string, certPath string, keyPath string) {
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
-	path := r.URL.Path
-	if path == "/" {
-		http.ServeFile(w, r, "web/index.html")
-	} else if path == "/index.html" {
-		http.ServeFile(w, r, "web/index.html")
-	} else if path == "/favicon.ico" {
-		http.ServeFile(w, r, "web/favicon.ico")
-	} else if path == "/service-worker.js" {
-		http.ServeFile(w, r, "web/service-worker.js")
-	} else if strings.HasPrefix(path, "/static/") {
-		http.ServeFile(w, r, "web"+path)
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		withGz.ServeHTTP(w, r)
 	} else {
-		http.NotFound(w, r)
+		fileServer.ServeHTTP(w, r)
 	}
 }
 
