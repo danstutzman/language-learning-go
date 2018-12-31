@@ -1,0 +1,2 @@
+#!/bin/bash -ex
+doctl compute ssh spanish --ssh-key-path ~/.ssh/digitalocean

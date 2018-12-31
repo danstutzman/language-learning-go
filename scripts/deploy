@@ -1,5 +1,10 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 cd `dirname $0`/..
+
+pushd $GOPATH/src/bitbucket.org/danstutzman/language-learning-go
+go vet bitbucket.org/danstutzman/language-learning-go/...
+go install -v bitbucket.org/danstutzman/language-learning-go/...
+pushd
 
 if [ "$IP" == "" ]; then
   IP=`doctl compute droplet list spanish --format PublicIPv4 --no-header`
@@ -7,7 +12,9 @@ if [ "$IP" == "" ]; then
     echo 1>&2 "Can't find IP address for spanish"
     exit 1
   fi
+fi
 
+if false; then
   ssh -i ~/.ssh/digitalocean root@$IP 'bash -exs' <<EOF
     apt-get update
     apt-get install -y golang
@@ -21,7 +28,6 @@ if [ "$IP" == "" ]; then
     cp /root/.ssh/authorized_keys /home/web/.ssh
     chmod 0600 /home/web/.ssh/authorized_keys
     chown web:web /home/web/.ssh/authorized_keys
-
 EOF
 fi
 
