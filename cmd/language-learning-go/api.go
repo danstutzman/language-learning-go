@@ -86,7 +86,7 @@ type UploadsRequest struct {
 type Upload struct {
 	UploadId  int     `json:"uploadId"`
 	Type      string  `json:"type"`
-	CardId    string  `json:"cardId"`
+	CardId    int     `json:"cardId"`
 	CreatedAt float64 `json:"createdAt"`
 }
 
