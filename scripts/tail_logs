@@ -1,3 +1,3 @@
 #!/bin/bash -ex
 doctl compute ssh spanish --ssh-key-path ~/.ssh/digitalocean \
-  --ssh-command='journalctl -u language-learning-go.service'
+  --ssh-command='journalctl -u language-learning-go.service -n 30'
