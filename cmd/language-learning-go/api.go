@@ -12,71 +12,9 @@ type Api struct {
 	db *sql.DB
 }
 
-type Card struct {
-	CardId int    `json:"cardId"`
-	Es     string `json:"es"`
-}
-
-type Exposure struct {
-	CardId    int     `json:"cardId"`
-	CreatedAt float64 `json:"createdAt"`
-}
-
 type SyncResponse struct {
 	Cards     []Card     `json:"cards"`
 	Exposures []Exposure `json:"exposures"`
-}
-
-func selectAllFromCards(db *sql.DB) []Card {
-	cards := []Card{}
-
-	rows, err := db.Query("select cardId, es from cards")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var card Card
-		err = rows.Scan(&card.CardId, &card.Es)
-		if err != nil {
-			log.Fatal(err)
-		}
-		cards = append(cards, card)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return cards
-}
-
-func selectAllFromExposures(db *sql.DB) []Exposure {
-	exposures := []Exposure{}
-
-	rows, err := db.Query("select cardId, createdAt from exposures")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var exposure Exposure
-		err = rows.Scan(&exposure.CardId, &exposure.CreatedAt)
-		if err != nil {
-			log.Fatal(err)
-		}
-		exposures = append(exposures, exposure)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return exposures
 }
 
 type UploadsRequest struct {
@@ -88,30 +26,6 @@ type Upload struct {
 	Type      string  `json:"type"`
 	CardId    int     `json:"cardId"`
 	CreatedAt float64 `json:"createdAt"`
-}
-
-func insertExposures(uploadsRequest UploadsRequest, db *sql.DB) {
-	tx, err := db.Begin()
-	if err != nil {
-		log.Fatalf("Error from db.Begin: %s", err)
-	}
-
-	stmt, err := tx.Prepare(
-		"insert into exposures(cardId, createdAt) values(?,?)")
-	if err != nil {
-		log.Fatalf("Error from tx.Prepare: %s", err)
-	}
-	defer stmt.Close()
-
-	for _, upload := range uploadsRequest.Uploads {
-		if upload.Type == "exposure" {
-			_, err = stmt.Exec(upload.CardId, upload.CreatedAt)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-	tx.Commit()
 }
 
 func (api *Api) handleApiRequest(w http.ResponseWriter, r *http.Request) {
