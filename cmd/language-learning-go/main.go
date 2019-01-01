@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
@@ -14,10 +15,15 @@ func main() {
 	httpsKeyPath := os.Getenv("HTTPS_KEY_PATH")
 	dbPath := os.Getenv("DB_PATH")
 
-	db, err := sql.Open("sqlite3", dbPath)
+	// Set mode=rw so it doesn't create database if file doesn't exist
+	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
+	db, err := sql.Open("sqlite3", connString)
 	if err != nil {
 		log.Fatalf("Error from sql.Open: %s", err)
 	}
+	assertCardsHasCorrectSchema(db)
+	assertExposuresHasCorrectSchema(db)
+
 	api := &Api{db: db}
 	handlerVars := InitHandlerVars(api)
 
