@@ -7,7 +7,8 @@ sqlite3 db.sqlite3 <<EOF
     es TEXT NOT NULL
   );
   CREATE TABLE exposures (
-    createdAt REAL NOT NULL
+    createdAt REAL NOT NULL,
+    cardId INTEGER NOT NULL
   );
   INSERT INTO cards(es) VALUES('hombre');
   INSERT INTO cards(es) VALUES('mujer');
