@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -15,7 +15,7 @@ type Exposure struct {
 	CreatedAt float64 `json:"createdAt"`
 }
 
-func assertCardsHasCorrectSchema(db *sql.DB) {
+func AssertCardsHasCorrectSchema(db *sql.DB) {
 	stmt, err := db.Prepare("select cardId, es from cards limit 1")
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
@@ -29,7 +29,7 @@ func assertCardsHasCorrectSchema(db *sql.DB) {
 	}
 }
 
-func assertExposuresHasCorrectSchema(db *sql.DB) {
+func AssertExposuresHasCorrectSchema(db *sql.DB) {
 	stmt, err := db.Prepare("select cardId, createdAt from exposures limit 1")
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
@@ -43,7 +43,7 @@ func assertExposuresHasCorrectSchema(db *sql.DB) {
 	}
 }
 
-func selectAllFromCards(db *sql.DB) []Card {
+func SelectAllFromCards(db *sql.DB) []Card {
 	cards := []Card{}
 
 	rows, err := db.Query("select cardId, es from cards")
@@ -69,7 +69,7 @@ func selectAllFromCards(db *sql.DB) []Card {
 	return cards
 }
 
-func selectAllFromExposures(db *sql.DB) []Exposure {
+func SelectAllFromExposures(db *sql.DB) []Exposure {
 	exposures := []Exposure{}
 
 	rows, err := db.Query("select cardId, createdAt from exposures")
@@ -95,7 +95,7 @@ func selectAllFromExposures(db *sql.DB) []Exposure {
 	return exposures
 }
 
-func insertExposures(uploadsRequest UploadsRequest, db *sql.DB) {
+func InsertExposures(exposures []Exposure, db *sql.DB) {
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("Error from db.Begin: %s", err)
@@ -108,12 +108,10 @@ func insertExposures(uploadsRequest UploadsRequest, db *sql.DB) {
 	}
 	defer stmt.Close()
 
-	for _, upload := range uploadsRequest.Uploads {
-		if upload.Type == "exposure" {
-			_, err = stmt.Exec(upload.CardId, upload.CreatedAt)
-			if err != nil {
-				log.Fatal(err)
-			}
+	for _, exposure := range exposures {
+		_, err = stmt.Exec(exposure.CardId, exposure.CreatedAt)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 	tx.Commit()

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
@@ -17,14 +18,14 @@ func main() {
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
-	db, err := sql.Open("sqlite3", connString)
+	dbConn, err := sql.Open("sqlite3", connString)
 	if err != nil {
 		log.Fatalf("Error from sql.Open: %s", err)
 	}
-	assertCardsHasCorrectSchema(db)
-	assertExposuresHasCorrectSchema(db)
+	db.AssertCardsHasCorrectSchema(dbConn)
+	db.AssertExposuresHasCorrectSchema(dbConn)
 
-	api := &Api{db: db}
+	api := &Api{db: dbConn}
 	handlerVars := InitHandlerVars(api)
 
 	if httpPort != "" {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -13,8 +14,8 @@ type Api struct {
 }
 
 type SyncResponse struct {
-	Cards     []Card     `json:"cards"`
-	Exposures []Exposure `json:"exposures"`
+	Cards     []db.Card     `json:"cards"`
+	Exposures []db.Exposure `json:"exposures"`
 }
 
 type UploadsRequest struct {
@@ -35,15 +36,30 @@ func (api *Api) handleApiRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("Error from decoder.Decode: %s", err)
 	}
-	insertExposures(uploadsRequest, api.db)
+
+	exposures := []db.Exposure{}
+	for _, upload := range uploadsRequest.Uploads {
+		if upload.Type == "exposure" {
+			exposures = append(exposures, db.Exposure{
+				CardId:    upload.CardId,
+				CreatedAt: upload.CreatedAt,
+			})
+		}
+	}
+	if len(exposures) > 0 {
+		db.InsertExposures(exposures, api.db)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if r.URL.Path == "/api/sync.json" {
 		response := SyncResponse{
-			Cards:     selectAllFromCards(api.db),
-			Exposures: selectAllFromExposures(api.db),
+			Cards:     db.SelectAllFromCards(api.db),
+			Exposures: db.SelectAllFromExposures(api.db),
 		}
 		bytes, err := json.Marshal(response)
 		if err != nil {
