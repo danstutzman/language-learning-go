@@ -35,7 +35,8 @@ ssh -i ~/.ssh/digitalocean web@$IP 'bash -exs' <<EOF
   mkdir -p /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
 EOF
 
-rsync -v -r -e "ssh -i /Users/dan/.ssh/digitalocean" --delete --copy-links \
+rsync -v -r -e "ssh -i /Users/dan/.ssh/digitalocean" \
+  --delete --copy-links --compress \
   ./ \
   web@$IP:/home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go
 
