@@ -16,12 +16,6 @@ func AssertExposuresHasCorrectSchema(db *sql.DB) {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
 	defer stmt.Close()
-
-	var exposure Exposure
-	err = stmt.QueryRow().Scan(&exposure.CardId, &exposure.CreatedAt)
-	if err != nil {
-		log.Fatalf("Error from stmt.QueryRow: %s", err)
-	}
 }
 
 func SelectAllFromExposures(db *sql.DB) []Exposure {

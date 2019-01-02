@@ -16,12 +16,6 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
 	defer stmt.Close()
-
-	var card Card
-	err = stmt.QueryRow().Scan(&card.CardId, &card.Es)
-	if err != nil {
-		log.Fatalf("Error from stmt.QueryRow: %s", err)
-	}
 }
 
 func SelectAllFromCards(db *sql.DB) []Card {
