@@ -30,6 +30,14 @@ type Upload struct {
 }
 
 func (api *Api) handleApiRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		return
+	} else if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	var uploadsRequest UploadsRequest
 	err := decoder.Decode(&uploadsRequest)
