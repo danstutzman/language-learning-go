@@ -33,10 +33,14 @@ func NewApi(db *sql.DB) *Api {
 	return &Api{db: db}
 }
 
+func setCORSHeaders(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "X-Client-Version")
+}
+
 func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "X-Client-Version")
+		setCORSHeaders(w)
 		return
 	} else if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -68,6 +72,7 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
 	if r.URL.Path == "/api/sync.json" {
