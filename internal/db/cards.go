@@ -1,0 +1,51 @@
+package db
+
+import (
+	"database/sql"
+	"log"
+)
+
+type Card struct {
+	CardId int    `json:"cardId"`
+	Es     string `json:"es"`
+}
+
+func AssertCardsHasCorrectSchema(db *sql.DB) {
+	stmt, err := db.Prepare("select cardId, es from cards limit 1")
+	if err != nil {
+		log.Fatalf("Error from db.Prepare: %s", err)
+	}
+	defer stmt.Close()
+
+	var card Card
+	err = stmt.QueryRow().Scan(&card.CardId, &card.Es)
+	if err != nil {
+		log.Fatalf("Error from stmt.QueryRow: %s", err)
+	}
+}
+
+func SelectAllFromCards(db *sql.DB) []Card {
+	cards := []Card{}
+
+	rows, err := db.Query("select cardId, es from cards")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var card Card
+		err = rows.Scan(&card.CardId, &card.Es)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cards = append(cards, card)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return cards
+}
