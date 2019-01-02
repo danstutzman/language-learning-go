@@ -11,7 +11,7 @@ type Exposure struct {
 }
 
 func AssertExposuresHasCorrectSchema(db *sql.DB) {
-	stmt, err := db.Prepare("select cardId, createdAt from exposures limit 1")
+	stmt, err := db.Prepare("select card_id, created_at from exposures limit 1")
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
@@ -27,7 +27,7 @@ func AssertExposuresHasCorrectSchema(db *sql.DB) {
 func SelectAllFromExposures(db *sql.DB) []Exposure {
 	exposures := []Exposure{}
 
-	rows, err := db.Query("select cardId, createdAt from exposures")
+	rows, err := db.Query("select card_id, created_at from exposures")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func InsertExposures(exposures []Exposure, db *sql.DB) {
 	}
 
 	stmt, err := tx.Prepare(
-		"insert into exposures(cardId, createdAt) values(?,?)")
+		"insert into exposures(card_id, created_at) values(?,?)")
 	if err != nil {
 		log.Fatalf("Error from tx.Prepare: %s", err)
 	}
