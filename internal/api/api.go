@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
@@ -29,7 +29,11 @@ type Upload struct {
 	CreatedAt float64 `json:"createdAt"`
 }
 
-func (api *Api) handleApiRequest(w http.ResponseWriter, r *http.Request) {
+func NewApi(db *sql.DB) *Api {
+	return &Api{db: db}
+}
+
+func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "X-Client-Version")

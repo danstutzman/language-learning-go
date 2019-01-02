@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/api"
 	"github.com/nytimes/gziphandler"
 	"github.com/shurcool/httpgzip"
 	"log"
@@ -9,13 +10,13 @@ import (
 )
 
 type HandlerVars struct {
-	api        *Api
+	api        *api.Api
 	withGz     http.Handler
 	fileServer http.Handler
 }
 
-func InitHandlerVars(api *Api) *HandlerVars {
-	withoutGz := http.HandlerFunc(api.handleApiRequest)
+func InitHandlerVars(api *api.Api) *HandlerVars {
+	withoutGz := http.HandlerFunc(api.HandleApiRequest)
 	return &HandlerVars{
 		api:    api,
 		withGz: gziphandler.GzipHandler(withoutGz),

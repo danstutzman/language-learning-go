@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/api"
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"database/sql"
 	"fmt"
@@ -25,7 +26,7 @@ func main() {
 	db.AssertCardsHasCorrectSchema(dbConn)
 	db.AssertExposuresHasCorrectSchema(dbConn)
 
-	api := &Api{db: dbConn}
+	api := api.NewApi(dbConn)
 	handlerVars := InitHandlerVars(api)
 
 	if httpPort != "" {
