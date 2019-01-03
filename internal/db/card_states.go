@@ -6,13 +6,13 @@ import (
 )
 
 type CardState struct {
-	CardId          int   `json:"cardId"`
-	CreatedAtMillis int64 `json:"createdAtMillis"`
+	CardId    int    `json:"cardId"`
+	StateJson string `json:"stateJson"`
 }
 
 func AssertCardStatesHasCorrectSchema(db *sql.DB) {
 	stmt, err := db.Prepare(
-		"select card_id, created_at_millis from card_states limit 1")
+		"select card_id, state_json from card_states limit 1")
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
@@ -22,7 +22,7 @@ func AssertCardStatesHasCorrectSchema(db *sql.DB) {
 func SelectAllFromCardStates(db *sql.DB) []CardState {
 	cardStates := []CardState{}
 
-	rows, err := db.Query("select card_id, created_at_millis from card_states")
+	rows, err := db.Query("select card_id, state_json from card_states")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func SelectAllFromCardStates(db *sql.DB) []CardState {
 
 	for rows.Next() {
 		var cardState CardState
-		err = rows.Scan(&cardState.CardId, &cardState.CreatedAtMillis)
+		err = rows.Scan(&cardState.CardId, &cardState.StateJson)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -45,21 +45,21 @@ func SelectAllFromCardStates(db *sql.DB) []CardState {
 	return cardStates
 }
 
-func InsertCardStates(cardStates []CardState, db *sql.DB) {
+func UpdateCardStates(cardStates []CardState, db *sql.DB) {
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("Error from db.Begin: %s", err)
 	}
 
 	stmt, err := tx.Prepare(
-		"insert into card_states(card_id, created_at_millis) values(?,?)")
+		"update card_states set state_json=? where card_id=?")
 	if err != nil {
 		log.Fatalf("Error from tx.Prepare: %s", err)
 	}
 	defer stmt.Close()
 
 	for _, cardState := range cardStates {
-		_, err = stmt.Exec(cardState.CardId, cardState.CreatedAtMillis)
+		_, err = stmt.Exec(cardState.StateJson, cardState.CardId)
 		if err != nil {
 			log.Fatal(err)
 		}

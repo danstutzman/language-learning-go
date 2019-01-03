@@ -29,6 +29,7 @@ type Upload struct {
 	CardId          int    `json:"cardId"`
 	CreatedAtMillis int64  `json:"createdAtMillis"`
 	LogJson         string `json:"logJson"`
+	StateJson       string `json:"stageJson"`
 }
 
 func NewApi(db *sql.DB) *Api {
@@ -62,8 +63,8 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	for _, upload := range uploadsRequest.Uploads {
 		if upload.Type == "cardState" {
 			cardStates = append(cardStates, db.CardState{
-				CardId:          upload.CardId,
-				CreatedAtMillis: upload.CreatedAtMillis,
+				CardId:    upload.CardId,
+				StateJson: upload.StateJson,
 			})
 		} else if upload.Type == "log" {
 			createdAt := time.Unix(
@@ -73,7 +74,7 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(cardStates) > 0 {
-		db.InsertCardStates(cardStates, api.db)
+		db.UpdateCardStates(cardStates, api.db)
 		if err != nil {
 			log.Fatal(err)
 		}
