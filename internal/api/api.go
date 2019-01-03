@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 type Api struct {
@@ -23,10 +24,11 @@ type UploadsRequest struct {
 }
 
 type Upload struct {
-	UploadId  int     `json:"uploadId"`
-	Type      string  `json:"type"`
-	CardId    int     `json:"cardId"`
-	CreatedAt float64 `json:"createdAt"`
+	UploadId        int    `json:"uploadId"`
+	Type            string `json:"type"`
+	CardId          int    `json:"cardId"`
+	CreatedAtMillis int64  `json:"createdAtMillis"`
+	LogJson         string `json:"logJson"`
 }
 
 func NewApi(db *sql.DB) *Api {
@@ -60,9 +62,14 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	for _, upload := range uploadsRequest.Uploads {
 		if upload.Type == "exposure" {
 			exposures = append(exposures, db.Exposure{
-				CardId:    upload.CardId,
-				CreatedAt: upload.CreatedAt,
+				CardId:          upload.CardId,
+				CreatedAtMillis: upload.CreatedAtMillis,
 			})
+		} else if upload.Type == "log" {
+			createdAt := time.Unix(
+				upload.CreatedAtMillis/1000,
+				upload.CreatedAtMillis%1000*1000000).Format(time.RFC3339Nano)
+			log.Printf("Client log: %s %v", createdAt, upload.LogJson)
 		}
 	}
 	if len(exposures) > 0 {

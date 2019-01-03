@@ -6,12 +6,13 @@ import (
 )
 
 type Exposure struct {
-	CardId    int     `json:"cardId"`
-	CreatedAt float64 `json:"createdAt"`
+	CardId          int   `json:"cardId"`
+	CreatedAtMillis int64 `json:"createdAtMillis"`
 }
 
 func AssertExposuresHasCorrectSchema(db *sql.DB) {
-	stmt, err := db.Prepare("select card_id, created_at from exposures limit 1")
+	stmt, err := db.Prepare(
+		"select card_id, created_at_millis from exposures limit 1")
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
@@ -21,7 +22,7 @@ func AssertExposuresHasCorrectSchema(db *sql.DB) {
 func SelectAllFromExposures(db *sql.DB) []Exposure {
 	exposures := []Exposure{}
 
-	rows, err := db.Query("select card_id, created_at from exposures")
+	rows, err := db.Query("select card_id, created_at_millis from exposures")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,7 +30,7 @@ func SelectAllFromExposures(db *sql.DB) []Exposure {
 
 	for rows.Next() {
 		var exposure Exposure
-		err = rows.Scan(&exposure.CardId, &exposure.CreatedAt)
+		err = rows.Scan(&exposure.CardId, &exposure.CreatedAtMillis)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -51,14 +52,14 @@ func InsertExposures(exposures []Exposure, db *sql.DB) {
 	}
 
 	stmt, err := tx.Prepare(
-		"insert into exposures(card_id, created_at) values(?,?)")
+		"insert into exposures(card_id, created_at_millis) values(?,?)")
 	if err != nil {
 		log.Fatalf("Error from tx.Prepare: %s", err)
 	}
 	defer stmt.Close()
 
 	for _, exposure := range exposures {
-		_, err = stmt.Exec(exposure.CardId, exposure.CreatedAt)
+		_, err = stmt.Exec(exposure.CardId, exposure.CreatedAtMillis)
 		if err != nil {
 			log.Fatal(err)
 		}
