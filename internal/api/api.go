@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -52,11 +53,17 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("X-Client-Version: %s", r.Header.Get("X-Client-Version"))
 
-	decoder := json.NewDecoder(r.Body)
-	var uploadsRequest UploadsRequest
-	err := decoder.Decode(&uploadsRequest)
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatalf("Error from decoder.Decode: %s", err)
+		log.Fatalf("Error from ioutil.ReadAll: %s", err)
+	}
+	defer r.Body.Close()
+	log.Printf("Request: %s", string(body))
+
+	var uploadsRequest UploadsRequest
+	err = json.Unmarshal(body, &uploadsRequest)
+	if err != nil {
+		log.Fatalf("Error from json.Unmarshal: %s", err)
 	}
 
 	cardStates := []db.CardState{}
@@ -93,6 +100,7 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Error from json.Marshal: %s", err)
 		}
 		w.Write(bytes)
+		log.Printf("Response: %s", string(bytes))
 
 	} else {
 		fmt.Fprintf(w, "Hello, you've requested: %s\n", r.URL.Path)
