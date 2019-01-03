@@ -17,7 +17,7 @@ fi
 if false; then
   ssh -i ~/.ssh/digitalocean root@$IP 'bash -exs' <<EOF
     apt-get update
-    apt-get install -y golang
+    apt-get install -y golang sqlite3
 
     useradd --create-home web || true
 

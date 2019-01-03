@@ -1,0 +1,3 @@
+#!/bin/bash -ex
+IP=`doctl compute droplet list spanish --format PublicIPv4 --no-header`
+ssh -t -i ~/.ssh/digitalocean web@$IP sqlite3 /home/web/gopath/src/bitbucket.org/danstutzman/language-learning-go/db.sqlite3
