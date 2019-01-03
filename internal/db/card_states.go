@@ -5,36 +5,36 @@ import (
 	"log"
 )
 
-type Exposure struct {
+type CardState struct {
 	CardId          int   `json:"cardId"`
 	CreatedAtMillis int64 `json:"createdAtMillis"`
 }
 
-func AssertExposuresHasCorrectSchema(db *sql.DB) {
+func AssertCardStatesHasCorrectSchema(db *sql.DB) {
 	stmt, err := db.Prepare(
-		"select card_id, created_at_millis from exposures limit 1")
+		"select card_id, created_at_millis from card_states limit 1")
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
 	defer stmt.Close()
 }
 
-func SelectAllFromExposures(db *sql.DB) []Exposure {
-	exposures := []Exposure{}
+func SelectAllFromCardStates(db *sql.DB) []CardState {
+	cardStates := []CardState{}
 
-	rows, err := db.Query("select card_id, created_at_millis from exposures")
+	rows, err := db.Query("select card_id, created_at_millis from card_states")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var exposure Exposure
-		err = rows.Scan(&exposure.CardId, &exposure.CreatedAtMillis)
+		var cardState CardState
+		err = rows.Scan(&cardState.CardId, &cardState.CreatedAtMillis)
 		if err != nil {
 			log.Fatal(err)
 		}
-		exposures = append(exposures, exposure)
+		cardStates = append(cardStates, cardState)
 	}
 
 	err = rows.Err()
@@ -42,24 +42,24 @@ func SelectAllFromExposures(db *sql.DB) []Exposure {
 		log.Fatal(err)
 	}
 
-	return exposures
+	return cardStates
 }
 
-func InsertExposures(exposures []Exposure, db *sql.DB) {
+func InsertCardStates(cardStates []CardState, db *sql.DB) {
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("Error from db.Begin: %s", err)
 	}
 
 	stmt, err := tx.Prepare(
-		"insert into exposures(card_id, created_at_millis) values(?,?)")
+		"insert into card_states(card_id, created_at_millis) values(?,?)")
 	if err != nil {
 		log.Fatalf("Error from tx.Prepare: %s", err)
 	}
 	defer stmt.Close()
 
-	for _, exposure := range exposures {
-		_, err = stmt.Exec(exposure.CardId, exposure.CreatedAtMillis)
+	for _, cardState := range cardStates {
+		_, err = stmt.Exec(cardState.CardId, cardState.CreatedAtMillis)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -15,8 +15,8 @@ type Api struct {
 }
 
 type SyncResponse struct {
-	Cards     []db.Card     `json:"cards"`
-	Exposures []db.Exposure `json:"exposures"`
+	Cards      []db.Card      `json:"cards"`
+	CardStates []db.CardState `json:"cardStates"`
 }
 
 type UploadsRequest struct {
@@ -58,10 +58,10 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Error from decoder.Decode: %s", err)
 	}
 
-	exposures := []db.Exposure{}
+	cardStates := []db.CardState{}
 	for _, upload := range uploadsRequest.Uploads {
-		if upload.Type == "exposure" {
-			exposures = append(exposures, db.Exposure{
+		if upload.Type == "cardState" {
+			cardStates = append(cardStates, db.CardState{
 				CardId:          upload.CardId,
 				CreatedAtMillis: upload.CreatedAtMillis,
 			})
@@ -72,8 +72,8 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Client log: %s %v", createdAt, upload.LogJson)
 		}
 	}
-	if len(exposures) > 0 {
-		db.InsertExposures(exposures, api.db)
+	if len(cardStates) > 0 {
+		db.InsertCardStates(cardStates, api.db)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -84,8 +84,8 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path == "/api/sync.json" {
 		response := SyncResponse{
-			Cards:     db.SelectAllFromCards(api.db),
-			Exposures: db.SelectAllFromExposures(api.db),
+			Cards:      db.SelectAllFromCards(api.db),
+			CardStates: db.SelectAllFromCardStates(api.db),
 		}
 		bytes, err := json.Marshal(response)
 		if err != nil {
