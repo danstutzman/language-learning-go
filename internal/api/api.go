@@ -29,7 +29,7 @@ type Upload struct {
 	CardId          int    `json:"cardId"`
 	CreatedAtMillis int64  `json:"createdAtMillis"`
 	LogJson         string `json:"logJson"`
-	StateJson       string `json:"stageJson"`
+	StateJson       string `json:"stateJson"`
 }
 
 func NewApi(db *sql.DB) *Api {
