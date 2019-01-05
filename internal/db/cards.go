@@ -6,13 +6,18 @@ import (
 )
 
 type Card struct {
-	CardId int    `json:"cardId"`
-	EsText string `json:"esText"`
-	EsJson string `json:"esJson"`
+	CardId  int    `json:"cardId"`
+	EsText  string `json:"esText"`
+	EsJson  string `json:"esJson"`
+	NumReps int    `json:"numReps"`
 }
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
-	stmt, err := db.Prepare("select card_id, es_text, es_json from cards limit 1")
+	stmt, err := db.Prepare(`
+		select card_id, es_text, es_json, num_reps
+		from cards
+		limit 1
+	`)
 	if err != nil {
 		log.Fatalf("Error from db.Prepare: %s", err)
 	}
@@ -22,7 +27,7 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 func SelectAllFromCards(db *sql.DB) []Card {
 	cards := []Card{}
 
-	rows, err := db.Query("select card_id, es_text, es_json from cards")
+	rows, err := db.Query("select card_id, es_text, es_json, num_reps from cards")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +35,7 @@ func SelectAllFromCards(db *sql.DB) []Card {
 
 	for rows.Next() {
 		var card Card
-		err = rows.Scan(&card.CardId, &card.EsText, &card.EsJson)
+		err = rows.Scan(&card.CardId, &card.EsText, &card.EsJson, &card.NumReps)
 		if err != nil {
 			log.Fatal(err)
 		}
