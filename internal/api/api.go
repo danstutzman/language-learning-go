@@ -2,17 +2,17 @@ package api
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 )
 
 type Api struct {
-	db *sql.DB
+	db             *sql.DB
+	dictionaryPath string
 }
 
-func NewApi(db *sql.DB) *Api {
-	return &Api{db: db}
+func NewApi(db *sql.DB, dictionaryPath string) *Api {
+	return &Api{db: db, dictionaryPath: dictionaryPath}
 }
 
 func setCORSHeaders(w http.ResponseWriter) {
@@ -34,7 +34,13 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	} else if r.URL.Path == "/api/download-dictionary" {
+		if r.Method == "GET" {
+			api.HandleDownloadDictionaryRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	} else {
-		fmt.Fprintf(w, "Hello, you've requested: %s\n", r.URL.Path)
+		http.Error(w, "Not found", http.StatusNotFound)
 	}
 }

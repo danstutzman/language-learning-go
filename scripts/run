@@ -2,4 +2,6 @@
 cd $GOPATH/src/bitbucket.org/danstutzman/language-learning-go
 go vet bitbucket.org/danstutzman/language-learning-go/...
 go install -v bitbucket.org/danstutzman/language-learning-go/...
-HTTP_PORT=8080 DB_PATH=./db.sqlite3 $GOPATH/bin/language-learning-go
+HTTP_PORT=8080 DB_PATH=./db.sqlite3 \
+  DICTIONARY_PATH=/Users/dan/dev/language-learning-corpora/es-en-dictionary-from-anki-deck/dictionary.csv \
+  $GOPATH/bin/language-learning-go
