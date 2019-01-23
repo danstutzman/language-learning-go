@@ -30,7 +30,7 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path == "/api/sync-cards" {
 		if r.Method == "POST" {
-			api.HandleSyncCardsRequest(w, r)
+			api.HandleSyncRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

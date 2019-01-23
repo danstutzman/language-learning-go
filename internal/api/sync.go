@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type SyncCardsResponse struct {
+type SyncResponse struct {
 	Cards      []db.Card      `json:"cards"`
 	CardStates []db.CardState `json:"cardStates"`
 }
@@ -27,7 +27,7 @@ type Upload struct {
 	StateJson       string `json:"stateJson"`
 }
 
-func (api *Api) HandleSyncCardsRequest(w http.ResponseWriter, r *http.Request) {
+func (api *Api) HandleSyncRequest(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatalf("Error from ioutil.ReadAll: %s", err)
@@ -65,7 +65,7 @@ func (api *Api) HandleSyncCardsRequest(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	response := SyncCardsResponse{
+	response := SyncResponse{
 		Cards:      db.SelectAllFromCards(api.db),
 		CardStates: db.SelectAllFromCardStates(api.db),
 	}
