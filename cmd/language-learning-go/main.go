@@ -26,6 +26,7 @@ func main() {
 	}
 	db.AssertCardsHasCorrectSchema(dbConn)
 	db.AssertCardStatesHasCorrectSchema(dbConn)
+	db.AssertNotesHasCorrectSchema(dbConn)
 
 	api := api.NewApi(dbConn, dictionaryPath)
 	handlerVars := InitHandlerVars(api)

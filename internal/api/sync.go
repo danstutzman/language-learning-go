@@ -12,10 +12,12 @@ import (
 type SyncResponse struct {
 	Cards      []db.Card      `json:"cards"`
 	CardStates []db.CardState `json:"cardStates"`
+	Notes      []db.Note      `json:"notes"`
 }
 
-type UploadsRequest struct {
+type SyncRequest struct {
 	Uploads []Upload
+	Notes   []db.Note
 }
 
 type Upload struct {
@@ -33,16 +35,15 @@ func (api *Api) HandleSyncRequest(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Error from ioutil.ReadAll: %s", err)
 	}
 	defer r.Body.Close()
-	log.Printf("Request: %s", string(body))
 
-	var uploadsRequest UploadsRequest
-	err = json.Unmarshal(body, &uploadsRequest)
+	var syncRequest SyncRequest
+	err = json.Unmarshal(body, &syncRequest)
 	if err != nil {
 		log.Fatalf("Error from json.Unmarshal: %s", err)
 	}
 
 	cardStates := []db.CardState{}
-	for _, upload := range uploadsRequest.Uploads {
+	for _, upload := range syncRequest.Uploads {
 		if upload.Type == "cardState" {
 			cardStates = append(cardStates, db.CardState{
 				CardId:    upload.CardId,
@@ -62,17 +63,21 @@ func (api *Api) HandleSyncRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for _, note := range syncRequest.Notes {
+		db.UpsertNote(&note, api.db)
+	}
+
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
 	response := SyncResponse{
 		Cards:      db.SelectAllFromCards(api.db),
 		CardStates: db.SelectAllFromCardStates(api.db),
+		Notes:      db.SelectAllFromNotes(api.db),
 	}
 	bytes, err := json.Marshal(response)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}
 	w.Write(bytes)
-	log.Printf("Response: %s", string(bytes))
 }
