@@ -1,16 +1,20 @@
 #!/bin/bash -ex
+
 cd `dirname $0`/..
+
 rm -f db.sqlite3
+
 sqlite3 db.sqlite3 <<EOF
   CREATE TABLE cards (
-    cardId INTEGER PRIMARY KEY NOT NULL,
-    es TEXT NOT NULL
+    id                INTEGER PRIMARY KEY NOT NULL,
+    l1                TEXT NOT NULL,
+    l2                TEXT NOT NULL,
+    morpheme_ids_json TEXT NOT NULL,
+    created_at_millis REAL NOT NULL,
+    updated_at_millis REAL NOT NULL
   );
-  CREATE TABLE exposures (
-    createdAt REAL NOT NULL,
-    cardId INTEGER NOT NULL
-  );
-  INSERT INTO cards(es) VALUES('hombre');
-  INSERT INTO cards(es) VALUES('mujer');
+  INSERT INTO cards(l1, l2, morpheme_ids_json, created_at_millis, updated_at_millis)
+    VALUES('man', 'hombre', '[]', STRFTIME('%s','now'), STRFTIME('%s','now'));
 EOF
+
 echo '.schema' | sqlite3 db.sqlite3
