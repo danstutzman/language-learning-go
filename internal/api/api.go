@@ -58,6 +58,18 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	} else if r.URL.Path == "/api/morphemes" {
 		if r.Method == "GET" {
 			api.HandleListMorphemesRequest(w, r)
+		} else if r.Method == "POST" {
+			api.HandleCreateMorphemeRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else if match := regexp.MustCompile(
+		`^/api/morphemes/(-?[0-9]+)$`).FindStringSubmatch(r.URL.Path); match != nil {
+		morphemeId := MustAtoi(match[1])
+		if r.Method == "GET" {
+			api.HandleShowMorphemeRequest(w, r, morphemeId)
+		} else if r.Method == "PUT" {
+			api.HandleUpdateMorphemeRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -67,10 +79,6 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	} else if match := regexp.MustCompile(
-		`^/api/morphemes/(-?[0-9]+)$`).FindStringSubmatch(r.URL.Path); match != nil {
-		morphemeId := MustAtoi(match[1])
-		api.HandleShowMorphemeRequest(w, r, morphemeId)
 	} else {
 		http.Error(w, "Not found", http.StatusNotFound)
 	}

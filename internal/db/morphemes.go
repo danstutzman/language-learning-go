@@ -68,3 +68,14 @@ func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 
 	return morpheme
 }
+
+func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
+	query := fmt.Sprintf("UPDATE morphemes SET l2=%s, gloss=%s WHERE id=%d",
+		Escape(morpheme.L2), Escape(morpheme.Gloss), morpheme.Id)
+	log.Println(query)
+
+	_, err := db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+}
