@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"regexp"
 )
 
 type Api struct {
@@ -28,7 +29,22 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path == "/api/sync-cards" {
+	if r.URL.Path == "/api/cards" {
+		if r.Method == "GET" {
+			api.HandleListCardsRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else if match := regexp.MustCompile(
+		`^/api/cards/(-?[0-9]+)$`).FindStringSubmatch(r.URL.Path); match != nil {
+		api.HandleShowCardRequest(w, r, match[1])
+	} else if r.URL.Path == "/api/morphemes" {
+		if r.Method == "GET" {
+			api.HandleListMorphemesRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else if r.URL.Path == "/api/sync-cards" {
 		if r.Method == "POST" {
 			api.HandleSyncRequest(w, r)
 		} else {
@@ -40,6 +56,9 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	} else if match := regexp.MustCompile(
+		`^/api/morphemes/(-?[0-9]+)$`).FindStringSubmatch(r.URL.Path); match != nil {
+		api.HandleShowMorphemeRequest(w, r, match[1])
 	} else {
 		http.Error(w, "Not found", http.StatusNotFound)
 	}

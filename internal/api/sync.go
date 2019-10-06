@@ -10,7 +10,8 @@ import (
 )
 
 type SyncResponse struct {
-	Cards []db.Card `json:"cards"`
+	Cards     []db.Card     `json:"cards"`
+	Morphemes []db.Morpheme `json:"morphemes"`
 }
 
 type SyncRequest struct {
@@ -56,7 +57,8 @@ func (api *Api) HandleSyncRequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
 	response := SyncResponse{
-		Cards: db.SelectAllFromCards(api.db),
+		Cards:     db.SelectAllFromCards(api.db),
+		Morphemes: db.SelectAllFromMorphemes(api.db),
 	}
 	bytes, err := json.Marshal(response)
 	log.Printf("HandleSyncRequest response: %s", bytes)

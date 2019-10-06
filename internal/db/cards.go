@@ -44,7 +44,6 @@ func SelectAllFromCards(db *sql.DB) []Card {
 			&card.MorphemeIdsJson,
 			&card.CreatedAtMillis,
 			&card.UpdatedAtMillis)
-		log.Printf("Saw card %+v", card)
 		if err != nil {
 			log.Fatalf("Error from rows.Scan in SelectAllFromCards: %s", err)
 		}
@@ -91,4 +90,22 @@ func UpsertCard(card *Card, db *sql.DB) {
 	}
 
 	tx.Commit()
+}
+
+func FindCardById(db *sql.DB, id string) (Card, error) {
+	row := db.QueryRow(
+		`select id, l1, l2, morpheme_ids_json, created_at_millis, updated_at_millis
+		from cards
+		where id=$1`, id)
+
+	card := Card{}
+	err := row.Scan(
+		&card.Id,
+		&card.L1,
+		&card.L2,
+		&card.MorphemeIdsJson,
+		&card.CreatedAtMillis,
+		&card.UpdatedAtMillis)
+
+	return card, err
 }
