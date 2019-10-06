@@ -74,7 +74,13 @@ func (api *Api) HandleCreateMorphemeRequest(w http.ResponseWriter, r *http.Reque
 		panic(err)
 	}
 
-	savedMorpheme := db.InsertMorpheme(api.db, morpheme)
+	var savedMorpheme db.MorphemeRow
+	existingMorphemes := db.FromMorphemes(api.db, "WHERE l2="+db.Escape(morpheme.L2))
+	if len(existingMorphemes) == 0 {
+		savedMorpheme = db.InsertMorpheme(api.db, morpheme)
+	} else {
+		savedMorpheme = existingMorphemes[0]
+	}
 
 	bytes, err := json.Marshal(savedMorpheme)
 	if err != nil {
@@ -106,4 +112,13 @@ func (api *Api) HandleUpdateMorphemeRequest(w http.ResponseWriter, r *http.Reque
 		panic(err)
 	}
 	w.Write(bytes)
+}
+
+func (api *Api) HandleDeleteMorphemeRequest(w http.ResponseWriter, r *http.Request, id int) {
+	setCORSHeaders(w)
+
+	where := fmt.Sprintf("WHERE id=%d", id)
+	db.DeleteFromMorphemes(api.db, where)
+
+	w.WriteHeader(204) // send the headers with a 204 response code.
 }

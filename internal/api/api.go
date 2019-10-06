@@ -9,12 +9,11 @@ import (
 )
 
 type Api struct {
-	db             *sql.DB
-	dictionaryPath string
+	db *sql.DB
 }
 
-func NewApi(db *sql.DB, dictionaryPath string) *Api {
-	return &Api{db: db, dictionaryPath: dictionaryPath}
+func NewApi(db *sql.DB) *Api {
+	return &Api{db: db}
 }
 
 func setCORSHeaders(w http.ResponseWriter) {
@@ -70,12 +69,8 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 			api.HandleShowMorphemeRequest(w, r, morphemeId)
 		} else if r.Method == "PUT" {
 			api.HandleUpdateMorphemeRequest(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	} else if r.URL.Path == "/api/download-dictionary" {
-		if r.Method == "GET" {
-			api.HandleDownloadDictionaryRequest(w, r)
+		} else if r.Method == "DELETE" {
+			api.HandleDeleteMorphemeRequest(w, r, morphemeId)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

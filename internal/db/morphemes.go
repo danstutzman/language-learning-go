@@ -79,3 +79,13 @@ func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
 		panic(err)
 	}
 }
+
+func DeleteFromMorphemes(db *sql.DB, where string) {
+	query := "DELETE FROM morphemes " + where
+	log.Println(query)
+
+	_, err := db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+}
