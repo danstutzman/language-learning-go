@@ -20,13 +20,14 @@ sqlite3 db.sqlite3 <<EOF
 
   CREATE TABLE cards_morphemes (
     card_id INTEGER NOT NULL,
-    morpheme_id INTEGER NOT NULL
+    morpheme_id INTEGER NOT NULL,
+    num_morpheme INTEGER NOT NULL
   );
   CREATE INDEX idx_cards_morphemes_card_id ON cards_morphemes(card_id);
   CREATE INDEX idx_cards_morphemes_morpheme_id ON cards_morphemes(morpheme_id);
-  INSERT INTO cards_morphemes (card_id, morpheme_id) VALUES (
+  INSERT INTO cards_morphemes (card_id, morpheme_id, num_morpheme) VALUES (
    (SELECT id FROM cards WHERE l2 = 'hombre'),
-   (SELECT id FROM morphemes WHERE l2 = 'hombre'));
+   (SELECT id FROM morphemes WHERE l2 = 'hombre'), 1);
 EOF
 
 echo '.schema' | sqlite3 db.sqlite3

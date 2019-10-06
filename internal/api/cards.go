@@ -150,7 +150,7 @@ func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
 
 	savedMorphemes := []db.MorphemeRow{}
 	existingMorphemes := db.FromMorphemes(api.db, "WHERE "+db.InStringList("l2", morphemeL2s))
-	for _, desiredMorpheme := range card.Morphemes {
+	for numMorpheme, desiredMorpheme := range card.Morphemes {
 		if desiredMorpheme.L2 == "" && desiredMorpheme.Gloss == "" {
 			continue
 		}
@@ -170,8 +170,9 @@ func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
 		}
 
 		db.InsertCardsMorphemesRow(api.db, db.CardsMorphemesRow{
-			CardId:     card.Id,
-			MorphemeId: savedMorpheme.Id,
+			CardId:      card.Id,
+			MorphemeId:  savedMorpheme.Id,
+			NumMorpheme: numMorpheme,
 		})
 
 		savedMorphemes = append(savedMorphemes, *savedMorpheme)
