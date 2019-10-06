@@ -2,14 +2,14 @@ package api
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
 
 type ListMorphemesResponse struct {
-	Morphemes []db.Morpheme `json:"morphemes"`
+	Morphemes []db.MorphemeRow `json:"morphemes"`
 }
 
 func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
 	response := ListMorphemesResponse{
-		Morphemes: db.SelectAllFromMorphemes(api.db),
+		Morphemes: db.FromMorphemes(api.db, "limit 20"),
 	}
 	bytes, err := json.Marshal(response)
 	if err != nil {
@@ -27,25 +27,26 @@ func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Reques
 }
 
 func (api *Api) HandleShowMorphemeRequest(w http.ResponseWriter, r *http.Request,
-	morphemeId string) {
+	morphemeId int) {
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	morpheme, err := db.FindMorphemeById(api.db, morphemeId)
-	if err == sql.ErrNoRows {
+	where := fmt.Sprintf("WHERE id = %d", morphemeId)
+	morphemes := db.FromMorphemes(api.db, where)
+	if len(morphemes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Not Found"))
 		return
-	} else if err != nil {
+	} else if len(morphemes) > 1 {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
-		log.Fatalf("Internal Server Error: %s", err)
-		return
+		panic("Too many morphemes")
 	}
+	morpheme := morphemes[0]
 
 	bytes, err := json.Marshal(morpheme)
 	if err != nil {
-		log.Fatalf("Error from json.Marshal: %s", err)
+		panic(err)
 	}
 	w.Write(bytes)
 }

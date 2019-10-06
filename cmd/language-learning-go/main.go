@@ -25,6 +25,7 @@ func main() {
 		log.Fatalf("Error from sql.Open: %s", err)
 	}
 	db.AssertCardsHasCorrectSchema(dbConn)
+	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 
 	api := api.NewApi(dbConn, dictionaryPath)

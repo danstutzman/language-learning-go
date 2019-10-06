@@ -2,103 +2,69 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 )
 
-type Morpheme struct {
-	Id              int     `json:"id"`
-	L2              string  `json:"l2"`
-	Gloss           string  `json:"gloss"`
-	CreatedAtMillis float64 `json:"created_at_millis"`
-	UpdatedAtMillis float64 `json:"updated_at_millis"`
+type MorphemeRow struct {
+	Id    int    `json:"id"`
+	L2    string `json:"l2"`
+	Gloss string `json:"gloss"`
 }
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
-	stmt, err := db.Prepare(`
-		select id, l2, gloss, created_at_millis, updated_at_millis
-		from morphemes
-		limit 1
-	`)
+	query := "SELECT id, l2, gloss FROM morphemes LIMIT 1"
+	_, err := db.Exec(query)
 	if err != nil {
-		log.Fatalf("Error from db.Prepare in AssertMorphemesHasCorrectSchema: %s", err)
+		panic(err)
 	}
-	defer stmt.Close()
 }
 
-func SelectAllFromMorphemes(db *sql.DB) []Morpheme {
-	morphemes := []Morpheme{}
+func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
+	query := "SELECT id, l2, gloss FROM morphemes " + whereLimit
+	log.Println(query)
 
-	rows, err := db.Query(
-		"select id, l2, gloss, created_at_millis, updated_at_millis from morphemes limit 20")
+	rset, err := db.Query(query)
 	if err != nil {
-		log.Fatalf("Error from db.Query in SelectAllFromMorphemes: %s", err)
+		panic(err)
 	}
-	defer rows.Close()
+	defer rset.Close()
 
-	for rows.Next() {
-		var morpheme Morpheme
-		err = rows.Scan(&morpheme.Id,
-			&morpheme.L2,
-			&morpheme.Gloss,
-			&morpheme.CreatedAtMillis,
-			&morpheme.UpdatedAtMillis)
+	rows := []MorphemeRow{}
+	for rset.Next() {
+		var row MorphemeRow
+		err = rset.Scan(&row.Id,
+			&row.L2,
+			&row.Gloss)
 		if err != nil {
-			log.Fatalf("Error from rows.Scan in SelectAllFromMorphemes: %s", err)
+			panic(err)
 		}
-		morphemes = append(morphemes, morpheme)
+		rows = append(rows, row)
 	}
 
-	err = rows.Err()
+	err = rset.Err()
 	if err != nil {
-		log.Fatalf("Error from rows.Err in SelectAllFromMorphemes: %s", err)
+		panic(err)
 	}
 
-	return morphemes
+	return rows
 }
 
-func UpsertMorpheme(morpheme *Morpheme, db *sql.DB) {
-	tx, err := db.Begin()
+func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
+	query := fmt.Sprintf(`INSERT INTO morphemes (l2, gloss) VALUES (%s, %s)`,
+		Escape(morpheme.L2), Escape(morpheme.Gloss))
+	log.Println(query)
+
+	result, err := db.Exec(query)
 	if err != nil {
-		log.Fatalf("Error from db.Begin in UpsertMorpheme: %s", err)
+		panic(err)
 	}
 
-	stmt, err := tx.Prepare(
-		`INSERT INTO morphemes(id, l2, gloss, created_at_millis, updated_at_millis)
-		VALUES(?, ?, ?, ?, ?)
-	  ON CONFLICT(id) DO UPDATE SET
-			l2=excluded.l2,
-			gloss=excluded.gloss,
-			created_at_millis=excluded.created_at_millis,
-			updated_at_millis=excluded.updated_at_millis`)
+	id, err := result.LastInsertId()
 	if err != nil {
-		log.Fatalf("Error from tx.Prepare in UpsertMorpheme: %s", err)
+		panic(err)
 	}
-	defer stmt.Close()
+	morpheme.Id = int(id)
 
-	_, err = stmt.Exec(
-		morpheme.Id,
-		morpheme.L2,
-		morpheme.Gloss,
-		morpheme.CreatedAtMillis,
-		morpheme.UpdatedAtMillis)
-	if err != nil {
-		log.Fatalf("Error from stmt.Exec in UpsertMorpheme: %s", err)
-	}
-
-	tx.Commit()
-}
-
-func FindMorphemeById(db *sql.DB, id string) (Morpheme, error) {
-	row := db.QueryRow(
-		"select id, l2, gloss, created_at_millis, updated_at_millis from morphemes where id=$1", id)
-
-	morpheme := Morpheme{}
-	err := row.Scan(
-		&morpheme.Id,
-		&morpheme.L2,
-		&morpheme.Gloss,
-		&morpheme.CreatedAtMillis,
-		&morpheme.UpdatedAtMillis)
-
-	return morpheme, err
+	return morpheme
 }

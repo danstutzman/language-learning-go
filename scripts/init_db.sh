@@ -11,14 +11,12 @@ sqlite3 db.sqlite3 <<EOF
     id                INTEGER PRIMARY KEY NOT NULL,
     l1                TEXT NOT NULL,
     l2                TEXT NOT NULL,
-    morpheme_ids_json TEXT NOT NULL,
-    created_at_millis REAL NOT NULL,
-    updated_at_millis REAL NOT NULL
+    morpheme_ids_json TEXT NOT NULL
   );
   CREATE UNIQUE INDEX idx_cards_l1 ON cards(l1);
   CREATE UNIQUE INDEX idx_cards_l2 ON cards(l2);
-  INSERT INTO cards (l1, l2, morpheme_ids_json, created_at_millis, updated_at_millis)
-    VALUES ('man', 'hombre', '[]', 0, 0);
+  INSERT INTO cards (l1, l2, morpheme_ids_json)
+    VALUES ('man', 'hombre', '[]');
 
   CREATE TABLE cards_morphemes (
     card_id INTEGER NOT NULL,
