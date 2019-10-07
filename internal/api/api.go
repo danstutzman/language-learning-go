@@ -2,7 +2,6 @@ package api
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -18,7 +17,6 @@ func NewApi(db *sql.DB) *Api {
 
 func setCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "X-Client-Version")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
 }
 
@@ -31,8 +29,6 @@ func MustAtoi(s string) int {
 }
 
 func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
-	log.Printf("X-Client-Version: %s", r.Header.Get("X-Client-Version"))
-
 	if r.Method == "OPTIONS" {
 		setCORSHeaders(w)
 		return
