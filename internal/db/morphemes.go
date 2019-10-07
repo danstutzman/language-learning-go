@@ -14,6 +14,8 @@ type MorphemeRow struct {
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
 	query := "SELECT id, l2, gloss FROM morphemes LIMIT 1"
+	log.Println(query)
+
 	_, err := db.Exec(query)
 	if err != nil {
 		panic(err)
