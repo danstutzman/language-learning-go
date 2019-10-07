@@ -8,11 +8,15 @@ import (
 )
 
 type Api struct {
-	db *sql.DB
+	db                    *sql.DB
+	googleTranslateApiKey string
 }
 
-func NewApi(db *sql.DB) *Api {
-	return &Api{db: db}
+func NewApi(db *sql.DB, googleTranslateApiKey string) *Api {
+	return &Api{
+		db:                    db,
+		googleTranslateApiKey: googleTranslateApiKey,
+	}
 }
 
 func setCORSHeaders(w http.ResponseWriter) {
@@ -72,6 +76,12 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else if r.Method == "DELETE" {
 			api.HandleDeleteMorphemeRequest(w, r, morphemeId)
 		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else if r.URL.Path == "/api/translate" {
+		if r.Method == "GET" {
+			api.HandleTranslateRequest(w, r)
+		} else if r.Method == "POST" {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	} else {

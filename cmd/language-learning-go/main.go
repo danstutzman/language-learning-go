@@ -16,6 +16,7 @@ func main() {
 	httpsCertPath := os.Getenv("HTTPS_CERT_PATH")
 	httpsKeyPath := os.Getenv("HTTPS_KEY_PATH")
 	dbPath := os.Getenv("DB_PATH")
+	googleTranslateApiKey := os.Getenv("GOOGLE_TRANSLATE_API_KEY")
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -27,7 +28,7 @@ func main() {
 	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 
-	api := api.NewApi(dbConn)
+	api := api.NewApi(dbConn, googleTranslateApiKey)
 	handlerVars := InitHandlerVars(api)
 
 	if httpPort != "" {
