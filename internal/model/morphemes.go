@@ -39,28 +39,30 @@ func morphemeRowsToMorphemes(rows []db.MorphemeRow) []Morpheme {
 	return morphemes
 }
 
-func (model *Model) ParseL2PhraseIntoMorphemes(l2Phrase string) []Morpheme {
-	morphemes := []Morpheme{}
-	for _, word := range L2_WORD_REGEXP.FindAllString(strings.ToLower(l2Phrase), -1) {
-		exactMatches := db.FromMorphemes(model.db, "WHERE l2 = "+db.Escape(word))
-		if len(exactMatches) > 0 {
-			for _, row := range exactMatches {
-				morphemes = append(morphemes, morphemeRowToMorpheme(row))
-			}
-		} else {
-			// look for matches with two morphemes
-			prefixMatches := db.FromMorphemes(model.db,
-				"WHERE "+db.Escape(word)+" LIKE (RTRIM(l2, '-') || '%')")
-			for _, prefixMatch := range prefixMatches {
-				// subtract one to account for the prefix's hyphen
-				suffix := "-" + word[(len(prefixMatch.L2)-1):]
+func (model *Model) SplitL2PhraseIntoWords(l2Phrase string) []string {
+	return L2_WORD_REGEXP.FindAllString(strings.ToLower(l2Phrase), -1)
+}
 
-				suffixMatches := db.FromMorphemes(model.db, "WHERE l2 = "+db.Escape(suffix))
-				if len(suffixMatches) > 0 {
-					morphemes = append(morphemes, morphemeRowToMorpheme(prefixMatch))
-					for _, row := range suffixMatches {
-						morphemes = append(morphemes, morphemeRowToMorpheme(row))
-					}
+func (model *Model) ParseL2WordIntoMorphemes(word string) []Morpheme {
+	morphemes := []Morpheme{}
+	exactMatches := db.FromMorphemes(model.db, "WHERE l2 = "+db.Escape(word))
+	if len(exactMatches) > 0 {
+		for _, row := range exactMatches {
+			morphemes = append(morphemes, morphemeRowToMorpheme(row))
+		}
+	} else {
+		// look for matches with two morphemes
+		prefixMatches := db.FromMorphemes(model.db,
+			"WHERE "+db.Escape(word)+" LIKE (RTRIM(l2, '-') || '%')")
+		for _, prefixMatch := range prefixMatches {
+			// subtract one to account for the prefix's hyphen
+			suffix := "-" + word[(len(prefixMatch.L2)-1):]
+
+			suffixMatches := db.FromMorphemes(model.db, "WHERE l2 = "+db.Escape(suffix))
+			if len(suffixMatches) > 0 {
+				morphemes = append(morphemes, morphemeRowToMorpheme(prefixMatch))
+				for _, row := range suffixMatches {
+					morphemes = append(morphemes, morphemeRowToMorpheme(row))
 				}
 			}
 		}

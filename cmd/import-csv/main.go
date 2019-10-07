@@ -2,6 +2,7 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"bitbucket.org/danstutzman/language-learning-go/internal/model"
 	"bufio"
 	"database/sql"
 	"encoding/csv"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 func indexOf(needle string, haystack []string) int {
@@ -38,6 +40,7 @@ func main() {
 	db.AssertCardsHasCorrectSchema(dbConn)
 	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
+	theModel := model.NewModel(dbConn)
 
 	csvFile, err := os.Open(csvPath)
 	if err != nil {
@@ -64,6 +67,24 @@ func main() {
 		l1 := values[l1Index]
 		l2 := values[l2Index]
 
-		db.InsertCard(dbConn, db.CardRow{L1: l1, L2: l2})
+		expectedWords := theModel.SplitL2PhraseIntoWords(l2)
+
+		morphemes := []model.Morpheme{}
+		for _, word := range expectedWords {
+			morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
+		}
+
+		actualWords := []string{}
+		for _, morpheme := range morphemes {
+			actualWords = append(actualWords, morpheme.L2)
+		}
+
+		expectedWordsJoined := strings.Join(expectedWords, " ")
+		actualWordsJoined := strings.Join(actualWords, " ")
+		if actualWordsJoined != expectedWordsJoined {
+			log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
+		}
+
+		theModel.InsertCard(model.Card{L1: l1, L2: l2, Morphemes: morphemes})
 	}
 }

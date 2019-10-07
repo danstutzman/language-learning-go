@@ -20,7 +20,11 @@ func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Reques
 	l2Phrase := r.URL.Query()["l2_phrase"]
 	l2Prefix := r.URL.Query()["l2_prefix"]
 	if len(l2Phrase) == 1 && l2Phrase[0] != "" {
-		morphemes = api.model.ParseL2PhraseIntoMorphemes(l2Phrase[0])
+		morphemes = []model.Morpheme{}
+		words := api.model.SplitL2PhraseIntoWords(l2Phrase[0])
+		for _, word := range words {
+			morphemes = append(morphemes, api.model.ParseL2WordIntoMorphemes(word)...)
+		}
 	} else if len(l2Prefix) == 1 && l2Prefix[0] != "" {
 		morphemes = api.model.ListMorphemesForPrefix(l2Prefix[0], 20)
 	} else {
