@@ -1,9 +1,15 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
-cd `dirname $0`
+cd `dirname $0`/..
 
-rm -f db.sqlite3
-cat schema.sql | sqlite3 db.sqlite3
-echo 1>&2 db.sqlite3
+# Build Go first
+cd $GOPATH/src/bitbucket.org/danstutzman/language-learning-go
+go vet bitbucket.org/danstutzman/language-learning-go/...
+go install -v bitbucket.org/danstutzman/language-learning-go/...
 
-./es-en-dictionary-from-anki-deck/load.sh
+rm -f db/db.sqlite3
+cat db/schema.sql | sqlite3 db/db.sqlite3
+
+db/es-en-dictionary-from-anki-deck/load.sh
+
+DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv db/dans-cards/export.csv
