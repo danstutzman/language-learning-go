@@ -1,0 +1,3 @@
+- Download Anki deck from https://ankiweb.net/shared/info/241428882
+- Extract the compressed file
+- Keep only the collection.anki2 file
