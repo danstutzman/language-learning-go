@@ -12,4 +12,6 @@ cat db/schema.sql | sqlite3 db/db.sqlite3
 
 db/es-en-dictionary-from-anki-deck/load.sh
 
-DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv db/dans-cards/export.csv
+DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv \
+  db/dans-cards/morphemes.csv \
+  db/dans-cards/cards.csv

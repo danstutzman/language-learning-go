@@ -103,6 +103,10 @@ func (model *Model) MaybeFindMorphemeById(id int) *Morpheme {
 	return &morpheme
 }
 
+func (model *Model) InsertMorpheme(morpheme Morpheme) Morpheme {
+	return morphemeRowToMorpheme(db.InsertMorpheme(model.db, morphemeToMorphemeRow(morpheme)))
+}
+
 func (model *Model) UpsertMorpheme(morpheme Morpheme) Morpheme {
 	existingMorphemes := db.FromMorphemes(model.db,
 		"WHERE l2="+db.Escape(morpheme.L2)+" AND gloss="+db.Escape(morpheme.Gloss))

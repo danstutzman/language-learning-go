@@ -26,10 +26,13 @@ func indexOf(needle string, haystack []string) int {
 func main() {
 	dbPath := os.Getenv("DB_PATH")
 
-	if len(os.Args) != 2 {
-		log.Fatalf("As first argument, specify path to CSV to import")
+	if len(os.Args) != 3 {
+		log.Fatalf(`Usage:
+		Argument 1: path to morphemes.csv
+		Argument 2: path to cards.csv`)
 	}
-	csvPath := os.Args[1]
+	morphemesCsvPath := os.Args[1]
+	cardsCsvPath := os.Args[2]
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -42,12 +45,47 @@ func main() {
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 	theModel := model.NewModel(dbConn)
 
-	csvFile, err := os.Open(csvPath)
+	importMorphemesCsv(morphemesCsvPath, theModel)
+	importCardsCsv(cardsCsvPath, theModel)
+}
+
+func importMorphemesCsv(path string, theModel *model.Model) {
+	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
 
-	reader := csv.NewReader(bufio.NewReader(csvFile))
+	reader := csv.NewReader(bufio.NewReader(file))
+
+	columnNames, err := reader.Read()
+	if err != nil {
+		panic(err)
+	}
+	l2Index := indexOf("l2", columnNames)
+	glossIndex := indexOf("gloss", columnNames)
+
+	for {
+		values, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+
+		l2 := values[l2Index]
+		gloss := values[glossIndex]
+
+		theModel.InsertMorpheme(model.Morpheme{L2: l2, Gloss: gloss})
+	}
+}
+
+func importCardsCsv(path string, theModel *model.Model) {
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+
+	reader := csv.NewReader(bufio.NewReader(file))
 
 	columnNames, err := reader.Read()
 	if err != nil {
@@ -80,7 +118,7 @@ func main() {
 		}
 
 		expectedWordsJoined := strings.Join(expectedWords, " ")
-		actualWordsJoined := strings.Join(actualWords, " ")
+		actualWordsJoined := strings.ReplaceAll(strings.Join(actualWords, " "), "- -", "")
 		if actualWordsJoined != expectedWordsJoined {
 			log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
 		}
