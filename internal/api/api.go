@@ -1,20 +1,20 @@
 package api
 
 import (
-	"database/sql"
+	"bitbucket.org/danstutzman/language-learning-go/internal/model"
 	"net/http"
 	"regexp"
 	"strconv"
 )
 
 type Api struct {
-	db                    *sql.DB
+	model                 *model.Model
 	googleTranslateApiKey string
 }
 
-func NewApi(db *sql.DB, googleTranslateApiKey string) *Api {
+func NewApi(model *model.Model, googleTranslateApiKey string) *Api {
 	return &Api{
-		db:                    db,
+		model:                 model,
 		googleTranslateApiKey: googleTranslateApiKey,
 	}
 }

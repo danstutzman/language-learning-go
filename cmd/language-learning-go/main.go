@@ -3,6 +3,7 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/api"
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"bitbucket.org/danstutzman/language-learning-go/internal/model"
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
@@ -28,7 +29,8 @@ func main() {
 	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 
-	api := api.NewApi(dbConn, googleTranslateApiKey)
+	model := model.NewModel(dbConn)
+	api := api.NewApi(model, googleTranslateApiKey)
 	handlerVars := InitHandlerVars(api)
 
 	if httpPort != "" {
