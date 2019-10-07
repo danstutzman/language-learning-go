@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 type ListMorphemesResponse struct {
@@ -24,7 +25,7 @@ func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Reques
 	l2Phrase, ok := r.URL.Query()["l2_phrase"]
 	if ok && l2Phrase[0] != "" {
 		morphemes = []db.MorphemeRow{}
-		for _, word := range L2_WORD_REGEXP.FindAllString(l2Phrase[0], -1) {
+		for _, word := range L2_WORD_REGEXP.FindAllString(strings.ToLower(l2Phrase[0]), -1) {
 			exactMatches := db.FromMorphemes(api.db, "WHERE l2 = "+db.Escape(word))
 			if len(exactMatches) > 0 {
 				morphemes = append(morphemes, exactMatches...)
