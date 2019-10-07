@@ -7,20 +7,46 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 type ListMorphemesResponse struct {
 	Morphemes []db.MorphemeRow `json:"morphemes"`
 }
 
+var L2_WORD_REGEXP = regexp.MustCompile(`(?i)[a-zñáéíóúü]+`)
+
 func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
 	where := ""
-	prefix, ok := r.URL.Query()["prefix"]
-	if ok {
-		where = "WHERE l2 LIKE " + db.Escape(prefix[0]+"%")
+	l2Prefix, ok := r.URL.Query()["l2_prefix"]
+	if ok && l2Prefix[0] != "" {
+		if where == "" {
+			where += "WHERE "
+		} else {
+			where += " AND "
+		}
+		where += "l2 LIKE " + db.Escape(l2Prefix[0]+"%")
+	}
+
+	allL2, ok := r.URL.Query()["all_l2"]
+	if ok && allL2[0] != "" {
+		words := []string{}
+		for _, word := range L2_WORD_REGEXP.FindAllString(allL2[0], -1) {
+			words = append(words, strings.ToLower(word))
+		}
+
+		if len(words) > 0 {
+			if where == "" {
+				where += "WHERE "
+			} else {
+				where += " AND "
+			}
+			where += db.InStringList("l2", words)
+		}
 	}
 
 	response := ListMorphemesResponse{
