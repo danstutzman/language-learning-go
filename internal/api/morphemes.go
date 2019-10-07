@@ -154,5 +154,5 @@ func (api *Api) HandleDeleteMorphemeRequest(w http.ResponseWriter, r *http.Reque
 	where := fmt.Sprintf("WHERE id=%d", id)
 	db.DeleteFromMorphemes(api.db, where)
 
-	w.WriteHeader(204) // send the headers with a 204 response code.
+	w.WriteHeader(http.StatusNoContent)
 }

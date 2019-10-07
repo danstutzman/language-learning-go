@@ -47,6 +47,8 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 			api.HandleShowCardRequest(w, r, cardId)
 		} else if r.Method == "PUT" {
 			api.HandleUpdateCardRequest(w, r, cardId)
+		} else if r.Method == "DELETE" {
+			api.HandleDeleteCardRequest(w, r, cardId)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

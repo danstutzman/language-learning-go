@@ -185,3 +185,12 @@ func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
 	}
 	w.Write(bytes)
 }
+
+func (api *Api) HandleDeleteCardRequest(w http.ResponseWriter, r *http.Request, id int) {
+	setCORSHeaders(w)
+
+	where := fmt.Sprintf("WHERE id=%d", id)
+	db.DeleteFromCards(api.db, where)
+
+	w.WriteHeader(http.StatusNoContent)
+}

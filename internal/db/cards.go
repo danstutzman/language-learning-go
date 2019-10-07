@@ -62,3 +62,13 @@ func UpdateCard(db *sql.DB, card *CardRow) {
 		panic(err)
 	}
 }
+
+func DeleteFromCards(db *sql.DB, where string) {
+	query := "DELETE FROM cards " + where
+	log.Println(query)
+
+	_, err := db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+}
