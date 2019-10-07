@@ -40,12 +40,18 @@ func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Reques
 		}
 
 		if len(words) > 0 {
+			likes := []string{}
+			for _, word := range words {
+				like := db.Escape(word) + " LIKE (RTRIM(l2, '-') || '%')"
+				likes = append(likes, like)
+			}
+
 			if where == "" {
 				where += "WHERE "
 			} else {
 				where += " AND "
 			}
-			where += db.InStringList("l2", words)
+			where += strings.Join(likes, " OR ")
 		}
 	}
 
