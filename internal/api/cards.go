@@ -115,31 +115,8 @@ func (api *Api) HandleShowCardRequest(w http.ResponseWriter, r *http.Request,
 	w.Write(bytes)
 }
 
-func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
-	cardId int) {
-	setCORSHeaders(w)
-	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-	defer r.Body.Close()
-	log.Printf("HandleSyncRequest body: %s", body)
-
-	var card Card
-	err = json.Unmarshal(body, &card)
-	if err != nil {
-		panic(err)
-	}
-
-	db.UpdateCard(api.db, &db.CardRow{
-		Id: card.Id,
-		L1: card.L1,
-		L2: card.L2,
-	})
-
-	db.DeleteFromCardsMorphemes(api.db, fmt.Sprintf("WHERE card_id=%d", cardId))
+func (api *Api) saveMorphemes(card Card) []db.MorphemeRow {
+	db.DeleteFromCardsMorphemes(api.db, fmt.Sprintf("WHERE card_id=%d", card.Id))
 
 	morphemeL2s := []string{}
 	for _, morpheme := range card.Morphemes {
@@ -177,7 +154,68 @@ func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
 
 		savedMorphemes = append(savedMorphemes, *savedMorpheme)
 	}
-	card.Morphemes = savedMorphemes
+	return savedMorphemes
+}
+
+func (api *Api) HandleCreateCardRequest(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var unsavedCard Card
+	err = json.Unmarshal(body, &unsavedCard)
+	if err != nil {
+		panic(err)
+	}
+
+	savedCardRow := db.InsertCard(api.db, db.CardRow{
+		L1: unsavedCard.L1,
+		L2: unsavedCard.L2,
+	})
+
+	savedCard := Card{
+		Id: savedCardRow.Id,
+		L1: savedCardRow.L1,
+		L2: savedCardRow.L2,
+	}
+	savedCard.Morphemes = api.saveMorphemes(savedCard)
+
+	bytes, err := json.Marshal(savedCard)
+	if err != nil {
+		log.Fatalf("Error from json.Marshal: %s", err)
+	}
+	w.Write(bytes)
+}
+
+func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
+	cardId int) {
+	setCORSHeaders(w)
+	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var card Card
+	err = json.Unmarshal(body, &card)
+	if err != nil {
+		panic(err)
+	}
+
+	db.UpdateCard(api.db, &db.CardRow{
+		Id: card.Id,
+		L1: card.L1,
+		L2: card.L2,
+	})
+
+	card.Morphemes = api.saveMorphemes(card)
 
 	bytes, err := json.Marshal(card)
 	if err != nil {

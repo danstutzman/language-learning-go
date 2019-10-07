@@ -52,6 +52,25 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	return rows
 }
 
+func InsertCard(db *sql.DB, card CardRow) CardRow {
+	query := fmt.Sprintf(`INSERT INTO cards (l1, l2) VALUES (%s, %s)`,
+		Escape(card.L1), Escape(card.L2))
+	log.Println(query)
+
+	result, err := db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		panic(err)
+	}
+	card.Id = int(id)
+
+	return card
+}
+
 func UpdateCard(db *sql.DB, card *CardRow) {
 	query := fmt.Sprintf("UPDATE cards SET l1=%s, l2=%s WHERE id=%d",
 		Escape(card.L1), Escape(card.L2), card.Id)

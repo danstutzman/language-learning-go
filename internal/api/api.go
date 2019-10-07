@@ -37,6 +37,8 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/api/cards" {
 		if r.Method == "GET" {
 			api.HandleListCardsRequest(w, r)
+		} else if r.Method == "POST" {
+			api.HandleCreateCardRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
