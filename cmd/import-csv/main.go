@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/yaml.v3"
 	"io"
 	"log"
 	"os"
@@ -26,13 +27,15 @@ func indexOf(needle string, haystack []string) int {
 func main() {
 	dbPath := os.Getenv("DB_PATH")
 
-	if len(os.Args) != 3 {
+	if len(os.Args) != 4 {
 		log.Fatalf(`Usage:
 		Argument 1: path to morphemes.csv
-		Argument 2: path to cards.csv`)
+		Argument 2: path to cards.csv
+		Argument 3: path to stories.yaml`)
 	}
 	morphemesCsvPath := os.Args[1]
 	cardsCsvPath := os.Args[2]
+	storiesYamlPath := os.Args[3]
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -47,6 +50,7 @@ func main() {
 
 	importMorphemesCsv(morphemesCsvPath, theModel)
 	importCardsCsv(cardsCsvPath, theModel)
+	importStoriesYaml(storiesYamlPath, theModel)
 }
 
 func importMorphemesCsv(path string, theModel *model.Model) {
@@ -105,24 +109,61 @@ func importCardsCsv(path string, theModel *model.Model) {
 		l1 := values[l1Index]
 		l2 := values[l2Index]
 
-		expectedWords := theModel.SplitL2PhraseIntoWords(l2)
+		insertCardForPhrase(l1, l2, theModel)
+	}
+}
 
-		morphemes := []model.Morpheme{}
-		for _, word := range expectedWords {
-			morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
+func insertCardForPhrase(l1, l2 string, theModel *model.Model) {
+	expectedWords := theModel.SplitL2PhraseIntoWords(l2)
+
+	morphemes := []model.Morpheme{}
+	for _, word := range expectedWords {
+		morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
+	}
+
+	actualWords := []string{}
+	for _, morpheme := range morphemes {
+		actualWords = append(actualWords, morpheme.L2)
+	}
+
+	expectedWordsJoined := strings.Join(expectedWords, " ")
+	actualWordsJoined := strings.Join(actualWords, " ")
+	actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- -", "")
+	actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
+	actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
+	if actualWordsJoined != expectedWordsJoined {
+		log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
+	}
+
+	theModel.InsertCard(model.Card{L1: l1, L2: l2, Morphemes: morphemes})
+}
+
+type Story struct {
+	Url   string        `yaml:"url"`
+	Lines []interface{} `yaml:"lines"`
+}
+
+func importStoriesYaml(path string, theModel *model.Model) {
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+
+	decoder := yaml.NewDecoder(bufio.NewReader(file))
+	for {
+		var story Story
+		err = decoder.Decode(&story)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
 		}
 
-		actualWords := []string{}
-		for _, morpheme := range morphemes {
-			actualWords = append(actualWords, morpheme.L2)
+		for _, line := range story.Lines {
+			var l2BySpeaker = line.(map[string]interface{})
+			for _, l2 := range l2BySpeaker {
+				insertCardForPhrase("", l2.(string), theModel)
+			}
 		}
-
-		expectedWordsJoined := strings.Join(expectedWords, " ")
-		actualWordsJoined := strings.ReplaceAll(strings.Join(actualWords, " "), "- -", "")
-		if actualWordsJoined != expectedWordsJoined {
-			log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
-		}
-
-		theModel.InsertCard(model.Card{L1: l1, L2: l2, Morphemes: morphemes})
 	}
 }

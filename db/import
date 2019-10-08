@@ -12,6 +12,12 @@ cat db/schema.sql | sqlite3 db/db.sqlite3
 
 db/es-en-dictionary-from-anki-deck/load.sh
 
+sqlite3 db/db.sqlite3 <<EOF
+DELETE FROM morphemes WHERE l2 = 'bueno' AND tags_csv = 'adv';
+DELETE FROM morphemes WHERE l2 = 'bien' AND tags_csv = 'nm';
+EOF
+
 DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv \
   db/dans-cards/morphemes.csv \
-  db/dans-cards/cards.csv
+  db/dans-cards/cards.csv \
+  db/spanishpod/stories.yaml

@@ -1,4 +1,24 @@
 l2,gloss
+
 tengo,"I have"
 vamos,"we go"
+
 -ar,INF
+-s,PL
+-amos,"1,PL,PRES"
+-á,"3,SING,PRES"
+-án,"3,PL,PRES"
+
+soy,"I am"
+estoy,"I am"
+eres,"you are"
+
+amanda,"Amanda"
+césar,"Cesar"
+claudia,"Claudia"
+cristina,"Cristina"
+javier,"Javier"
+
+nosotras,"we (fem)"
+
+profesora,"professor (fem)"
