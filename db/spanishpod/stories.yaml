@@ -5,14 +5,14 @@ lines:
 - JOSÉ: ¡Hola! Buenos días.
 - BEATRIZ: ¿Cómo está?
 - JOSÉ: Yo estoy bien. ¿Y usted?
-- BEATRIZ: Yo estoy muy bien. Gracias.
+- BEATRIZ: Yo estoy {muy bien}. Gracias.
 ---
 url: https://www.spanishpod101.com/lesson/newbie-lesson-2-how-are-you-all-2/?lp=176
 lines:
-- JOSÉ: ¿Cómo están Claudia y tú?
-- BEATRIZ: Nosotras estamos bien.
-- JOSÉ: ¿Y cómo están Cristina y Javier?
-- BEATRIZ: Ellos también están bien.
+- JOSÉ: ¿Cómo están {Claudia y tú}?
+- BEATRIZ: Nosotras {estamos bien}.
+- JOSÉ: ¿Y {cómo están} {Cristina y Javier}?
+- BEATRIZ: Ellos también {están bien}.
 - JOSÉ: ¡Qué bueno!
 ---
 url: https://www.spanishpod101.com/lesson/newbie-lesson-3-who-are-you

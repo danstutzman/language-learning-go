@@ -113,29 +113,58 @@ func importCardsCsv(path string, theModel *model.Model) {
 	}
 }
 
+func removeCurlyBraces(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, "{", ""), "}", "")
+}
+
+// Convert "{a {b}} c" to ["a b c", "a b", "b"]
+func extractBraceSurroundedPhrases(input string) []string {
+	indexStack := []int{}
+	out := []string{removeCurlyBraces(input)}
+	for i, c := range input {
+		if c == '{' {
+			indexStack = append(indexStack, i)
+		} else if c == '}' {
+			beginIndex := indexStack[len(indexStack)-1] + 1
+			indexStack = indexStack[0 : len(indexStack)-1]
+			extracted := removeCurlyBraces(input[beginIndex:i])
+			out = append(out, extracted)
+		}
+	}
+	return out
+}
+
 func insertCardForPhrase(l1, l2 string, theModel *model.Model) {
-	expectedWords := theModel.SplitL2PhraseIntoWords(l2)
+	cardPhrases := extractBraceSurroundedPhrases(l2)
 
-	morphemes := []model.Morpheme{}
-	for _, word := range expectedWords {
-		morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
+	for _, cardPhrase := range cardPhrases {
+		expectedWords := theModel.SplitL2PhraseIntoWords(cardPhrase)
+
+		morphemes := []model.Morpheme{}
+		for _, word := range expectedWords {
+			morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
+		}
+
+		actualWords := []string{}
+		for _, morpheme := range morphemes {
+			actualWords = append(actualWords, morpheme.L2)
+		}
+
+		expectedWordsJoined := strings.Join(expectedWords, " ")
+		actualWordsJoined := strings.Join(actualWords, " ")
+		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- -", "")
+		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
+		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
+		if actualWordsJoined != expectedWordsJoined {
+			log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
+		}
+
+		theModel.InsertCard(model.Card{
+			L1:        l1,
+			L2:        cardPhrase,
+			Morphemes: morphemes,
+		})
 	}
-
-	actualWords := []string{}
-	for _, morpheme := range morphemes {
-		actualWords = append(actualWords, morpheme.L2)
-	}
-
-	expectedWordsJoined := strings.Join(expectedWords, " ")
-	actualWordsJoined := strings.Join(actualWords, " ")
-	actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- -", "")
-	actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
-	actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
-	if actualWordsJoined != expectedWordsJoined {
-		log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
-	}
-
-	theModel.InsertCard(model.Card{L1: l1, L2: l2, Morphemes: morphemes})
 }
 
 type Story struct {
