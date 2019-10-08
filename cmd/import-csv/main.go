@@ -43,6 +43,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer dbConn.Close()
+
 	db.AssertCardsHasCorrectSchema(dbConn)
 	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
