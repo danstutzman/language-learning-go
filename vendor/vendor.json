@@ -671,6 +671,13 @@
 			"path": "google.golang.org/grpc/tap",
 			"revision": "d08614fd392b47bba85933a0023caad2c4cece95",
 			"revisionTime": "2019-10-05T22:38:30Z"
+		},
+		{
+			"checksumSHA1": "cLiP9+rJWBlh6oVFZzzAQjbyGdA=",
+			"path": "gopkg.in/yaml.v3",
+			"revision": "c8b7dadae55537a6c8367220c0f93d3205869c8a",
+			"revisionTime": "2019-09-24T16:43:51Z",
+			"tree": true
 		}
 	],
 	"rootPath": "bitbucket.org/danstutzman/language-learning-go"
