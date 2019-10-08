@@ -53,10 +53,15 @@ func (model *Model) ParseL2WordIntoMorphemes(word string) []Morpheme {
 	} else {
 		// look for matches with two morphemes
 		prefixMatches := db.FromMorphemes(model.db,
-			"WHERE (l2 LIKE '%-' AND "+db.Escape(word)+" LIKE (RTRIM(l2, '-') || '%'))")
+			"WHERE "+db.Escape(word)+" LIKE (RTRIM(l2, '-') || '%')")
 		for _, prefixMatch := range prefixMatches {
-			// subtract one to account for the prefix's hyphen
-			suffix := "-" + word[(len(prefixMatch.L2)-1):]
+
+			var suffix string
+			if strings.HasSuffix(prefixMatch.L2, "-") {
+				suffix = "-" + word[(len(prefixMatch.L2)-1):]
+			} else {
+				suffix = "-" + word[len(prefixMatch.L2):]
+			}
 
 			suffixMatches := db.FromMorphemes(model.db, "WHERE l2 = "+db.Escape(suffix))
 			if len(suffixMatches) > 0 {
