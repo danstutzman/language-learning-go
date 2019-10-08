@@ -1,0 +1,51 @@
+#!/bin/bash -ex
+
+gcloud compute firewall-rules create freeling \
+    --action allow \
+    --direction ingress \
+    --rules tcp:50005 \
+    --source-ranges 0.0.0.0/0 \
+    --target-tags freeling
+
+gcloud compute instances create freeling \
+  --image-family=ubuntu-1604-lts --image-project=ubuntu-os-cloud \
+  --machine-type=g1-small --preemptible --tags=freeling
+
+gcloud compute ssh freeling <<EOF
+set -ex
+
+sudo apt-get update
+
+sudo apt-get install -y zlib1g libboost-all-dev
+
+if [ ! -e freeling-4.1-xenial-amd64.deb ]; then
+  curl -L https://github.com/TALP-UPC/FreeLing/releases/download/4.1/freeling-4.1-xenial-amd64.deb -o freeling-4.1-xenial-amd64.deb
+fi
+sudo dpkg -i freeling-4.1-xenial-amd64.deb
+sudo apt-get install -yf
+
+sudo useradd -s /bin/bash --create-home freeling || true
+
+sudo tee /etc/systemd/system/freeling.service <<EOF2
+[Unit]
+Description=freeling
+After=syslog.target
+
+[Service]
+#Type=forking
+User=freeling
+Group=freeling
+WorkingDirectory=/home/freeling
+ExecStart=/usr/bin/analyze -f /usr/share/freeling/config/es.cfg --outlv shallow --output json --server --port 50005
+
+[Install]
+WantedBy=multi-user.target
+EOF2
+
+sudo systemctl daemon-reload
+sudo systemctl enable freeling.service
+sudo systemctl restart freeling
+
+# To see logs, run 'sudo journalctl -u freeling'
+
+EOF
