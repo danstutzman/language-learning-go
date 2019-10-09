@@ -14,7 +14,9 @@ type MorphemeRow struct {
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
 	query := "SELECT id, l2, gloss FROM morphemes LIMIT 1"
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
@@ -24,7 +26,9 @@ func AssertMorphemesHasCorrectSchema(db *sql.DB) {
 
 func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 	query := "SELECT id, l2, gloss FROM morphemes " + whereLimit
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	rset, err := db.Query(query)
 	if err != nil {
@@ -55,7 +59,9 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 	query := fmt.Sprintf(`INSERT INTO morphemes (l2, gloss) VALUES (%s, %s)`,
 		Escape(morpheme.L2), Escape(morpheme.Gloss))
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	result, err := db.Exec(query)
 	if err != nil {
@@ -74,7 +80,9 @@ func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
 	query := fmt.Sprintf("UPDATE morphemes SET l2=%s, gloss=%s WHERE id=%d",
 		Escape(morpheme.L2), Escape(morpheme.Gloss), morpheme.Id)
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
@@ -84,7 +92,9 @@ func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
 
 func DeleteFromMorphemes(db *sql.DB, where string) {
 	query := "DELETE FROM morphemes " + where
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {

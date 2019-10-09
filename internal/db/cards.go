@@ -14,7 +14,9 @@ type CardRow struct {
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
 	query := "SELECT id, l1, l2 FROM cards LIMIT 1"
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
@@ -26,7 +28,9 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	rows := []CardRow{}
 
 	query := "SELECT id, l1, l2 FROM cards " + whereLimit
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 	rset, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -55,7 +59,9 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 func InsertCard(db *sql.DB, card CardRow) CardRow {
 	query := fmt.Sprintf(`INSERT INTO cards (l1, l2) VALUES (%s, %s)`,
 		Escape(card.L1), Escape(card.L2))
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	result, err := db.Exec(query)
 	if err != nil {
@@ -74,7 +80,9 @@ func InsertCard(db *sql.DB, card CardRow) CardRow {
 func UpdateCard(db *sql.DB, card *CardRow) {
 	query := fmt.Sprintf("UPDATE cards SET l1=%s, l2=%s WHERE id=%d",
 		Escape(card.L1), Escape(card.L2), card.Id)
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
@@ -84,7 +92,9 @@ func UpdateCard(db *sql.DB, card *CardRow) {
 
 func DeleteFromCards(db *sql.DB, where string) {
 	query := "DELETE FROM cards " + where
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {

@@ -14,7 +14,9 @@ type CardsMorphemesRow struct {
 
 func AssertCardsMorphemesHasCorrectSchema(db *sql.DB) {
 	query := "SELECT card_id, morpheme_id, num_morpheme FROM cards_morphemes LIMIT 1"
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
@@ -27,7 +29,9 @@ func FromCardsMorphemes(db *sql.DB, where string) []CardsMorphemesRow {
 
 	query := "SELECT card_id, morpheme_id, num_morpheme FROM cards_morphemes " +
 		where + " ORDER BY num_morpheme"
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	rset, err := db.Query(query)
 	if err != nil {
@@ -55,7 +59,9 @@ func FromCardsMorphemes(db *sql.DB, where string) []CardsMorphemesRow {
 
 func DeleteFromCardsMorphemes(db *sql.DB, where string) {
 	query := "DELETE FROM cards_morphemes " + where
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
@@ -66,7 +72,9 @@ func DeleteFromCardsMorphemes(db *sql.DB, where string) {
 func InsertCardsMorphemesRow(db *sql.DB, row CardsMorphemesRow) {
 	query := fmt.Sprintf(`INSERT INTO cards_morphemes (card_id, morpheme_id, num_morpheme)
 		VALUES (%d, %d, %d)`, row.CardId, row.MorphemeId, row.NumMorpheme)
-	log.Println(query)
+	if LOG {
+		log.Println(query)
+	}
 
 	_, err := db.Exec(query)
 	if err != nil {
