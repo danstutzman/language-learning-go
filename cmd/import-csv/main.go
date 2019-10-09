@@ -107,8 +107,8 @@ func extractBraceSurroundedPhrases(input string) []string {
 	return out
 }
 
-func insertCardForPhrase(l1, l2 string, theModel *model.Model) error {
-	cardPhrases := extractBraceSurroundedPhrases(l2)
+func insertCardForPhrase(phrase string, theModel *model.Model) error {
+	cardPhrases := extractBraceSurroundedPhrases(phrase)
 
 	for _, cardPhrase := range cardPhrases {
 		expectedWords := theModel.SplitL2PhraseIntoWords(cardPhrase)
@@ -134,7 +134,7 @@ func insertCardForPhrase(l1, l2 string, theModel *model.Model) error {
 		}
 
 		theModel.InsertCard(model.Card{
-			L1:        l1,
+			L1:        "",
 			L2:        cardPhrase,
 			Morphemes: morphemes,
 		})
@@ -153,7 +153,7 @@ func importStoriesYaml(path string, theModel *model.Model) []error {
 		panic(err)
 	}
 
-	allErrors := []error{}
+	phrases := []string{}
 	decoder := yaml.NewDecoder(bufio.NewReader(file))
 	for {
 		var story Story
@@ -167,11 +167,16 @@ func importStoriesYaml(path string, theModel *model.Model) []error {
 		for _, line := range story.Lines {
 			var l2BySpeaker = line.(map[string]interface{})
 			for _, l2 := range l2BySpeaker {
-				err = insertCardForPhrase("", l2.(string), theModel)
-				if err != nil {
-					allErrors = append(allErrors, err)
-				}
+				phrases = append(phrases, l2.(string))
 			}
+		}
+	}
+
+	allErrors := []error{}
+	for _, phrase := range phrases {
+		err = insertCardForPhrase(phrase, theModel)
+		if err != nil {
+			allErrors = append(allErrors, err)
 		}
 	}
 	return allErrors
