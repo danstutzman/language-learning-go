@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -25,19 +26,25 @@ type Sentence struct {
 }
 
 type Token struct {
-	Id     string `json:"id"`
-	Begin  string `json:"begin"`
-	End    string `json:"end"`
-	Form   string `json:"form"`
-	Lemma  string `json:"lemma"`
-	Tag    string `json:"tag"`
-	Ctag   string `json:"ctag"`
-	Pos    string `json:"pos"`
-	Type   string `json:"type"`
-	Mood   string `json:"mood"`
-	Person string `json:"person"`
-	Num    string `json:"num"`
-	Gen    string `json:"gen"`
+	Id            string `json:"id"`
+	Begin         string `json:"begin"`
+	End           string `json:"end"`
+	Form          string `json:"form"`
+	Lemma         string `json:"lemma"`
+	Tag           string `json:"tag"`
+	Ctag          string `json:"ctag"`
+	Pos           string `json:"pos"`
+	Type          string `json:"type"`
+	Mood          string `json:"mood"`
+	Person        string `json:"person"`
+	Num           string `json:"num"`
+	Gen           string `json:"gen"`
+	BeginInPhrase int    // relative to phrase instead of all phrases
+	EndInPhrase   int    // relative to phrase instead of all phrases
+}
+
+func (token *Token) IsPunctuation() bool {
+	return strings.HasPrefix(token.Tag, "F")
 }
 
 type Constituent struct {
@@ -47,6 +54,37 @@ type Constituent struct {
 	Head     string        `json:"head"`
 	Token    string        `json:"token"`
 	Word     string        `json:"word"`
+}
+
+func parseAnalysisJson(analysisJson string) Analysis {
+	var analysis Analysis
+	err := json.Unmarshal([]byte(analysisJson), &analysis)
+	if err != nil {
+		panic(err)
+	}
+	return analysis
+}
+
+func augmentAnalysis(analysis Analysis, phraseBeginIndex int) Analysis {
+	for i := range analysis.Sentences {
+		sentence := &analysis.Sentences[i]
+		for j := range sentence.Tokens {
+			token := &sentence.Tokens[j]
+
+			begin, err := strconv.Atoi(token.Begin)
+			if err != nil {
+				panic(err)
+			}
+			token.BeginInPhrase = begin - phraseBeginIndex
+
+			end, err := strconv.Atoi(token.End)
+			if err != nil {
+				panic(err)
+			}
+			token.EndInPhrase = end - phraseBeginIndex
+		}
+	}
+	return analysis
 }
 
 /* Example analysis JSON is [ { "sentences" : [
@@ -78,8 +116,6 @@ type Constituent struct {
 func AnalyzePhrasesWithFreeling(phrases []string,
 	freelingHostAndPort string) []Output {
 
-	analysisJsons := []string{}
-
 	log.Printf("Conecting to %s\n", freelingHostAndPort)
 	conn, err := net.Dial("tcp", freelingHostAndPort)
 	if err != nil {
@@ -104,6 +140,8 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 		panic("Server not ready?")
 	}
 
+	outputs := []Output{}
+	phraseBeginIndex := 0
 	for _, phrase := range phrases {
 		if strings.ContainsRune(phrase, '\x00') {
 			log.Panicf("Phrase contains \\x00: '%s'", phrase)
@@ -124,8 +162,20 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 			panic(err)
 		}
 		if output != "FL-SERVER-READY\x00" {
-			analysisJsons = append(analysisJsons, strings.TrimSuffix(output, "\x00"))
+			analysisJson := strings.TrimSuffix(output, "\x00")
+			analysis :=
+				augmentAnalysis(parseAnalysisJson(analysisJson), phraseBeginIndex)
+			output := Output{
+				Phrase:       phrase,
+				AnalysisJson: analysisJson,
+				Analysis:     analysis,
+			}
+			outputs = append(outputs, output)
 		}
+
+		// Freeling measures offsets by Unicode codepoints (runes), not by bytes
+		// Plus one for the newline between phrases?
+		phraseBeginIndex += len([]rune(phrase)) + 1
 	}
 
 	log.Printf("Writing FLUSH_BUFFER...\n")
@@ -140,18 +190,7 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 		panic(err)
 	}
 	if output != "FL-SERVER-READY\x00" {
-		analysisJsons = append(analysisJsons, strings.TrimSuffix(output, "\x00"))
-	}
-
-	outputs := []Output{}
-	for i, analysisJson := range analysisJsons {
-		output := Output{Phrase: phrases[i], AnalysisJson: analysisJson}
-		err = json.Unmarshal([]byte(analysisJson), &output.Analysis)
-		if err != nil {
-			panic(err)
-		}
-
-		outputs = append(outputs, output)
+		panic("Unexpected output " + output)
 	}
 
 	return outputs

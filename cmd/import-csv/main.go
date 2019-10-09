@@ -16,9 +16,10 @@ import (
 )
 
 type Import struct {
-	phrase   string
-	analysis model.Analysis
-	err      error
+	phrase         string
+	analysisJson   string
+	analysis       model.Analysis
+	sentenceErrors []error
 }
 
 func indexOf(needle string, haystack []string) int {
@@ -100,35 +101,20 @@ func removeCurlyBraces(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(s, "{", ""), "}", "")
 }
 
-// Convert "{a {b}} c" to ["a b c", "a b", "b"]
-func extractBraceSurroundedPhrases(input string) []string {
-	indexStack := []int{}
-	out := []string{removeCurlyBraces(input)}
-	for i, c := range input {
-		if c == '{' {
-			indexStack = append(indexStack, i)
-		} else if c == '}' {
-			beginIndex := indexStack[len(indexStack)-1] + 1
-			indexStack = indexStack[0 : len(indexStack)-1]
-			extracted := removeCurlyBraces(input[beginIndex:i])
-			out = append(out, extracted)
-		}
-	}
-	return out
-}
-
 func importImport(import_ *Import, theModel *model.Model) {
-	phrase := ""
-	for _, sentence := range import_.analysis.Sentences {
+	import_.sentenceErrors = make([]error, len(import_.analysis.Sentences))
+	for sentenceNum, sentence := range import_.analysis.Sentences {
+		firstIndex := sentence.Tokens[0].BeginInPhrase
+		lastIndex := sentence.Tokens[len(sentence.Tokens)-1].EndInPhrase
+		// Offset by number of Unicode points (runes), not number of bytes
+		excerpt := string(([]rune(import_.phrase))[firstIndex:lastIndex])
+
+		expectedWords := []string{}
 		for _, token := range sentence.Tokens {
-			phrase = phrase + token.Form + " "
+			if !token.IsPunctuation() {
+				expectedWords = append(expectedWords, strings.ToLower(token.Form))
+			}
 		}
-	}
-
-	cardPhrases := extractBraceSurroundedPhrases(phrase)
-
-	for _, cardPhrase := range cardPhrases {
-		expectedWords := theModel.SplitL2PhraseIntoWords(cardPhrase)
 
 		morphemes := []model.Morpheme{}
 		for _, word := range expectedWords {
@@ -146,12 +132,13 @@ func importImport(import_ *Import, theModel *model.Model) {
 		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
 		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
 		if actualWordsJoined != expectedWordsJoined {
-			import_.err = fmt.Errorf("Expected [%s] but got [%s]",
+			import_.sentenceErrors[sentenceNum] = fmt.Errorf(
+				"Expected [%s] but got [%s]",
 				expectedWordsJoined, actualWordsJoined)
 		} else {
 			theModel.InsertCard(model.Card{
 				L1:        "",
-				L2:        cardPhrase,
+				L2:        excerpt,
 				Morphemes: morphemes,
 			})
 		}
@@ -197,16 +184,20 @@ func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort s
 
 	for i, _ := range imports {
 		imports[i].analysis = outputs[i].Analysis
+		imports[i].analysisJson = outputs[i].AnalysisJson
 	}
 
 	for i, _ := range imports {
 		importImport(&imports[i], theModel)
 	}
 
-	for i, import_ := range imports {
-		if import_.err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", import_.err)
-			fmt.Fprintf(os.Stderr, "%s\n", outputs[i].AnalysisJson)
+	for _, import_ := range imports {
+		for _, sentenceErr := range import_.sentenceErrors {
+			if sentenceErr != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", sentenceErr)
+				fmt.Fprintf(os.Stderr, "%s\n", import_.analysisJson)
+				os.Exit(1)
+			}
 		}
 	}
 }
