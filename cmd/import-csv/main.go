@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,14 @@ func indexOf(needle string, haystack []string) int {
 
 func main() {
 	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		log.Fatalf("Specify DB_PATH env var")
+	}
+
+	freelingHostAndPort := os.Getenv("FREELING_HOST_AND_PORT")
+	if freelingHostAndPort == "" {
+		log.Fatalf("Specify FREELING_HOST_AND_PORT env var, for example: 1.2.3.4:5678")
+	}
 
 	if len(os.Args) != 1+2 { // Args[0] is name of program
 		log.Fatalf(`Usage:
@@ -49,7 +58,7 @@ func main() {
 	theModel := model.NewModel(dbConn)
 
 	importMorphemesCsv(morphemesCsvPath, theModel)
-	errors := importStoriesYaml(storiesYamlPath, theModel)
+	errors := importStoriesYaml(storiesYamlPath, theModel, freelingHostAndPort)
 
 	for _, err := range errors {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -107,7 +116,23 @@ func extractBraceSurroundedPhrases(input string) []string {
 	return out
 }
 
-func insertCardForPhrase(phrase string, theModel *model.Model) error {
+func insertCardForAnalysis(analysisJson string, theModel *model.Model) error {
+	var sentencesObject map[string]interface{}
+	err := json.Unmarshal([]byte(analysisJson), &sentencesObject)
+	if err != nil {
+		panic(err)
+	}
+
+	phrase := ""
+	sentences := sentencesObject["sentences"].([]interface{})
+	for _, sentence := range sentences {
+		tokens := sentence.(map[string]interface{})["tokens"].([]interface{})
+		for _, token := range tokens {
+			form := token.(map[string]interface{})["form"].(string)
+			phrase = phrase + form + " "
+		}
+	}
+
 	cardPhrases := extractBraceSurroundedPhrases(phrase)
 
 	for _, cardPhrase := range cardPhrases {
@@ -147,7 +172,7 @@ type Story struct {
 	Lines []interface{} `yaml:"lines"`
 }
 
-func importStoriesYaml(path string, theModel *model.Model) []error {
+func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort string) []error {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -172,9 +197,11 @@ func importStoriesYaml(path string, theModel *model.Model) []error {
 		}
 	}
 
+	analysisJsons := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
+
 	allErrors := []error{}
-	for _, phrase := range phrases {
-		err = insertCardForPhrase(phrase, theModel)
+	for _, analysisJson := range analysisJsons {
+		err = insertCardForAnalysis(analysisJson, theModel)
 		if err != nil {
 			allErrors = append(allErrors, err)
 		}
