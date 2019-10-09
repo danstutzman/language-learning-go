@@ -51,8 +51,12 @@ func main() {
 	theModel := model.NewModel(dbConn)
 
 	importMorphemesCsv(morphemesCsvPath, theModel)
-	importCardsCsv(cardsCsvPath, theModel)
-	importStoriesYaml(storiesYamlPath, theModel)
+	errors := importCardsCsv(cardsCsvPath, theModel)
+	errors = append(importStoriesYaml(storiesYamlPath, theModel), errors...)
+
+	for _, err := range errors {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+	}
 }
 
 func importMorphemesCsv(path string, theModel *model.Model) {
@@ -85,7 +89,7 @@ func importMorphemesCsv(path string, theModel *model.Model) {
 	}
 }
 
-func importCardsCsv(path string, theModel *model.Model) {
+func importCardsCsv(path string, theModel *model.Model) []error {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -100,6 +104,7 @@ func importCardsCsv(path string, theModel *model.Model) {
 	l1Index := indexOf("l1", columnNames)
 	l2Index := indexOf("l2", columnNames)
 
+	allErrors := []error{}
 	for {
 		values, err := reader.Read()
 		if err == io.EOF {
@@ -111,8 +116,12 @@ func importCardsCsv(path string, theModel *model.Model) {
 		l1 := values[l1Index]
 		l2 := values[l2Index]
 
-		insertCardForPhrase(l1, l2, theModel)
+		err = insertCardForPhrase(l1, l2, theModel)
+		if err != nil {
+			allErrors = append(allErrors, err)
+		}
 	}
+	return allErrors
 }
 
 func removeCurlyBraces(s string) string {
@@ -136,7 +145,7 @@ func extractBraceSurroundedPhrases(input string) []string {
 	return out
 }
 
-func insertCardForPhrase(l1, l2 string, theModel *model.Model) {
+func insertCardForPhrase(l1, l2 string, theModel *model.Model) error {
 	cardPhrases := extractBraceSurroundedPhrases(l2)
 
 	for _, cardPhrase := range cardPhrases {
@@ -158,7 +167,8 @@ func insertCardForPhrase(l1, l2 string, theModel *model.Model) {
 		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
 		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
 		if actualWordsJoined != expectedWordsJoined {
-			log.Fatalf("Expected [%s] but got [%s]", expectedWordsJoined, actualWordsJoined)
+			return fmt.Errorf("Expected [%s] but got [%s]",
+				expectedWordsJoined, actualWordsJoined)
 		}
 
 		theModel.InsertCard(model.Card{
@@ -167,6 +177,7 @@ func insertCardForPhrase(l1, l2 string, theModel *model.Model) {
 			Morphemes: morphemes,
 		})
 	}
+	return nil
 }
 
 type Story struct {
@@ -174,12 +185,13 @@ type Story struct {
 	Lines []interface{} `yaml:"lines"`
 }
 
-func importStoriesYaml(path string, theModel *model.Model) {
+func importStoriesYaml(path string, theModel *model.Model) []error {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
 
+	allErrors := []error{}
 	decoder := yaml.NewDecoder(bufio.NewReader(file))
 	for {
 		var story Story
@@ -193,8 +205,12 @@ func importStoriesYaml(path string, theModel *model.Model) {
 		for _, line := range story.Lines {
 			var l2BySpeaker = line.(map[string]interface{})
 			for _, l2 := range l2BySpeaker {
-				insertCardForPhrase("", l2.(string), theModel)
+				err = insertCardForPhrase("", l2.(string), theModel)
+				if err != nil {
+					allErrors = append(allErrors, err)
+				}
 			}
 		}
 	}
+	return allErrors
 }
