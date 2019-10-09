@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+type Output struct {
+	Phrase       string
+	AnalysisJson string
+	Analysis     Analysis
+}
+
 type Analysis struct {
 	Sentences []Sentence `json:"sentences"`
 }
@@ -70,7 +76,7 @@ type Constituent struct {
 ]*/
 
 func AnalyzePhrasesWithFreeling(phrases []string,
-	freelingHostAndPort string) []Analysis {
+	freelingHostAndPort string) []Output {
 
 	analysisJsons := []string{}
 
@@ -137,16 +143,16 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 		analysisJsons = append(analysisJsons, strings.TrimSuffix(output, "\x00"))
 	}
 
-	analyses := []Analysis{}
-	for _, analysisJson := range analysisJsons {
-		var analysis Analysis
-		err = json.Unmarshal([]byte(analysisJson), &analysis)
+	outputs := []Output{}
+	for i, analysisJson := range analysisJsons {
+		output := Output{Phrase: phrases[i], AnalysisJson: analysisJson}
+		err = json.Unmarshal([]byte(analysisJson), &output.Analysis)
 		if err != nil {
 			panic(err)
 		}
 
-		analyses = append(analyses, analysis)
+		outputs = append(outputs, output)
 	}
 
-	return analyses
+	return outputs
 }

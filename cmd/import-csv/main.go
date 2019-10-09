@@ -193,19 +193,20 @@ func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort s
 		phrases = append(phrases, import_.phrase)
 	}
 
-	analyses := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
+	outputs := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
 
 	for i, _ := range imports {
-		imports[i].analysis = analyses[i]
+		imports[i].analysis = outputs[i].Analysis
 	}
 
 	for i, _ := range imports {
 		importImport(&imports[i], theModel)
 	}
 
-	for _, import_ := range imports {
+	for i, import_ := range imports {
 		if import_.err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", import_.err)
+			fmt.Fprintf(os.Stderr, "%s\n", outputs[i].AnalysisJson)
 		}
 	}
 }
