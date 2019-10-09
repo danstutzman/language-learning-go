@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v3"
@@ -17,9 +16,9 @@ import (
 )
 
 type Import struct {
-	phrase       string
-	analysisJson string
-	err          error
+	phrase   string
+	analysis model.Analysis
+	err      error
 }
 
 func indexOf(needle string, haystack []string) int {
@@ -119,19 +118,10 @@ func extractBraceSurroundedPhrases(input string) []string {
 }
 
 func importImport(import_ *Import, theModel *model.Model) {
-	var sentencesObject map[string]interface{}
-	err := json.Unmarshal([]byte(import_.analysisJson), &sentencesObject)
-	if err != nil {
-		panic(err)
-	}
-
 	phrase := ""
-	sentences := sentencesObject["sentences"].([]interface{})
-	for _, sentence := range sentences {
-		tokens := sentence.(map[string]interface{})["tokens"].([]interface{})
-		for _, token := range tokens {
-			form := token.(map[string]interface{})["form"].(string)
-			phrase = phrase + form + " "
+	for _, sentence := range import_.analysis.Sentences {
+		for _, token := range sentence.Tokens {
+			phrase = phrase + token.Form + " "
 		}
 	}
 
@@ -203,10 +193,10 @@ func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort s
 		phrases = append(phrases, import_.phrase)
 	}
 
-	analysisJsons := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
+	analyses := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
 
 	for i, _ := range imports {
-		imports[i].analysisJson = analysisJsons[i]
+		imports[i].analysis = analyses[i]
 	}
 
 	for i, _ := range imports {
