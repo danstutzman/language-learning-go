@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -101,11 +102,19 @@ func removeCurlyBraces(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(s, "{", ""), "}", "")
 }
 
+func mustAtoi(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
 func importImport(import_ *Import, theModel *model.Model) {
 	import_.sentenceErrors = make([]error, len(import_.analysis.Sentences))
 	for sentenceNum, sentence := range import_.analysis.Sentences {
-		firstIndex := sentence.Tokens[0].BeginInPhrase
-		lastIndex := sentence.Tokens[len(sentence.Tokens)-1].EndInPhrase
+		firstIndex := mustAtoi(sentence.Tokens[0].Begin)
+		lastIndex := mustAtoi(sentence.Tokens[len(sentence.Tokens)-1].End)
 		// Offset by number of Unicode points (runes), not number of bytes
 		excerpt := string(([]rune(import_.phrase))[firstIndex:lastIndex])
 
