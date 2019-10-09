@@ -27,15 +27,13 @@ func indexOf(needle string, haystack []string) int {
 func main() {
 	dbPath := os.Getenv("DB_PATH")
 
-	if len(os.Args) != 4 {
+	if len(os.Args) != 1+2 { // Args[0] is name of program
 		log.Fatalf(`Usage:
 		Argument 1: path to morphemes.csv
-		Argument 2: path to cards.csv
-		Argument 3: path to stories.yaml`)
+		Argument 2: path to stories.yaml`)
 	}
 	morphemesCsvPath := os.Args[1]
-	cardsCsvPath := os.Args[2]
-	storiesYamlPath := os.Args[3]
+	storiesYamlPath := os.Args[2]
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -51,8 +49,7 @@ func main() {
 	theModel := model.NewModel(dbConn)
 
 	importMorphemesCsv(morphemesCsvPath, theModel)
-	errors := importCardsCsv(cardsCsvPath, theModel)
-	errors = append(importStoriesYaml(storiesYamlPath, theModel), errors...)
+	errors := importStoriesYaml(storiesYamlPath, theModel)
 
 	for _, err := range errors {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -87,41 +84,6 @@ func importMorphemesCsv(path string, theModel *model.Model) {
 
 		theModel.InsertMorpheme(model.Morpheme{L2: l2, Gloss: gloss})
 	}
-}
-
-func importCardsCsv(path string, theModel *model.Model) []error {
-	file, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
-
-	reader := csv.NewReader(bufio.NewReader(file))
-
-	columnNames, err := reader.Read()
-	if err != nil {
-		panic(err)
-	}
-	l1Index := indexOf("l1", columnNames)
-	l2Index := indexOf("l2", columnNames)
-
-	allErrors := []error{}
-	for {
-		values, err := reader.Read()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-
-		l1 := values[l1Index]
-		l2 := values[l2Index]
-
-		err = insertCardForPhrase(l1, l2, theModel)
-		if err != nil {
-			allErrors = append(allErrors, err)
-		}
-	}
-	return allErrors
 }
 
 func removeCurlyBraces(s string) string {

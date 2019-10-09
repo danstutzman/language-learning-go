@@ -18,5 +18,4 @@ EOF
 
 DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv \
   db/dans-cards/morphemes.csv \
-  db/dans-cards/cards.csv \
   db/spanishpod/stories.yaml
