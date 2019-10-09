@@ -16,6 +16,12 @@ import (
 	"strings"
 )
 
+type Import struct {
+	phrase       string
+	analysisJson string
+	err          error
+}
+
 func indexOf(needle string, haystack []string) int {
 	for index, element := range haystack {
 		if element == needle {
@@ -58,11 +64,7 @@ func main() {
 	theModel := model.NewModel(dbConn)
 
 	importMorphemesCsv(morphemesCsvPath, theModel)
-	errors := importStoriesYaml(storiesYamlPath, theModel, freelingHostAndPort)
-
-	for _, err := range errors {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-	}
+	importStoriesYaml(storiesYamlPath, theModel, freelingHostAndPort)
 }
 
 func importMorphemesCsv(path string, theModel *model.Model) {
@@ -116,9 +118,9 @@ func extractBraceSurroundedPhrases(input string) []string {
 	return out
 }
 
-func insertCardForAnalysis(analysisJson string, theModel *model.Model) error {
+func importImport(import_ *Import, theModel *model.Model) {
 	var sentencesObject map[string]interface{}
-	err := json.Unmarshal([]byte(analysisJson), &sentencesObject)
+	err := json.Unmarshal([]byte(import_.analysisJson), &sentencesObject)
 	if err != nil {
 		panic(err)
 	}
@@ -154,17 +156,16 @@ func insertCardForAnalysis(analysisJson string, theModel *model.Model) error {
 		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
 		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
 		if actualWordsJoined != expectedWordsJoined {
-			return fmt.Errorf("Expected [%s] but got [%s]",
+			import_.err = fmt.Errorf("Expected [%s] but got [%s]",
 				expectedWordsJoined, actualWordsJoined)
+		} else {
+			theModel.InsertCard(model.Card{
+				L1:        "",
+				L2:        cardPhrase,
+				Morphemes: morphemes,
+			})
 		}
-
-		theModel.InsertCard(model.Card{
-			L1:        "",
-			L2:        cardPhrase,
-			Morphemes: morphemes,
-		})
 	}
-	return nil
 }
 
 type Story struct {
@@ -172,13 +173,13 @@ type Story struct {
 	Lines []interface{} `yaml:"lines"`
 }
 
-func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort string) []error {
+func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort string) {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
 
-	phrases := []string{}
+	imports := []Import{}
 	decoder := yaml.NewDecoder(bufio.NewReader(file))
 	for {
 		var story Story
@@ -192,19 +193,29 @@ func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort s
 		for _, line := range story.Lines {
 			var l2BySpeaker = line.(map[string]interface{})
 			for _, l2 := range l2BySpeaker {
-				phrases = append(phrases, l2.(string))
+				imports = append(imports, Import{phrase: l2.(string)})
 			}
 		}
 	}
 
+	phrases := []string{}
+	for _, import_ := range imports {
+		phrases = append(phrases, import_.phrase)
+	}
+
 	analysisJsons := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
 
-	allErrors := []error{}
-	for _, analysisJson := range analysisJsons {
-		err = insertCardForAnalysis(analysisJson, theModel)
-		if err != nil {
-			allErrors = append(allErrors, err)
+	for i, _ := range imports {
+		imports[i].analysisJson = analysisJsons[i]
+	}
+
+	for i, _ := range imports {
+		importImport(&imports[i], theModel)
+	}
+
+	for _, import_ := range imports {
+		if import_.err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", import_.err)
 		}
 	}
-	return allErrors
 }
