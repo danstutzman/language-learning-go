@@ -224,8 +224,7 @@ func (model *Model) verbToMorphemes(token Token) ([]Morpheme, error) {
 
 		if !strings.HasPrefix(form, stem) {
 			return []Morpheme{}, fmt.Errorf(
-				"No stem change to explain why '%s' doesn't match lemma '%s'",
-				form, lemma)
+				"No stem change for form=%s, lemma=%s, tag=%s", form, lemma, tag)
 		}
 
 		stemMorpheme := model.UpsertMorpheme(Morpheme{
