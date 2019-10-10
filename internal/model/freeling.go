@@ -61,6 +61,10 @@ func (token *Token) IsInterjection() bool {
 	return strings.HasPrefix(token.Tag, "I")
 }
 
+func (token *Token) IsProperNoun() bool {
+	return strings.HasPrefix(token.Tag, "NP")
+}
+
 func (token *Token) IsNoun() bool {
 	return strings.HasPrefix(token.Tag, "N")
 }

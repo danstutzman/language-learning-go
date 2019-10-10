@@ -248,6 +248,11 @@ func (model *Model) verbToMorphemes(token Token) ([]Morpheme, error) {
 	}
 }
 
+func (model *Model) LowercaseToken(token Token) Token {
+	token.Form = strings.ToLower(token.Form)
+	return token
+}
+
 func (model *Model) TokenToMorphemes(token Token) ([]Morpheme, error) {
 	if token.IsVerb() {
 		return model.verbToMorphemes(token)

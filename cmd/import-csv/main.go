@@ -79,16 +79,24 @@ func mustAtoi(s string) int {
 func importImport(import_ *Import, theModel *model.Model) {
 	import_.sentenceErrors = make([]error, len(import_.analysis.Sentences))
 	for sentenceNum, sentence := range import_.analysis.Sentences {
+		// Uncapitalize first token
+		for i, token := range sentence.Tokens {
+			if !token.IsPunctuation() {
+				if !token.IsProperNoun() {
+					sentence.Tokens[i] = theModel.LowercaseToken(token)
+				}
+				break
+			}
+		}
+
 		for _, token := range sentence.Tokens {
 			morphemes, err := theModel.TokenToMorphemes(token)
 			if err != nil {
 				import_.sentenceErrors[sentenceNum] = err
 			}
 
-			excerpt := string(([]rune(
-				import_.phrase))[mustAtoi(token.Begin):mustAtoi(token.End)])
 			theModel.InsertCardIfNotExists(model.Card{
-				L2:        excerpt,
+				L2:        token.Form,
 				Morphemes: morphemes,
 			})
 		}
