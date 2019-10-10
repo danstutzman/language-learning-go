@@ -15,16 +15,23 @@ INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'tengo', 'tener', 'VMIP1S0', NULL);
 
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category, tense)
+  VALUES ('VERB_STEM_CHANGE', 'estuv-', 'estar', NULL, NULL, 'past');
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category, tense)
+  VALUES ('VERB_STEM_CHANGE', 'tuv-', 'tener', NULL, NULL, 'past');
+
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-ar', NULL, 'VMN0000', 'ar');
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-er', NULL, 'VSN0000', 'er');
-
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-a', NULL, 'VMIP3S0', 'ar');
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-amos', NULL, 'VMIP1P0', 'ar');
-
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'er');
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'stempret');
 EOF
 
 DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv \

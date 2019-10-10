@@ -96,11 +96,9 @@ func (model *Model) InsertCard(card Card) Card {
 		L1: card.L1,
 		L2: card.L2,
 	})
-
 	card.Id = savedCardRow.Id
-	card.L1 = savedCardRow.L1
-	card.L2 = savedCardRow.L2
-	card.Morphemes = model.saveMorphemes(card)
+
+	model.saveCardsMorphemes(card)
 
 	return card
 }
@@ -112,52 +110,22 @@ func (model *Model) UpdateCard(card Card) Card {
 		L2: card.L2,
 	})
 
-	card.Morphemes = model.saveMorphemes(card)
+	model.saveCardsMorphemes(card)
+
 	return card
 }
 
-func (model *Model) saveMorphemes(card Card) []Morpheme {
-	db.DeleteFromCardsMorphemes(model.db, fmt.Sprintf("WHERE card_id=%d", card.Id))
+func (model *Model) saveCardsMorphemes(card Card) {
+	db.DeleteFromCardsMorphemes(model.db,
+		fmt.Sprintf("WHERE card_id=%d", card.Id))
 
-	morphemeL2s := []string{}
-	for _, morpheme := range card.Morphemes {
-		if morpheme.L2 != "" {
-			morphemeL2s = append(morphemeL2s, morpheme.L2)
-		}
-	}
-
-	savedMorphemes := []Morpheme{}
-	existingMorphemeRows := db.FromMorphemes(model.db, "WHERE "+db.InStringList("l2", morphemeL2s))
-	for numMorpheme, desiredMorpheme := range card.Morphemes {
-		if desiredMorpheme.L2 == "" && desiredMorpheme.Gloss == "" {
-			continue
-		}
-
-		var savedMorpheme *Morpheme
-		for _, existingMorphemeRow := range existingMorphemeRows {
-			if existingMorphemeRow.L2 == desiredMorpheme.L2 &&
-				existingMorphemeRow.Gloss == desiredMorpheme.Gloss {
-				converted := morphemeRowToMorpheme(existingMorphemeRow)
-				savedMorpheme = &converted
-				break
-			}
-		}
-
-		if savedMorpheme == nil {
-			insertedMorpheme := morphemeRowToMorpheme(
-				db.InsertMorpheme(model.db, morphemeToMorphemeRow(desiredMorpheme)))
-			savedMorpheme = &insertedMorpheme
-		}
-
+	for numMorpheme, morpheme := range card.Morphemes {
 		db.InsertCardsMorphemesRow(model.db, db.CardsMorphemesRow{
 			CardId:      card.Id,
-			MorphemeId:  savedMorpheme.Id,
+			MorphemeId:  morpheme.Id,
 			NumMorpheme: numMorpheme,
 		})
-
-		savedMorphemes = append(savedMorphemes, *savedMorpheme)
 	}
-	return savedMorphemes
 }
 
 func (model *Model) DeleteCardWithId(id int) {

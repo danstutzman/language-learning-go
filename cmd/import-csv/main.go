@@ -99,21 +99,26 @@ func verbToMorphemes(token model.Token,
 		log.Fatalf("Unknown category for lemma '%s'", lemma)
 	}
 
-	// Warning: for verbs like 'ser' the stem could be weird like 's'
-	stem := lemma[0 : len(lemma)-len(category)]
+	stemChangeMorpheme := theModel.FindVerbStemChange(lemma, token.Tense)
+	if stemChangeMorpheme != nil {
+		suffix := "-" + form[len(stemChangeMorpheme.L2)-1:len(form)]
 
-	var suffix string
-	if strings.HasPrefix(form, stem) {
-		// Warning: for verbs like 'tengo' the suffix could be weird like 'go'.
-		// This should be caught by the unique verb look up earlier, but otherwise
-		// it will just fail on the suffix look up.
-		suffix = form[len(stem):len(form)]
-
-		suffixMorpheme := theModel.FindVerbSuffix("-"+suffix, category, tag)
+		category = "stempret"
+		suffixMorpheme := theModel.FindVerbSuffix(suffix, category, tag)
 		if suffixMorpheme == nil {
 			return []model.Morpheme{}, fmt.Errorf(
 				"Can't find verb suffix '%s' with category=%s tag=%s",
 				suffix, category, tag)
+		}
+
+		return []model.Morpheme{*stemChangeMorpheme, *suffixMorpheme}, nil
+	} else { // If there is no stem change
+		stem := lemma[0 : len(lemma)-len(category)]
+
+		if !strings.HasPrefix(form, stem) {
+			return []model.Morpheme{}, fmt.Errorf(
+				"No stem change to explain why '%s' doesn't match lemma '%s'",
+				form, lemma)
 		}
 
 		stemMorpheme := theModel.UpsertMorpheme(model.Morpheme{
@@ -121,24 +126,21 @@ func verbToMorphemes(token model.Token,
 			L2:   stem,
 		})
 
-		return []model.Morpheme{stemMorpheme, *suffixMorpheme}, nil
-	} else { // if form doesn't match stem
-		stemChangeMorpheme := theModel.FindVerbStemChange(form, lemma, tag)
-		if stemChangeMorpheme == nil {
-			return []model.Morpheme{}, fmt.Errorf(
-				"No stem change to explain why '%s' doesn't match lemma '%s'",
-				form, lemma)
-		}
+		// Warning: for verbs like 'tengo' the suffix could be weird like 'go'.
+		// This should be caught by the unique verb look up earlier, but otherwise
+		// it will just fail on the suffix look up.
+		suffix := "-" + form[len(stem):len(form)]
 
-		suffixMorpheme := theModel.FindVerbSuffix(form, category, tag)
+		suffixMorpheme := theModel.FindVerbSuffix(suffix, category, tag)
 		if suffixMorpheme == nil {
 			return []model.Morpheme{}, fmt.Errorf(
 				"Can't find verb suffix '%s' with category=%s tag=%s",
-				form, category, tag)
+				suffix, category, tag)
 		}
 
-		return []model.Morpheme{*stemChangeMorpheme, *suffixMorpheme}, nil
+		return []model.Morpheme{stemMorpheme, *suffixMorpheme}, nil
 	}
+
 }
 
 func importImport(import_ *Import, theModel *model.Model) {
@@ -166,34 +168,34 @@ func importImport(import_ *Import, theModel *model.Model) {
 			}
 		}
 
-		morphemes := []model.Morpheme{}
-		for _, word := range expectedWords {
-			morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
-		}
+		/*
+			morphemes := []model.Morpheme{}
+			for _, word := range expectedWords {
+				morphemes = append(morphemes, theModel.ParseL2WordIntoMorphemes(word)...)
+			}
 
-		actualWords := []string{}
-		for _, morpheme := range morphemes {
-			actualWords = append(actualWords, morpheme.L2)
-		}
+			actualWords := []string{}
+			for _, morpheme := range morphemes {
+				actualWords = append(actualWords, morpheme.L2)
+			}
 
-		expectedWordsJoined := strings.Join(expectedWords, " ")
-		actualWordsJoined := strings.Join(actualWords, " ")
-		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- -", "")
-		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
-		actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
-		if actualWordsJoined != expectedWordsJoined {
-			import_.sentenceErrors[sentenceNum] = fmt.Errorf(
-				"Expected [%s] but got [%s]",
-				expectedWordsJoined, actualWordsJoined)
-		} else {
-			/*
-				theModel.InsertCard(model.Card{
-					L1:        "",
-					L2:        excerpt,
-					Morphemes: morphemes,
-				})
-			*/
-		}
+			expectedWordsJoined := strings.Join(expectedWords, " ")
+			actualWordsJoined := strings.Join(actualWords, " ")
+			actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- -", "")
+			actualWordsJoined = strings.ReplaceAll(actualWordsJoined, " -", "")
+			actualWordsJoined = strings.ReplaceAll(actualWordsJoined, "- ", "")
+			if actualWordsJoined != expectedWordsJoined {
+				import_.sentenceErrors[sentenceNum] = fmt.Errorf(
+					"Expected [%s] but got [%s]",
+					expectedWordsJoined, actualWordsJoined)
+			} else {
+					theModel.InsertCard(model.Card{
+						L1:        "",
+						L2:        excerpt,
+						Morphemes: morphemes,
+					})
+			}
+		*/
 	}
 }
 

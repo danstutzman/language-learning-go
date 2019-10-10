@@ -23,8 +23,6 @@ CREATE TABLE morphemes (
   l2                TEXT NOT NULL,
   lemma             TEXT, -- type=VERB_SUFFIX has no lemma
   freeling_tag      TEXT,
-  verb_category     TEXT
+  verb_category     TEXT,
+  tense             TEXT -- only for VERB_STEM_CHANGE
 );
-CREATE UNIQUE INDEX idx_morphemes_type_and_l2 ON morphemes(type, l2);
-CREATE UNIQUE INDEX idx_morphemes_verb_category_and_freeling_tag
-  ON morphemes(verb_category, freeling_tag);

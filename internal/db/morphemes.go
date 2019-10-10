@@ -7,10 +7,10 @@ import (
 )
 
 type MorphemeRow struct {
-	Id          int    `json:"id"`
-	Type        string `json:"type"`
-	L2          string `json:"l2"`
-	FreelingTag string `json:"freeling_tag"`
+	Id          int     `json:"id"`
+	Type        string  `json:"type"`
+	L2          string  `json:"l2"`
+	FreelingTag *string `json:"freeling_tag"`
 }
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
@@ -75,8 +75,8 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 
 func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 	query := fmt.Sprintf(`INSERT INTO morphemes (type, l2, freeling_tag)
-		VALUES (%s, %s, %s)`,
-		Escape(morpheme.Type), Escape(morpheme.L2), Escape(morpheme.FreelingTag))
+		VALUES (%s, %s, %s)`, Escape(morpheme.Type), Escape(morpheme.L2),
+		EscapePtr(morpheme.FreelingTag))
 	if LOG {
 		log.Println(query)
 	}
@@ -97,10 +97,9 @@ func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 
 func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
 	query := fmt.Sprintf(`UPDATE morphemes
-		SET type=%s, l2=%s, freeling_tag=%s
-		WHERE id=%d`,
-		Escape(morpheme.Type), Escape(morpheme.L2), Escape(morpheme.FreelingTag),
-		morpheme.Id)
+		SET type=%s, l2=%s, freeling_tag=%s WHERE id=%d`,
+		Escape(morpheme.Type), Escape(morpheme.L2),
+		EscapePtr(morpheme.FreelingTag), morpheme.Id)
 	if LOG {
 		log.Println(query)
 	}

@@ -10,10 +10,10 @@ import (
 var L2_WORD_REGEXP = regexp.MustCompile(`(?i)[a-zñáéíóúü]+`)
 
 type Morpheme struct {
-	Id          int    `json:"id"`
-	Type        string `json:"type"`
-	L2          string `json:"l2"`
-	FreelingTag string `json:"freeling_tag"`
+	Id          int     `json:"id"`
+	Type        string  `json:"type"`
+	L2          string  `json:"l2"`
+	FreelingTag *string `json:"freeling_tag"`
 }
 
 func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
@@ -151,10 +151,10 @@ func (model *Model) FindVerbSuffix(l2, verbCategory, tag string) *Morpheme {
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 
-func (model *Model) FindVerbStemChange(l2, lemma, tag string) *Morpheme {
+func (model *Model) FindVerbStemChange(lemma, tense string) *Morpheme {
 	where := fmt.Sprintf(
-		"WHERE type='VERB_STEM_CHANGE' AND l2=%s AND lemma=%s AND freeling_tag=%s",
-		db.Escape(l2), db.Escape(lemma), db.Escape(tag))
+		"WHERE type='VERB_STEM_CHANGE' AND lemma=%s AND tense=%s",
+		db.Escape(lemma), db.Escape(tense))
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 

@@ -35,6 +35,7 @@ type Token struct {
 	Pos    string `json:"pos"`
 	Type   string `json:"type"`
 	Mood   string `json:"mood"`
+	Tense  string `json:"tense"`
 	Person string `json:"person"`
 	Num    string `json:"num"`
 	Gen    string `json:"gen"`
