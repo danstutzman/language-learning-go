@@ -141,7 +141,14 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 			panic(err)
 		}
 		if output != "FL-SERVER-READY\x00" {
-			panic("Unexpected output " + output)
+			analysisJson := strings.TrimSuffix(output, "\x00")
+			analysis := parseAnalysisJson(analysisJson)
+			output := Output{
+				Phrase:       phrase,
+				AnalysisJson: analysisJson,
+				Analysis:     analysis,
+			}
+			outputs = append(outputs, output)
 		}
 
 		log.Printf("Writing FLUSH_BUFFER...\n")
@@ -165,6 +172,11 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 			}
 			outputs = append(outputs, output)
 		}
+	}
+
+	if len(outputs) != len(phrases) {
+		log.Panicf("len(outputs)=%d but len(phrases)=%d",
+			len(outputs), len(phrases))
 	}
 
 	return outputs
