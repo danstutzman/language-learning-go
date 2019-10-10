@@ -5,7 +5,6 @@ import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/model"
 	"bufio"
 	"database/sql"
-	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v3"
@@ -43,13 +42,11 @@ func main() {
 		log.Fatalf("Specify FREELING_HOST_AND_PORT env var, for example: 1.2.3.4:5678")
 	}
 
-	if len(os.Args) != 1+2 { // Args[0] is name of program
+	if len(os.Args) != 1+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to morphemes.csv
-		Argument 2: path to stories.yaml`)
+		Argument 1: path to stories.yaml`)
 	}
-	morphemesCsvPath := os.Args[1]
-	storiesYamlPath := os.Args[2]
+	storiesYamlPath := os.Args[1]
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -64,38 +61,7 @@ func main() {
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 	theModel := model.NewModel(dbConn)
 
-	importMorphemesCsv(morphemesCsvPath, theModel)
 	importStoriesYaml(storiesYamlPath, theModel, freelingHostAndPort)
-}
-
-func importMorphemesCsv(path string, theModel *model.Model) {
-	file, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
-
-	reader := csv.NewReader(bufio.NewReader(file))
-
-	columnNames, err := reader.Read()
-	if err != nil {
-		panic(err)
-	}
-	l2Index := indexOf("l2", columnNames)
-	glossIndex := indexOf("gloss", columnNames)
-
-	for {
-		values, err := reader.Read()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-
-		l2 := values[l2Index]
-		gloss := values[glossIndex]
-
-		theModel.InsertMorpheme(model.Morpheme{L2: l2, Gloss: gloss})
-	}
 }
 
 func removeCurlyBraces(s string) string {
@@ -110,6 +76,71 @@ func mustAtoi(s string) int {
 	return i
 }
 
+func verbToMorphemes(token model.Token,
+	theModel *model.Model) ([]model.Morpheme, error) {
+
+	lemma := token.Lemma
+	form := strings.ToLower(token.Form)
+	tag := token.Tag
+
+	unique := theModel.FindVerbUnique(form, lemma, tag)
+	if unique != nil {
+		return []model.Morpheme{*unique}, nil
+	}
+
+	var category string
+	if strings.HasSuffix(lemma, "ar") {
+		category = "ar"
+	} else if strings.HasSuffix(lemma, "er") {
+		category = "er"
+	} else if strings.HasSuffix(lemma, "ir") {
+		category = "ir"
+	} else {
+		log.Fatalf("Unknown category for lemma '%s'", lemma)
+	}
+
+	// Warning: for verbs like 'ser' the stem could be weird like 's'
+	stem := lemma[0 : len(lemma)-len(category)]
+
+	var suffix string
+	if strings.HasPrefix(form, stem) {
+		// Warning: for verbs like 'tengo' the suffix could be weird like 'go'.
+		// This should be caught by the unique verb look up earlier, but otherwise
+		// it will just fail on the suffix look up.
+		suffix = form[len(stem):len(form)]
+
+		suffixMorpheme := theModel.FindVerbSuffix("-"+suffix, category, tag)
+		if suffixMorpheme == nil {
+			return []model.Morpheme{}, fmt.Errorf(
+				"Can't find verb suffix '%s' with category=%s tag=%s",
+				suffix, category, tag)
+		}
+
+		stemMorpheme := theModel.UpsertMorpheme(model.Morpheme{
+			Type: "VERB_STEM",
+			L2:   stem,
+		})
+
+		return []model.Morpheme{stemMorpheme, *suffixMorpheme}, nil
+	} else { // if form doesn't match stem
+		stemChangeMorpheme := theModel.FindVerbStemChange(form, lemma, tag)
+		if stemChangeMorpheme == nil {
+			return []model.Morpheme{}, fmt.Errorf(
+				"No stem change to explain why '%s' doesn't match lemma '%s'",
+				form, lemma)
+		}
+
+		suffixMorpheme := theModel.FindVerbSuffix(form, category, tag)
+		if suffixMorpheme == nil {
+			return []model.Morpheme{}, fmt.Errorf(
+				"Can't find verb suffix '%s' with category=%s tag=%s",
+				form, category, tag)
+		}
+
+		return []model.Morpheme{*stemChangeMorpheme, *suffixMorpheme}, nil
+	}
+}
+
 func importImport(import_ *Import, theModel *model.Model) {
 	import_.sentenceErrors = make([]error, len(import_.analysis.Sentences))
 	for sentenceNum, sentence := range import_.analysis.Sentences {
@@ -117,11 +148,21 @@ func importImport(import_ *Import, theModel *model.Model) {
 		lastIndex := mustAtoi(sentence.Tokens[len(sentence.Tokens)-1].End)
 		// Offset by number of Unicode points (runes), not number of bytes
 		excerpt := string(([]rune(import_.phrase))[firstIndex:lastIndex])
+		_ = excerpt
 
 		expectedWords := []string{}
 		for _, token := range sentence.Tokens {
 			if !token.IsPunctuation() {
 				expectedWords = append(expectedWords, strings.ToLower(token.Form))
+
+				if strings.HasPrefix(token.Tag, "V") {
+					morphemes, err := verbToMorphemes(token, theModel)
+					if err != nil {
+						import_.sentenceErrors[sentenceNum] = err
+					}
+
+					log.Printf("morphemes:%v %v", morphemes, err)
+				}
 			}
 		}
 
@@ -145,11 +186,13 @@ func importImport(import_ *Import, theModel *model.Model) {
 				"Expected [%s] but got [%s]",
 				expectedWordsJoined, actualWordsJoined)
 		} else {
-			theModel.InsertCard(model.Card{
-				L1:        "",
-				L2:        excerpt,
-				Morphemes: morphemes,
-			})
+			/*
+				theModel.InsertCard(model.Card{
+					L1:        "",
+					L2:        excerpt,
+					Morphemes: morphemes,
+				})
+			*/
 		}
 	}
 }
@@ -159,7 +202,9 @@ type Story struct {
 	Lines []interface{} `yaml:"lines"`
 }
 
-func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort string) {
+func importStoriesYaml(path string, theModel *model.Model,
+	freelingHostAndPort string) {
+
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -200,13 +245,13 @@ func importStoriesYaml(path string, theModel *model.Model, freelingHostAndPort s
 		importImport(&imports[i], theModel)
 	}
 
-	for _, import_ := range imports {
-		for _, sentenceErr := range import_.sentenceErrors {
-			if sentenceErr != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", sentenceErr)
-				fmt.Fprintf(os.Stderr, "%s\n", import_.analysisJson)
-				os.Exit(1)
-			}
-		}
-	}
+	//for _, import_ := range imports {
+	//		for _, sentenceErr := range import_.sentenceErrors {
+	//			if sentenceErr != nil {
+	//				fmt.Fprintf(os.Stderr, "%s\n", sentenceErr)
+	//fmt.Fprintf(os.Stderr, "%s\n", import_.analysisJson)
+	//				os.Exit(1)
+	//			}
+	//		}
+	//}
 }

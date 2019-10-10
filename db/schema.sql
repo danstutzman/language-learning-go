@@ -19,9 +19,12 @@ CREATE INDEX idx_cards_morphemes_morpheme_id ON cards_morphemes(morpheme_id);
 DROP TABLE IF EXISTS morphemes;
 CREATE TABLE morphemes (
   id                INTEGER PRIMARY KEY NOT NULL,
+  type              TEXT NOT NULL,
   l2                TEXT NOT NULL,
-  gloss             TEXT NOT NULL,
-  lemma             TEXT,
-  tags_csv          TEXT
+  lemma             TEXT, -- type=VERB_SUFFIX has no lemma
+  freeling_tag      TEXT,
+  verb_category     TEXT
 );
-CREATE UNIQUE INDEX idx_morphemes_l2_gloss ON morphemes(l2, gloss);
+CREATE UNIQUE INDEX idx_morphemes_type_and_l2 ON morphemes(type, l2);
+CREATE UNIQUE INDEX idx_morphemes_verb_category_and_freeling_tag
+  ON morphemes(verb_category, freeling_tag);

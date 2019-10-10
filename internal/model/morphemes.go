@@ -10,25 +10,37 @@ import (
 var L2_WORD_REGEXP = regexp.MustCompile(`(?i)[a-zñáéíóúü]+`)
 
 type Morpheme struct {
-	Id    int    `json:"id"`
-	L2    string `json:"l2"`
-	Gloss string `json:"gloss"`
+	Id          int    `json:"id"`
+	Type        string `json:"type"`
+	L2          string `json:"l2"`
+	FreelingTag string `json:"freeling_tag"`
 }
 
 func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
 	return db.MorphemeRow{
-		Id:    morpheme.Id,
-		L2:    morpheme.L2,
-		Gloss: morpheme.Gloss,
+		Id:          morpheme.Id,
+		Type:        morpheme.Type,
+		L2:          morpheme.L2,
+		FreelingTag: morpheme.FreelingTag,
 	}
 }
 
 func morphemeRowToMorpheme(row db.MorphemeRow) Morpheme {
 	return Morpheme{
-		Id:    row.Id,
-		L2:    row.L2,
-		Gloss: row.Gloss,
+		Id:          row.Id,
+		Type:        row.Type,
+		L2:          row.L2,
+		FreelingTag: row.FreelingTag,
 	}
+}
+
+func morphemeRowPtrToMorphemePtr(row *db.MorphemeRow) *Morpheme {
+	if row == nil {
+		return nil
+	}
+
+	morpheme := morphemeRowToMorpheme(*row)
+	return &morpheme
 }
 
 func morphemeRowsToMorphemes(rows []db.MorphemeRow) []Morpheme {
@@ -114,7 +126,8 @@ func (model *Model) InsertMorpheme(morpheme Morpheme) Morpheme {
 
 func (model *Model) UpsertMorpheme(morpheme Morpheme) Morpheme {
 	existingMorphemes := db.FromMorphemes(model.db,
-		"WHERE l2="+db.Escape(morpheme.L2)+" AND gloss="+db.Escape(morpheme.Gloss))
+		"WHERE type="+db.Escape(morpheme.Type)+
+			" AND l2="+db.Escape(morpheme.L2))
 	if len(existingMorphemes) == 0 {
 		return morphemeRowToMorpheme(db.InsertMorpheme(model.db, morphemeToMorphemeRow(morpheme)))
 	} else {
@@ -129,4 +142,25 @@ func (model *Model) UpdateMorpheme(morpheme Morpheme) {
 func (model *Model) DeleteMorpheme(id int) {
 	where := fmt.Sprintf("WHERE id=%d", id)
 	db.DeleteFromMorphemes(model.db, where)
+}
+
+func (model *Model) FindVerbSuffix(l2, verbCategory, tag string) *Morpheme {
+	where := fmt.Sprintf(`WHERE type='VERB_SUFFIX' 
+		AND l2=%s AND verb_category=%s AND freeling_tag=%s`,
+		db.Escape(l2), db.Escape(verbCategory), db.Escape(tag))
+	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
+}
+
+func (model *Model) FindVerbStemChange(l2, lemma, tag string) *Morpheme {
+	where := fmt.Sprintf(
+		"WHERE type='VERB_STEM_CHANGE' AND l2=%s AND lemma=%s AND freeling_tag=%s",
+		db.Escape(l2), db.Escape(lemma), db.Escape(tag))
+	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
+}
+
+func (model *Model) FindVerbUnique(l2, lemma, tag string) *Morpheme {
+	where := fmt.Sprintf(
+		"WHERE type='VERB_UNIQUE' AND l2=%s AND lemma=%s AND freeling_tag=%s",
+		db.Escape(l2), db.Escape(lemma), db.Escape(tag))
+	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
