@@ -143,13 +143,12 @@ func importStoriesYaml(path string, theModel *model.Model,
 		importImport(&imports[i], theModel)
 	}
 
-	//for _, import_ := range imports {
-	//		for _, sentenceErr := range import_.sentenceErrors {
-	//			if sentenceErr != nil {
-	//				fmt.Fprintf(os.Stderr, "%s\n", sentenceErr)
-	//fmt.Fprintf(os.Stderr, "%s\n", import_.analysisJson)
-	//				os.Exit(1)
-	//			}
-	//		}
-	//}
+	for _, import_ := range imports {
+		for _, sentenceErr := range import_.sentenceErrors {
+			if sentenceErr != nil {
+				fmt.Fprintf(os.Stderr, "%s\n", sentenceErr)
+				// fmt.Fprintf(os.Stderr, "%s\n", import_.analysisJson)
+			}
+		}
+	}
 }
