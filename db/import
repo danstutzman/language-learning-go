@@ -11,7 +11,15 @@ cat db/schema.sql | sqlite3 db/db.sqlite3
 
 sqlite3 db/db.sqlite3 <<EOF
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'está', 'estar', 'VMIP3S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'estoy', 'estar', 'VMIP1S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'soy', 'ser', 'VSIP1S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'soy', 'ser', 'VSIP1S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'eres', 'ser', 'VSIP2S0', NULL);
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'tengo', 'tener', 'VMIP1S0', NULL);
 
@@ -26,6 +34,8 @@ INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-er', NULL, 'VSN0000', 'er');
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-a', NULL, 'VMIP3S0', 'ar');
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_SUFFIX', '-án', NULL, 'VMIP3P0', 'ar');
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-amos', NULL, 'VMIP1P0', 'ar');
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
