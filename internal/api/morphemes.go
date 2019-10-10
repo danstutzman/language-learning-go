@@ -26,9 +26,9 @@ func (api *Api) HandleListMorphemesRequest(w http.ResponseWriter, r *http.Reques
 			morphemes = append(morphemes, api.model.ParseL2WordIntoMorphemes(word)...)
 		}
 	} else if len(l2Prefix) == 1 && l2Prefix[0] != "" {
-		morphemes = api.model.ListMorphemesForPrefix(l2Prefix[0], 20)
+		morphemes = api.model.ListMorphemesForPrefix(l2Prefix[0], 999)
 	} else {
-		morphemes = api.model.ListMorphemesForPrefix("", 20)
+		morphemes = api.model.ListMorphemesForPrefix("", 999)
 	}
 
 	response := ListMorphemesResponse{Morphemes: morphemes}
