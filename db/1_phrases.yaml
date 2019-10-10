@@ -1,4 +1,19 @@
 ---
+lines:
+- A: Come los pomos y bebe el agua.
+- A: Come pomos y bebe agua.
+- A: Come pomos y agua.
+- A: Estoy bien.
+- A: andar
+- A: anda
+- A: estar
+- A: estuve
+- A: estamos
+- A: soy
+- A: ser
+- A: tengo
+- A: tuve
+---
 url: https://www.spanishpod101.com/lesson/hi-how-are-you
 lines:
 - BEATRIZ: ¡Hola!
@@ -22,14 +37,4 @@ lines:
 - CÉSAR: Yo soy César. Soy músico.
 - AMANDA: ¡Qué bueno! Yo soy profesora.
 - CÉSAR: ¡Qué interesante!
----
-lines:
-- A: andar
-- A: anda
-- A: estar
-- A: estuve
-- A: estamos
-- A: soy
-- A: ser
-- A: tengo
-- A: tuve
+

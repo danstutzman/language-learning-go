@@ -23,6 +23,7 @@ type Sentence struct {
 	Id           string        `json:"id"`
 	Tokens       []Token       `json:"tokens"`
 	Constituents []Constituent `json:"constituents"`
+	Dependencies []Dependency  `json:"dependencies"`
 }
 
 type Token struct {
@@ -87,6 +88,13 @@ type Constituent struct {
 	Word     string        `json:"word"`
 }
 
+type Dependency struct {
+	Token    string       `json:"token"`
+	Function string       `json:"function"`
+	Word     string       `json:"word"`
+	Children []Dependency `json:"children"`
+}
+
 func unmarshalParseJson(parseJson string) Parse {
 	var parse Parse
 	err := json.Unmarshal([]byte(parseJson), &parse)
@@ -96,30 +104,46 @@ func unmarshalParseJson(parseJson string) Parse {
 	return parse
 }
 
-/* Example parse JSON is [ { "sentences" : [
-      { "id":"1",
-        "tokens" : [
-           { "id" : "t1.1", "begin" : "0", "end" : "5", "form" : "Estoy", "lemma" : "estar", "tag" : "VMIP1S0", "ctag" : "VMI", "pos" : "verb", "type" : "main", "mood" : "indicative", "tense" : "present", "person" : "1", "num" : "singular"},
-           { "id" : "t1.2", "begin" : "6", "end" : "11", "form" : "feliz", "lemma" : "feliz", "tag" : "AQ0CS00", "ctag" : "AQ", "pos" : "adjective", "type" : "qualificative", "gen" : "common", "num" : "singular"},
-           { "id" : "t1.3", "begin" : "11", "end" : "12", "form" : ".", "lemma" : ".", "tag" : "Fp", "ctag" : "Fp", "pos" : "punctuation", "type" : "period"}],
-        "constituents" : [
-          {"label" : "S", "children" : [
-            {"label" : "grup-verb", "children" : [
-              {"label" : "verb", "head" : "1", "children" : [
-                {"leaf" : "1", "head" : "1", "token" : "t1.1", "word" : "Estoy"}
-              ]}
-            ]},
-            {"label" : "s-adj", "children" : [
-              {"label" : "s-a-ms", "head" : "1", "children" : [
-                {"label" : "a-ms", "head" : "1", "children" : [
-                  {"leaf" : "1", "head" : "1", "token" : "t1.2", "word" : "feliz"}
-                ]}
-              ]}
-            ]},
-            {"label" : "F-term", "children" : [
-              {"leaf" : "1", "head" : "1", "token" : "t1.3", "word" : "."}
-            ]}
-          ]}]}]}
+/* Example parse JSON of "Cómo está?" follows:
+{ "sentences" : [
+  { "id":"1",
+    "tokens" : [
+       { "id" : "t1.1", "begin" : "0", "end" : "1", "form" : "¿",
+         "lemma" : "¿", "tag" : "Fia", "ctag" : "Fia", "pos" : "punctuation",
+         "type" : "questionmark", "punctenclose" : "open"},
+       { "id" : "t1.2", "begin" : "1", "end" : "5", "form" : "Cómo",
+         "lemma" : "cómo", "tag" : "PT00000", "ctag" : "PT", "pos" : "pronoun",
+          "type" : "interrogative"},
+       { "id" : "t1.3", "begin" : "6", "end" : "10", "form" : "está",
+         "lemma" : "estar", "tag" : "VMIP3S0", "ctag" : "VMI", "pos" : "verb",
+         "type" : "main", "mood" : "indicative", "tense" : "present",
+         "person" : "3", "num" : "singular"},
+       { "id" : "t1.4", "begin" : "10", "end" : "11", "form" : "?",
+         "lemma" : "?", "tag" : "Fit", "ctag" : "Fit", "pos" : "punctuation",
+         "type" : "questionmark", "punctenclose" : "close"}],
+    "constituents" : [
+      {"label" : "grup-verb", "head" : "1", "children" : [
+        {"label" : "F-no-c", "children" : [
+          {"leaf" : "1", "head" : "1", "token" : "t1.1", "word" : "¿"}
+        ]},
+        {"label" : "sadv", "children" : [
+          {"label" : "adv-interrog", "head" : "1", "children" : [
+            {"leaf" : "1", "head" : "1", "token" : "t1.2", "word" : "Cómo"}
+          ]}
+        ]},
+        {"label" : "verb", "head" : "1", "children" : [
+          {"leaf" : "1", "head" : "1", "token" : "t1.3", "word" : "está"}
+        ]},
+        {"label" : "F-term", "children" : [
+          {"leaf" : "1", "head" : "1", "token" : "t1.4", "word" : "?"}
+        ]}
+      ]}],
+    "dependencies" : [
+      {"token" : "t1.3", "function" : "top", "word" : "está", "children" : [
+        {"token" : "t1.1", "function" : "punc", "word" : "¿"},
+        {"token" : "t1.2", "function" : "adjt", "word" : "Cómo"},
+        {"token" : "t1.4", "function" : "punc", "word" : "?"}
+      ]}]}]}
 ]*/
 
 func ParsePhrasesWithFreeling(phrases []string,

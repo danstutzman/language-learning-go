@@ -36,7 +36,7 @@ After=syslog.target
 User=freeling
 Group=freeling
 WorkingDirectory=/home/freeling
-ExecStart=/usr/bin/analyze -f /usr/share/freeling/config/es.cfg --outlv shallow --output json --server --port 50005
+ExecStart=/usr/bin/analyze -f /usr/share/freeling/config/es.cfg --outlv dep --output json --server --port 50005
 
 [Install]
 WantedBy=multi-user.target

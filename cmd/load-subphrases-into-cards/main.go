@@ -9,6 +9,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 )
 
@@ -55,6 +56,11 @@ func importPhrase(phrase string, parse parsing.Parse,
 
 	errors := make([]error, len(parse.Sentences))
 	for sentenceNum, sentence := range parse.Sentences {
+		tokenById := map[string]parsing.Token{}
+		for _, token := range sentence.Tokens {
+			tokenById[token.Id] = token
+		}
+
 		// Uncapitalize first token
 		for i, token := range sentence.Tokens {
 			if !token.IsPunctuation() {
@@ -65,31 +71,70 @@ func importPhrase(phrase string, parse parsing.Parse,
 			}
 		}
 
-		// Insert a card for each word.  Some words are two morphemes.
-		allMorphemes := []model.Morpheme{}
+		cardByTokenId := map[string]model.Card{}
 		for _, token := range sentence.Tokens {
 			morphemes, err := theModel.TokenToMorphemes(token)
 			if err != nil {
 				errors[sentenceNum] = err
 			}
-			allMorphemes = append(allMorphemes, morphemes...)
 
-			theModel.InsertCardIfNotExists(model.Card{
+			card := theModel.InsertCardIfNotExists(model.Card{
 				L2:        token.Form,
 				Morphemes: morphemes,
 			})
+			cardByTokenId[token.Id] = card
 		}
 
-		// Insert the entire sentence
-		firstTokenBegin := mustAtoi(sentence.Tokens[0].Begin)
-		lastTokenEnd := mustAtoi(sentence.Tokens[len(sentence.Tokens)-1].End)
-		l2 := string(([]rune(phrase))[firstTokenBegin:lastTokenEnd])
-		theModel.InsertCardIfNotExists(model.Card{
-			L2:        l2,
-			Morphemes: allMorphemes,
-		})
+		for _, dependency := range sentence.Dependencies {
+			importDependency(dependency, cardByTokenId, tokenById, theModel)
+		}
+
 	}
 	return errors
+}
+
+func importDependency(dependency parsing.Dependency,
+	cardByTokenId map[string]model.Card, tokenById map[string]parsing.Token,
+	theModel *model.Model) model.Card {
+
+	tokens := getTokensForDependency(dependency, tokenById)
+
+	l2 := ""
+	for i, token := range tokens {
+		if i > 0 && mustAtoi(token.Begin) > mustAtoi(tokens[i-1].End) {
+			l2 += " "
+		}
+		l2 += token.Form
+	}
+
+	morphemes := []model.Morpheme{}
+	for _, token := range tokens {
+		morphemes = append(morphemes, cardByTokenId[token.Id].Morphemes...)
+	}
+
+	for _, child := range dependency.Children {
+		importDependency(child, cardByTokenId, tokenById, theModel)
+	}
+
+	card := theModel.InsertCardIfNotExists(model.Card{
+		L2:        l2,
+		Morphemes: morphemes,
+	})
+	return card
+}
+
+func getTokensForDependency(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) []parsing.Token {
+
+	tokens := []parsing.Token{}
+	tokens = append(tokens, tokenById[dependency.Token])
+	for _, child := range dependency.Children {
+		tokens = append(tokens, getTokensForDependency(child, tokenById)...)
+	}
+	sort.SliceStable(tokens, func(i, j int) bool {
+		return mustAtoi(tokens[i].Begin) < mustAtoi(tokens[j].Begin)
+	})
+	return tokens
 }
 
 func mustAtoi(s string) int {
