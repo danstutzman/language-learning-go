@@ -89,17 +89,29 @@ func importImport(import_ *Import, theModel *model.Model) {
 			}
 		}
 
+		// Insert a card for each word.  Some words are two morphemes.
+		allMorphemes := []model.Morpheme{}
 		for _, token := range sentence.Tokens {
 			morphemes, err := theModel.TokenToMorphemes(token)
 			if err != nil {
 				import_.sentenceErrors[sentenceNum] = err
 			}
+			allMorphemes = append(allMorphemes, morphemes...)
 
 			theModel.InsertCardIfNotExists(model.Card{
 				L2:        token.Form,
 				Morphemes: morphemes,
 			})
 		}
+
+		// Insert the entire sentence
+		firstTokenBegin := mustAtoi(sentence.Tokens[0].Begin)
+		lastTokenEnd := mustAtoi(sentence.Tokens[len(sentence.Tokens)-1].End)
+		l2 := string(([]rune(import_.phrase))[firstTokenBegin:lastTokenEnd])
+		theModel.InsertCardIfNotExists(model.Card{
+			L2:        l2,
+			Morphemes: allMorphemes,
+		})
 	}
 }
 
