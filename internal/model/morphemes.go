@@ -2,6 +2,7 @@ package model
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"database/sql"
 	"fmt"
 	"regexp"
@@ -185,7 +186,7 @@ func (model *Model) findVerbUnique(l2, lemma, tag string) *Morpheme {
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 
-func (model *Model) verbToMorphemes(token Token) ([]Morpheme, error) {
+func (model *Model) verbToMorphemes(token parsing.Token) ([]Morpheme, error) {
 	lemma := token.Lemma
 	form := strings.ToLower(token.Form)
 	tag := token.Tag
@@ -248,12 +249,12 @@ func (model *Model) verbToMorphemes(token Token) ([]Morpheme, error) {
 	}
 }
 
-func (model *Model) LowercaseToken(token Token) Token {
+func (model *Model) LowercaseToken(token parsing.Token) parsing.Token {
 	token.Form = strings.ToLower(token.Form)
 	return token
 }
 
-func (model *Model) TokenToMorphemes(token Token) ([]Morpheme, error) {
+func (model *Model) TokenToMorphemes(token parsing.Token) ([]Morpheme, error) {
 	if token.IsVerb() {
 		return model.verbToMorphemes(token)
 

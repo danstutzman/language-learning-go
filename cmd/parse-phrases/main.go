@@ -1,18 +1,30 @@
 package main
 
 import (
-	"bitbucket.org/danstutzman/language-learning-go/internal/model"
+	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
 )
 
 func main() {
-	freelingHostAndPort := os.Getenv("FREELING_HOST_AND_PORT")
-	if freelingHostAndPort == "" {
-		log.Fatalf("Specify FREELING_HOST_AND_PORT env var, for example: 1.2.3.4:5678")
+	if len(os.Args) != 2+1 { // Args[0] is name of program
+		log.Fatalf(`Usage:
+		Argument 1: path to stories.yaml
+		Argument 2: hostname:port for freeling server`)
 	}
+	storiesYamlPath := os.Args[1]
+	freelingHostAndPort := os.Args[2]
 
-	phrases := []string{"Estoy feliz."}
-	analyses := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
-	log.Println(analyses)
+	parseDir := "db/1_parses"
+
+	phrases := parsing.ImportStoriesYaml(storiesYamlPath, parseDir)
+
+	outputs := parsing.ParsePhrasesWithFreeling(phrases, freelingHostAndPort)
+
+	for _, output := range outputs {
+		parsing.SaveParse(output.Phrase, output.ParseJson, parseDir)
+		fmt.Fprintf(os.Stderr, "%s\n", parseDir+"/"+output.Phrase+".json")
+	}
 }

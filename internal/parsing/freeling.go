@@ -1,8 +1,9 @@
-package model
+package parsing
 
 import (
 	"bufio"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net"
 	"strings"
@@ -121,7 +122,7 @@ func unmarshalParseJson(parseJson string) Parse {
           ]}]}]}
 ]*/
 
-func AnalyzePhrasesWithFreeling(phrases []string,
+func ParsePhrasesWithFreeling(phrases []string,
 	freelingHostAndPort string) []Output {
 
 	log.Printf("Conecting to %s\n", freelingHostAndPort)
@@ -208,4 +209,27 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 	}
 
 	return outputs
+}
+
+func SaveParse(phrase, parseJson, phraseDir string) {
+	path := phraseDir + "/" + phrase + ".json"
+	err := ioutil.WriteFile(path, []byte(parseJson), 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func LoadSavedParse(phrase string, phraseDir string) Output {
+	path := phraseDir + "/" + phrase + ".json"
+	parseJson, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	parse := unmarshalParseJson(string(parseJson))
+	return Output{
+		Phrase:    phrase,
+		ParseJson: string(parseJson),
+		Parse:     parse,
+	}
 }
