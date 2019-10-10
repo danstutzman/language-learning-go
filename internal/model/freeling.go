@@ -9,12 +9,12 @@ import (
 )
 
 type Output struct {
-	Phrase       string
-	AnalysisJson string
-	Analysis     Analysis
+	Phrase    string
+	ParseJson string
+	Parse     Parse
 }
 
-type Analysis struct {
+type Parse struct {
 	Sentences []Sentence `json:"sentences"`
 }
 
@@ -86,16 +86,16 @@ type Constituent struct {
 	Word     string        `json:"word"`
 }
 
-func parseAnalysisJson(analysisJson string) Analysis {
-	var analysis Analysis
-	err := json.Unmarshal([]byte(analysisJson), &analysis)
+func unmarshalParseJson(parseJson string) Parse {
+	var parse Parse
+	err := json.Unmarshal([]byte(parseJson), &parse)
 	if err != nil {
 		panic(err)
 	}
-	return analysis
+	return parse
 }
 
-/* Example analysis JSON is [ { "sentences" : [
+/* Example parse JSON is [ { "sentences" : [
       { "id":"1",
         "tokens" : [
            { "id" : "t1.1", "begin" : "0", "end" : "5", "form" : "Estoy", "lemma" : "estar", "tag" : "VMIP1S0", "ctag" : "VMI", "pos" : "verb", "type" : "main", "mood" : "indicative", "tense" : "present", "person" : "1", "num" : "singular"},
@@ -169,12 +169,12 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 			panic(err)
 		}
 		if output != "FL-SERVER-READY\x00" {
-			analysisJson := strings.TrimSuffix(output, "\x00")
-			analysis := parseAnalysisJson(analysisJson)
+			parseJson := strings.TrimSuffix(output, "\x00")
+			parse := unmarshalParseJson(parseJson)
 			output := Output{
-				Phrase:       phrase,
-				AnalysisJson: analysisJson,
-				Analysis:     analysis,
+				Phrase:    phrase,
+				ParseJson: parseJson,
+				Parse:     parse,
 			}
 			outputs = append(outputs, output)
 		}
@@ -191,12 +191,12 @@ func AnalyzePhrasesWithFreeling(phrases []string,
 			panic(err)
 		}
 		if output != "FL-SERVER-READY\x00" {
-			analysisJson := strings.TrimSuffix(output, "\x00")
-			analysis := parseAnalysisJson(analysisJson)
+			parseJson := strings.TrimSuffix(output, "\x00")
+			parse := unmarshalParseJson(parseJson)
 			output := Output{
-				Phrase:       phrase,
-				AnalysisJson: analysisJson,
-				Analysis:     analysis,
+				Phrase:    phrase,
+				ParseJson: parseJson,
+				Parse:     parse,
 			}
 			outputs = append(outputs, output)
 		}

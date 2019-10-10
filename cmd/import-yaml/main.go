@@ -17,8 +17,8 @@ import (
 
 type Import struct {
 	phrase         string
-	analysisJson   string
-	analysis       model.Analysis
+	parseJson      string
+	parse          model.Parse
 	sentenceErrors []error
 }
 
@@ -77,8 +77,8 @@ func mustAtoi(s string) int {
 }
 
 func importImport(import_ *Import, theModel *model.Model) {
-	import_.sentenceErrors = make([]error, len(import_.analysis.Sentences))
-	for sentenceNum, sentence := range import_.analysis.Sentences {
+	import_.sentenceErrors = make([]error, len(import_.parse.Sentences))
+	for sentenceNum, sentence := range import_.parse.Sentences {
 		// Uncapitalize first token
 		for i, token := range sentence.Tokens {
 			if !token.IsPunctuation() {
@@ -155,8 +155,8 @@ func importStoriesYaml(path string, theModel *model.Model,
 	outputs := model.AnalyzePhrasesWithFreeling(phrases, freelingHostAndPort)
 
 	for i, _ := range imports {
-		imports[i].analysis = outputs[i].Analysis
-		imports[i].analysisJson = outputs[i].AnalysisJson
+		imports[i].parse = outputs[i].Parse
+		imports[i].parseJson = outputs[i].ParseJson
 	}
 
 	for i, _ := range imports {
@@ -167,7 +167,7 @@ func importStoriesYaml(path string, theModel *model.Model,
 		for _, sentenceErr := range import_.sentenceErrors {
 			if sentenceErr != nil {
 				fmt.Fprintf(os.Stderr, "%s\n", sentenceErr)
-				// fmt.Fprintf(os.Stderr, "%s\n", import_.analysisJson)
+				// fmt.Fprintf(os.Stderr, "%s\n", import_.parseJson)
 			}
 		}
 	}
