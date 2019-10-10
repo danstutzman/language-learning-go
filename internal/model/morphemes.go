@@ -253,16 +253,33 @@ func (model *Model) TokenToMorphemes(token Token) ([]Morpheme, error) {
 	if token.IsVerb() {
 		return model.verbToMorphemes(token)
 
-	} else if token.IsPunctuation() {
+	} else {
+		var type_ string
+		if token.IsAdjective() {
+			type_ = "ADJECTIVE"
+		} else if token.IsAdverb() {
+			type_ = "ADVERB"
+		} else if token.IsConjunction() {
+			type_ = "CONJUNCTION"
+		} else if token.IsInterjection() {
+			type_ = "INTERJECTION"
+		} else if token.IsNoun() {
+			type_ = "NOUN"
+		} else if token.IsPronoun() {
+			type_ = "PRONOUN"
+		} else if token.IsPunctuation() {
+			type_ = "PUNCTUATION"
+		} else {
+			return []Morpheme{}, fmt.Errorf("Unknown token tag %s", token.Tag)
+		}
+
 		morpheme := model.UpsertMorpheme(Morpheme{
-			Type:        "PUNCTUATION",
+			Type:        type_,
 			L2:          token.Form,
 			Lemma:       &token.Lemma,
 			FreelingTag: &token.Tag,
 		})
 
 		return []Morpheme{morpheme}, nil
-	} else {
-		return []Morpheme{}, fmt.Errorf("Can't handle tag=%s", token.Tag)
 	}
 }

@@ -41,6 +41,30 @@ type Token struct {
 	Gen    string `json:"gen"`
 }
 
+func (token *Token) IsAdjective() bool {
+	return strings.HasPrefix(token.Tag, "A")
+}
+
+func (token *Token) IsAdverb() bool {
+	return strings.HasPrefix(token.Tag, "R")
+}
+
+func (token *Token) IsConjunction() bool {
+	return strings.HasPrefix(token.Tag, "C")
+}
+
+func (token *Token) IsPronoun() bool {
+	return strings.HasPrefix(token.Tag, "P")
+}
+
+func (token *Token) IsInterjection() bool {
+	return strings.HasPrefix(token.Tag, "I")
+}
+
+func (token *Token) IsNoun() bool {
+	return strings.HasPrefix(token.Tag, "N")
+}
+
 func (token *Token) IsPunctuation() bool {
 	return strings.HasPrefix(token.Tag, "F")
 }
