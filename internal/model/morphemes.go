@@ -144,23 +144,87 @@ func (model *Model) DeleteMorpheme(id int) {
 	db.DeleteFromMorphemes(model.db, where)
 }
 
-func (model *Model) FindVerbSuffix(l2, verbCategory, tag string) *Morpheme {
+func (model *Model) findVerbSuffix(l2, verbCategory, tag string) *Morpheme {
 	where := fmt.Sprintf(`WHERE type='VERB_SUFFIX' 
 		AND l2=%s AND verb_category=%s AND freeling_tag=%s`,
 		db.Escape(l2), db.Escape(verbCategory), db.Escape(tag))
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 
-func (model *Model) FindVerbStemChange(lemma, tense string) *Morpheme {
+func (model *Model) findVerbStemChange(lemma, tense string) *Morpheme {
 	where := fmt.Sprintf(
 		"WHERE type='VERB_STEM_CHANGE' AND lemma=%s AND tense=%s",
 		db.Escape(lemma), db.Escape(tense))
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 
-func (model *Model) FindVerbUnique(l2, lemma, tag string) *Morpheme {
+func (model *Model) findVerbUnique(l2, lemma, tag string) *Morpheme {
 	where := fmt.Sprintf(
 		"WHERE type='VERB_UNIQUE' AND l2=%s AND lemma=%s AND freeling_tag=%s",
 		db.Escape(l2), db.Escape(lemma), db.Escape(tag))
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
+}
+
+func (model *Model) VerbToMorphemes(token Token) ([]Morpheme, error) {
+	lemma := token.Lemma
+	form := strings.ToLower(token.Form)
+	tag := token.Tag
+
+	unique := model.findVerbUnique(form, lemma, tag)
+	if unique != nil {
+		return []Morpheme{*unique}, nil
+	}
+
+	var category string
+	if strings.HasSuffix(lemma, "ar") {
+		category = "ar"
+	} else if strings.HasSuffix(lemma, "er") {
+		category = "er"
+	} else if strings.HasSuffix(lemma, "ir") {
+		category = "ir"
+	} else {
+		return []Morpheme{}, fmt.Errorf("Unknown category for lemma '%s'", lemma)
+	}
+
+	stemChangeMorpheme := model.findVerbStemChange(lemma, token.Tense)
+	if stemChangeMorpheme != nil {
+		suffix := "-" + form[len(stemChangeMorpheme.L2)-1:len(form)]
+
+		category = "stempret"
+		suffixMorpheme := model.findVerbSuffix(suffix, category, tag)
+		if suffixMorpheme == nil {
+			return []Morpheme{}, fmt.Errorf(
+				"Can't find verb suffix '%s' with category=%s tag=%s",
+				suffix, category, tag)
+		}
+
+		return []Morpheme{*stemChangeMorpheme, *suffixMorpheme}, nil
+	} else { // If there is no stem change
+		stem := lemma[0 : len(lemma)-len(category)]
+
+		if !strings.HasPrefix(form, stem) {
+			return []Morpheme{}, fmt.Errorf(
+				"No stem change to explain why '%s' doesn't match lemma '%s'",
+				form, lemma)
+		}
+
+		stemMorpheme := model.UpsertMorpheme(Morpheme{
+			Type: "VERB_STEM",
+			L2:   stem,
+		})
+
+		// Warning: for verbs like 'tengo' the suffix could be weird like 'go'.
+		// This should be caught by the unique verb look up earlier, but otherwise
+		// it will just fail on the suffix look up.
+		suffix := "-" + form[len(stem):len(form)]
+
+		suffixMorpheme := model.findVerbSuffix(suffix, category, tag)
+		if suffixMorpheme == nil {
+			return []Morpheme{}, fmt.Errorf(
+				"Can't find verb suffix '%s' with category=%s tag=%s",
+				suffix, category, tag)
+		}
+
+		return []Morpheme{stemMorpheme, *suffixMorpheme}, nil
+	}
 }
