@@ -266,6 +266,8 @@ func (model *Model) TokenToMorphemes(token parsing.Token) ([]Morpheme, error) {
 			type_ = "ADVERB"
 		} else if token.IsConjunction() {
 			type_ = "CONJUNCTION"
+		} else if token.IsDeterminer() {
+			type_ = "DETERMINER"
 		} else if token.IsInterjection() {
 			type_ = "INTERJECTION"
 		} else if token.IsNoun() {

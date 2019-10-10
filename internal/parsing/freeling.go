@@ -55,6 +55,10 @@ func (token *Token) IsConjunction() bool {
 	return strings.HasPrefix(token.Tag, "C")
 }
 
+func (token *Token) IsDeterminer() bool {
+	return strings.HasPrefix(token.Tag, "D")
+}
+
 func (token *Token) IsPronoun() bool {
 	return strings.HasPrefix(token.Tag, "P")
 }
