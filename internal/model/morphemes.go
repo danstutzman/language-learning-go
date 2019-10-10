@@ -2,6 +2,7 @@ package model
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"database/sql"
 	"fmt"
 	"regexp"
 	"strings"
@@ -13,7 +14,16 @@ type Morpheme struct {
 	Id          int     `json:"id"`
 	Type        string  `json:"type"`
 	L2          string  `json:"l2"`
+	Lemma       *string `json:"lemma"`
 	FreelingTag *string `json:"freeling_tag"`
+}
+
+func stringPtrToNullString(s *string) sql.NullString {
+	if s == nil {
+		return sql.NullString{Valid: false, String: ""}
+	} else {
+		return sql.NullString{Valid: true, String: *s}
+	}
 }
 
 func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
@@ -21,7 +31,16 @@ func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
 		Id:          morpheme.Id,
 		Type:        morpheme.Type,
 		L2:          morpheme.L2,
-		FreelingTag: morpheme.FreelingTag,
+		Lemma:       stringPtrToNullString(morpheme.Lemma),
+		FreelingTag: stringPtrToNullString(morpheme.FreelingTag),
+	}
+}
+
+func nullStringToStringPtr(s sql.NullString) *string {
+	if s.Valid {
+		return &s.String
+	} else {
+		return nil
 	}
 }
 
@@ -30,7 +49,8 @@ func morphemeRowToMorpheme(row db.MorphemeRow) Morpheme {
 		Id:          row.Id,
 		Type:        row.Type,
 		L2:          row.L2,
-		FreelingTag: row.FreelingTag,
+		Lemma:       nullStringToStringPtr(row.Lemma),
+		FreelingTag: nullStringToStringPtr(row.FreelingTag),
 	}
 }
 
@@ -165,7 +185,7 @@ func (model *Model) findVerbUnique(l2, lemma, tag string) *Morpheme {
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 
-func (model *Model) VerbToMorphemes(token Token) ([]Morpheme, error) {
+func (model *Model) verbToMorphemes(token Token) ([]Morpheme, error) {
 	lemma := token.Lemma
 	form := strings.ToLower(token.Form)
 	tag := token.Tag
@@ -210,7 +230,7 @@ func (model *Model) VerbToMorphemes(token Token) ([]Morpheme, error) {
 
 		stemMorpheme := model.UpsertMorpheme(Morpheme{
 			Type: "VERB_STEM",
-			L2:   stem,
+			L2:   stem + "-",
 		})
 
 		// Warning: for verbs like 'tengo' the suffix could be weird like 'go'.
@@ -226,5 +246,23 @@ func (model *Model) VerbToMorphemes(token Token) ([]Morpheme, error) {
 		}
 
 		return []Morpheme{stemMorpheme, *suffixMorpheme}, nil
+	}
+}
+
+func (model *Model) TokenToMorphemes(token Token) ([]Morpheme, error) {
+	if token.IsVerb() {
+		return model.verbToMorphemes(token)
+
+	} else if token.IsPunctuation() {
+		morpheme := model.UpsertMorpheme(Morpheme{
+			Type:        "PUNCTUATION",
+			L2:          token.Form,
+			Lemma:       &token.Lemma,
+			FreelingTag: &token.Tag,
+		})
+
+		return []Morpheme{morpheme}, nil
+	} else {
+		return []Morpheme{}, fmt.Errorf("Can't handle tag=%s", token.Tag)
 	}
 }

@@ -7,14 +7,15 @@ import (
 )
 
 type MorphemeRow struct {
-	Id          int     `json:"id"`
-	Type        string  `json:"type"`
-	L2          string  `json:"l2"`
-	FreelingTag *string `json:"freeling_tag"`
+	Id          int
+	Type        string
+	L2          string
+	Lemma       sql.NullString
+	FreelingTag sql.NullString
 }
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
-	query := "SELECT id, type, l2, freeling_tag FROM morphemes LIMIT 1"
+	query := "SELECT id, type, l2, lemma, freeling_tag FROM morphemes LIMIT 1"
 	if LOG {
 		log.Println(query)
 	}
@@ -26,14 +27,18 @@ func AssertMorphemesHasCorrectSchema(db *sql.DB) {
 }
 
 func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
-	query := "SELECT id, type, l2, freeling_tag FROM morphemes " + where
+	query := "SELECT id, type, l2, lemma, freeling_tag FROM morphemes " + where
 	if LOG {
 		log.Println(query)
 	}
 
 	var row MorphemeRow
 	rset := db.QueryRow(query)
-	switch err := rset.Scan(&row.Id, &row.Type, &row.L2, &row.FreelingTag); err {
+	switch err := rset.Scan(&row.Id,
+		&row.Type,
+		&row.L2,
+		&row.Lemma,
+		&row.FreelingTag); err {
 	case sql.ErrNoRows:
 		return nil
 	case nil:
@@ -44,7 +49,8 @@ func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
 }
 
 func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
-	query := "SELECT id, type, l2, freeling_tag FROM morphemes " + whereLimit
+	query := "SELECT id, type, l2, lemma, freeling_tag FROM morphemes " +
+		whereLimit
 	if LOG {
 		log.Println(query)
 	}
@@ -58,7 +64,7 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 	rows := []MorphemeRow{}
 	for rset.Next() {
 		var row MorphemeRow
-		err = rset.Scan(&row.Id, &row.Type, &row.L2, &row.FreelingTag)
+		err = rset.Scan(&row.Id, &row.Type, &row.L2, &row.Lemma, &row.FreelingTag)
 		if err != nil {
 			panic(err)
 		}
@@ -74,9 +80,9 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 }
 
 func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
-	query := fmt.Sprintf(`INSERT INTO morphemes (type, l2, freeling_tag)
-		VALUES (%s, %s, %s)`, Escape(morpheme.Type), Escape(morpheme.L2),
-		EscapePtr(morpheme.FreelingTag))
+	query := fmt.Sprintf(`INSERT INTO morphemes (type, l2, lemma, freeling_tag)
+		VALUES (%s, %s, %s, %s)`, Escape(morpheme.Type), Escape(morpheme.L2),
+		EscapeNullString(morpheme.Lemma), EscapeNullString(morpheme.FreelingTag))
 	if LOG {
 		log.Println(query)
 	}
@@ -97,9 +103,10 @@ func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 
 func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
 	query := fmt.Sprintf(`UPDATE morphemes
-		SET type=%s, l2=%s, freeling_tag=%s WHERE id=%d`,
+		SET type=%s, l2=%s, lemma=%s, freeling_tag=%s WHERE id=%d`,
 		Escape(morpheme.Type), Escape(morpheme.L2),
-		EscapePtr(morpheme.FreelingTag), morpheme.Id)
+		EscapeNullString(morpheme.Lemma),
+		EscapeNullString(morpheme.FreelingTag), morpheme.Id)
 	if LOG {
 		log.Println(query)
 	}

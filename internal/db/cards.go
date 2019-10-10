@@ -7,13 +7,13 @@ import (
 )
 
 type CardRow struct {
-	Id int    `json:"id"`
-	L1 string `json:"l1"`
-	L2 string `json:"l2"`
+	Id             int
+	L2             string
+	MorphemeIdsCsv string
 }
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
-	query := "SELECT id, l1, l2 FROM cards LIMIT 1"
+	query := "SELECT id, l2, morpheme_ids_csv FROM cards LIMIT 1"
 	if LOG {
 		log.Println(query)
 	}
@@ -27,7 +27,7 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	rows := []CardRow{}
 
-	query := "SELECT id, l1, l2 FROM cards " + whereLimit
+	query := "SELECT id, l2, morpheme_ids_csv FROM cards " + whereLimit
 	if LOG {
 		log.Println(query)
 	}
@@ -40,8 +40,8 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	for rset.Next() {
 		var row CardRow
 		err = rset.Scan(&row.Id,
-			&row.L1,
-			&row.L2)
+			&row.L2,
+			&row.MorphemeIdsCsv)
 		if err != nil {
 			panic(err)
 		}
@@ -57,8 +57,9 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 }
 
 func InsertCard(db *sql.DB, card CardRow) CardRow {
-	query := fmt.Sprintf(`INSERT INTO cards (l1, l2) VALUES (%s, %s)`,
-		Escape(card.L1), Escape(card.L2))
+	query := fmt.Sprintf(
+		"INSERT INTO cards (l2, morpheme_ids_csv) VALUES (%s, %s)",
+		Escape(card.L2), Escape(card.MorphemeIdsCsv))
 	if LOG {
 		log.Println(query)
 	}
@@ -78,8 +79,9 @@ func InsertCard(db *sql.DB, card CardRow) CardRow {
 }
 
 func UpdateCard(db *sql.DB, card *CardRow) {
-	query := fmt.Sprintf("UPDATE cards SET l1=%s, l2=%s WHERE id=%d",
-		Escape(card.L1), Escape(card.L2), card.Id)
+	query := fmt.Sprintf(
+		"UPDATE cards SET l2=%s, morpheme_ids_csv=%s WHERE id=%d",
+		Escape(card.L2), Escape(card.MorphemeIdsCsv), card.Id)
 	if LOG {
 		log.Println(query)
 	}

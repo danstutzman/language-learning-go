@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"strings"
 )
 
@@ -13,5 +14,12 @@ func EscapePtr(s *string) string {
 		return "NULL"
 	} else {
 		return "'" + strings.ReplaceAll(*s, "'", "''") + "'"
+	}
+}
+func EscapeNullString(s sql.NullString) string {
+	if !s.Valid {
+		return "NULL"
+	} else {
+		return "'" + strings.ReplaceAll(s.String, "'", "''") + "'"
 	}
 }

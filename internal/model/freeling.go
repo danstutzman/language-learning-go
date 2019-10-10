@@ -45,6 +45,10 @@ func (token *Token) IsPunctuation() bool {
 	return strings.HasPrefix(token.Tag, "F")
 }
 
+func (token *Token) IsVerb() bool {
+	return strings.HasPrefix(token.Tag, "V")
+}
+
 type Constituent struct {
 	Label    string        `json:"label"`
 	Children []Constituent `json:"children"`

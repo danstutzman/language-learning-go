@@ -80,19 +80,17 @@ func importImport(import_ *Import, theModel *model.Model) {
 	import_.sentenceErrors = make([]error, len(import_.analysis.Sentences))
 	for sentenceNum, sentence := range import_.analysis.Sentences {
 		for _, token := range sentence.Tokens {
-			if !token.IsPunctuation() && strings.HasPrefix(token.Tag, "V") {
-				morphemes, err := theModel.VerbToMorphemes(token)
-				if err != nil {
-					import_.sentenceErrors[sentenceNum] = err
-				}
-				excerpt := string(([]rune(
-					import_.phrase))[mustAtoi(token.Begin):mustAtoi(token.End)])
-				theModel.InsertCard(model.Card{
-					L1:        "",
-					L2:        excerpt,
-					Morphemes: morphemes,
-				})
+			morphemes, err := theModel.TokenToMorphemes(token)
+			if err != nil {
+				import_.sentenceErrors[sentenceNum] = err
 			}
+
+			excerpt := string(([]rune(
+				import_.phrase))[mustAtoi(token.Begin):mustAtoi(token.End)])
+			theModel.InsertCardIfNotExists(model.Card{
+				L2:        excerpt,
+				Morphemes: morphemes,
+			})
 		}
 	}
 }

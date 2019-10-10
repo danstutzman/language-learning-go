@@ -3,17 +3,37 @@ package model
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 type Card struct {
 	Id        int        `json:"id"`
-	L1        string     `json:"l1"`
 	L2        string     `json:"l2"`
 	Morphemes []Morpheme `json:"morphemes"`
 }
 
 type CardList struct {
 	Cards []Card `json:"cards"`
+}
+
+func (model *Model) cardRowToCard(row db.CardRow) Card {
+	cardsMorphemes := db.FromCardsMorphemes(model.db,
+		fmt.Sprintf("WHERE card_id=%d", row.Id))
+
+	morphemeIds := []int{}
+	for _, cardsMorphemes := range cardsMorphemes {
+		morphemeIds = append(morphemeIds, cardsMorphemes.MorphemeId)
+	}
+
+	morphemes := morphemeRowsToMorphemes(
+		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
+
+	return Card{
+		Id:        row.Id,
+		L2:        row.L2,
+		Morphemes: morphemes,
+	}
 }
 
 func (model *Model) GetCard(id int) *Card {
@@ -24,23 +44,8 @@ func (model *Model) GetCard(id int) *Card {
 		panic("Too many cards")
 	}
 	cardRow := cardRows[0]
+	card := model.cardRowToCard(cardRow)
 
-	cardsMorphemes := db.FromCardsMorphemes(model.db, fmt.Sprintf("WHERE card_id=%d", cardRow.Id))
-
-	morphemeIds := []int{}
-	for _, cardsMorphemes := range cardsMorphemes {
-		morphemeIds = append(morphemeIds, cardsMorphemes.MorphemeId)
-	}
-
-	morphemes := morphemeRowsToMorphemes(
-		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
-
-	card := Card{
-		Id:        cardRow.Id,
-		L1:        cardRow.L1,
-		L2:        cardRow.L2,
-		Morphemes: morphemes,
-	}
 	return &card
 }
 
@@ -81,7 +86,6 @@ func (model *Model) ListCards() CardList {
 
 		card := Card{
 			Id:        cardRow.Id,
-			L1:        cardRow.L1,
 			L2:        cardRow.L2,
 			Morphemes: morphemes,
 		}
@@ -91,10 +95,29 @@ func (model *Model) ListCards() CardList {
 	return CardList{Cards: cards}
 }
 
+func (model *Model) InsertCardIfNotExists(card Card) Card {
+	cardRows := db.FromCards(model.db,
+		"WHERE morpheme_ids_csv="+db.Escape(joinMorphemeIdsCsv(card)))
+	if len(cardRows) == 1 {
+		return model.cardRowToCard(cardRows[0])
+	} else {
+		return model.InsertCard(card)
+	}
+}
+
+func joinMorphemeIdsCsv(card Card) string {
+	morphemeIds := []string{}
+	for _, morpheme := range card.Morphemes {
+		morphemeIds = append(morphemeIds, strconv.Itoa(morpheme.Id))
+	}
+
+	return strings.Join(morphemeIds, ",")
+}
+
 func (model *Model) InsertCard(card Card) Card {
 	savedCardRow := db.InsertCard(model.db, db.CardRow{
-		L1: card.L1,
-		L2: card.L2,
+		L2:             card.L2,
+		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	})
 	card.Id = savedCardRow.Id
 
@@ -105,9 +128,9 @@ func (model *Model) InsertCard(card Card) Card {
 
 func (model *Model) UpdateCard(card Card) Card {
 	db.UpdateCard(model.db, &db.CardRow{
-		Id: card.Id,
-		L1: card.L1,
-		L2: card.L2,
+		Id:             card.Id,
+		L2:             card.L2,
+		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	})
 
 	model.saveCardsMorphemes(card)
