@@ -46,5 +46,8 @@ INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'er');
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIP3S0', 'er');
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'stempret');
+
 EOF
