@@ -44,5 +44,5 @@ INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'stempret');
 EOF
 
-DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-csv \
+DB_PATH=./db/db.sqlite3 $GOPATH/bin/import-yaml \
   db/spanishpod/stories.yaml
