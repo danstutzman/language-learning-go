@@ -9,6 +9,8 @@ import (
 
 type Card struct {
 	Id        int        `json:"id"`
+	Type      string     `json:"type"`
+	L1        string     `json:"l1"`
 	L2        string     `json:"l2"`
 	Morphemes []Morpheme `json:"morphemes"`
 }
@@ -31,6 +33,8 @@ func (model *Model) cardRowToCard(row db.CardRow) Card {
 
 	return Card{
 		Id:        row.Id,
+		Type:      row.Type,
+		L1:        row.L1,
 		L2:        row.L2,
 		Morphemes: morphemes,
 	}
@@ -86,6 +90,8 @@ func (model *Model) ListCards() CardList {
 
 		card := Card{
 			Id:        cardRow.Id,
+			Type:      cardRow.Type,
+			L1:        cardRow.L1,
 			L2:        cardRow.L2,
 			Morphemes: morphemes,
 		}
@@ -116,6 +122,8 @@ func joinMorphemeIdsCsv(card Card) string {
 
 func (model *Model) InsertCard(card Card) Card {
 	savedCardRow := db.InsertCard(model.db, db.CardRow{
+		Type:           card.Type,
+		L1:             card.L1,
 		L2:             card.L2,
 		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	})
@@ -129,6 +137,8 @@ func (model *Model) InsertCard(card Card) Card {
 func (model *Model) UpdateCard(card Card) Card {
 	db.UpdateCard(model.db, &db.CardRow{
 		Id:             card.Id,
+		Type:           card.Type,
+		L1:             card.L1,
 		L2:             card.L2,
 		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	})

@@ -254,10 +254,19 @@ func (model *Model) LowercaseToken(token parsing.Token) parsing.Token {
 	return token
 }
 
-func (model *Model) TokenToMorphemes(token parsing.Token) ([]Morpheme, error) {
+func (model *Model) TokenToCard(token parsing.Token) (*Card, error) {
+	var card Card
 	if token.IsVerb() {
-		return model.verbToMorphemes(token)
+		morphemes, err := model.verbToMorphemes(token)
+		if err != nil {
+			return nil, err
+		}
 
+		card = Card{
+			Type:      "VERB",
+			L2:        token.Form,
+			Morphemes: morphemes,
+		}
 	} else {
 		var type_ string
 		if token.IsAdjective() {
@@ -277,7 +286,7 @@ func (model *Model) TokenToMorphemes(token parsing.Token) ([]Morpheme, error) {
 		} else if token.IsPunctuation() {
 			type_ = "PUNCTUATION"
 		} else {
-			return []Morpheme{}, fmt.Errorf("Unknown token tag %s", token.Tag)
+			return nil, fmt.Errorf("Unknown token tag %s", token.Tag)
 		}
 
 		morpheme := model.UpsertMorpheme(Morpheme{
@@ -287,6 +296,11 @@ func (model *Model) TokenToMorphemes(token parsing.Token) ([]Morpheme, error) {
 			FreelingTag: &token.Tag,
 		})
 
-		return []Morpheme{morpheme}, nil
+		card = Card{
+			Type:      type_,
+			L2:        token.Form,
+			Morphemes: []Morpheme{morpheme},
+		}
 	}
+	return &card, nil
 }

@@ -73,31 +73,28 @@ func importPhrase(phrase string, parse parsing.Parse,
 
 		cardByTokenId := map[string]model.Card{}
 		for _, token := range sentence.Tokens {
-			morphemes, err := theModel.TokenToMorphemes(token)
+			unsavedCard, err := theModel.TokenToCard(token)
 			if err != nil {
 				errors[sentenceNum] = err
 			}
 
-			card := theModel.InsertCardIfNotExists(model.Card{
-				L2:        token.Form,
-				Morphemes: morphemes,
-			})
+			card := theModel.InsertCardIfNotExists(*unsavedCard)
 			cardByTokenId[token.Id] = card
 		}
 
-		for _, dependency := range sentence.Dependencies {
-			importDependency(dependency, cardByTokenId, tokenById, theModel)
+		for _, constituent := range sentence.Constituents {
+			importConstituent(constituent, cardByTokenId, tokenById, theModel)
 		}
 
 	}
 	return errors
 }
 
-func importDependency(dependency parsing.Dependency,
+func importConstituent(constituent parsing.Constituent,
 	cardByTokenId map[string]model.Card, tokenById map[string]parsing.Token,
 	theModel *model.Model) model.Card {
 
-	tokens := getTokensForDependency(dependency, tokenById)
+	tokens := getTokensForConstituent(constituent, tokenById)
 
 	l2 := ""
 	for i, token := range tokens {
@@ -112,24 +109,31 @@ func importDependency(dependency parsing.Dependency,
 		morphemes = append(morphemes, cardByTokenId[token.Id].Morphemes...)
 	}
 
-	for _, child := range dependency.Children {
-		importDependency(child, cardByTokenId, tokenById, theModel)
+	for _, child := range constituent.Children {
+		importConstituent(child, cardByTokenId, tokenById, theModel)
 	}
 
-	card := theModel.InsertCardIfNotExists(model.Card{
-		L2:        l2,
-		Morphemes: morphemes,
-	})
-	return card
+	if constituent.Leaf == "1" {
+		return cardByTokenId[constituent.Token]
+	} else {
+		card := theModel.InsertCardIfNotExists(model.Card{
+			Type:      constituent.Label,
+			L2:        l2,
+			Morphemes: morphemes,
+		})
+		return card
+	}
 }
 
-func getTokensForDependency(dependency parsing.Dependency,
+func getTokensForConstituent(constituent parsing.Constituent,
 	tokenById map[string]parsing.Token) []parsing.Token {
 
 	tokens := []parsing.Token{}
-	tokens = append(tokens, tokenById[dependency.Token])
-	for _, child := range dependency.Children {
-		tokens = append(tokens, getTokensForDependency(child, tokenById)...)
+	if constituent.Token != "" {
+		tokens = append(tokens, tokenById[constituent.Token])
+	}
+	for _, child := range constituent.Children {
+		tokens = append(tokens, getTokensForConstituent(child, tokenById)...)
 	}
 	sort.SliceStable(tokens, func(i, j int) bool {
 		return mustAtoi(tokens[i].Begin) < mustAtoi(tokens[j].Begin)
