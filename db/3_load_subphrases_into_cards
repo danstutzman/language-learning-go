@@ -14,6 +14,7 @@ CREATE TABLE cards (
   type              TEXT NOT NULL,
   l1                TEXT,
   l2                TEXT NOT NULL,
+  last_answered_at  DATETIME,
   mnemonic12        TEXT,
   mnemonic21        TEXT,
   morpheme_ids_csv  TEXT NOT NULL,
