@@ -84,14 +84,13 @@ func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
 		panic(err)
 	}
 
-	/*savedCard := api.model.UpdateCard(unsavedCard)
+	savedCard := api.model.UpdateCard(unsavedCard)
 
 	bytes, err := json.Marshal(savedCard)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}
 	w.Write(bytes)
-	*/
 }
 
 func (api *Api) HandleDeleteCardRequest(w http.ResponseWriter, r *http.Request, id int) {
@@ -100,4 +99,25 @@ func (api *Api) HandleDeleteCardRequest(w http.ResponseWriter, r *http.Request, 
 	api.model.DeleteCardWithId(id)
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (api *Api) HandleGiven1Type2Request(w http.ResponseWriter,
+	r *http.Request) {
+
+	setCORSHeaders(w)
+	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
+
+	cardList := api.model.ListCards()
+	if len(cardList.Cards) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Not Found"))
+		return
+	}
+	topCard := cardList.Cards[0]
+
+	bytes, err := json.Marshal(topCard)
+	if err != nil {
+		log.Fatalf("Error from json.Marshal: %s", err)
+	}
+	w.Write(bytes)
 }

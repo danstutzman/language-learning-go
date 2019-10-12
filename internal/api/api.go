@@ -58,6 +58,12 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	} else if r.URL.Path == "/api/cards/top/given1type2" {
+		if r.Method == "GET" {
+			api.HandleGiven1Type2Request(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	} else if r.URL.Path == "/api/morphemes" {
 		if r.Method == "GET" {
 			api.HandleListMorphemesRequest(w, r)
