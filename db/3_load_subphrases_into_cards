@@ -14,7 +14,10 @@ CREATE TABLE cards (
   type              TEXT NOT NULL,
   l1                TEXT,
   l2                TEXT NOT NULL,
-  morpheme_ids_csv  TEXT NOT NULL
+  mnemonic12        TEXT,
+  mnemonic21        TEXT,
+  morpheme_ids_csv  TEXT NOT NULL,
+  noun_gender       TEXT
 );
 CREATE INDEX idx_cards_l2 ON cards(l2);
 

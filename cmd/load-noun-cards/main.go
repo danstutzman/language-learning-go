@@ -49,6 +49,9 @@ func main() {
 	}
 	l1Index := indexOf("l1", columnNames)
 	l2Index := indexOf("l2", columnNames)
+	mnemonic12Index := indexOf("mnemonic12", columnNames)
+	mnemonic21Index := indexOf("mnemonic21", columnNames)
+	nounGenderIndex := indexOf("noun_gender", columnNames)
 
 	for {
 		values, err := reader.Read()
@@ -60,8 +63,18 @@ func main() {
 
 		l1 := values[l1Index]
 		l2 := values[l2Index]
+		mnemonic12 := values[mnemonic12Index]
+		mnemonic21 := values[mnemonic21Index]
+		nounGender := values[nounGenderIndex]
 
-		theModel.InsertCard(model.Card{L1: l1, L2: l2})
+		theModel.InsertCard(model.Card{
+			L1:         l1,
+			L2:         l2,
+			Mnemonic12: mnemonic12,
+			Mnemonic21: mnemonic21,
+			NounGender: nounGender,
+			Type:       "NOUN",
+		})
 	}
 }
 

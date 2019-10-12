@@ -8,10 +8,14 @@ import (
 )
 
 type Card struct {
-	Id        int        `json:"id"`
-	Type      string     `json:"type"`
-	L1        string     `json:"l1"`
-	L2        string     `json:"l2"`
+	Id         int    `json:"id"`
+	L1         string `json:"l1"`
+	L2         string `json:"l2"`
+	Mnemonic12 string `json:"mnemonic12"`
+	Mnemonic21 string `json:"mnemonic21"`
+	NounGender string `json:"nounGender"`
+	Type       string `json:"type"`
+
 	Morphemes []Morpheme `json:"morphemes"`
 }
 
@@ -32,11 +36,28 @@ func (model *Model) cardRowToCard(row db.CardRow) Card {
 		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
 
 	return Card{
-		Id:        row.Id,
-		Type:      row.Type,
-		L1:        row.L1,
-		L2:        row.L2,
+		Id:         row.Id,
+		L1:         row.L1,
+		L2:         row.L2,
+		Mnemonic12: row.Mnemonic12,
+		Mnemonic21: row.Mnemonic21,
+		NounGender: row.NounGender,
+		Type:       row.Type,
+
 		Morphemes: morphemes,
+	}
+}
+
+func cardToCardRow(card Card) db.CardRow {
+	return db.CardRow{
+		L1:         card.L1,
+		L2:         card.L2,
+		Mnemonic12: card.Mnemonic12,
+		Mnemonic21: card.Mnemonic21,
+		NounGender: card.NounGender,
+		Type:       card.Type,
+
+		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	}
 }
 
@@ -89,10 +110,14 @@ func (model *Model) ListCards() CardList {
 		}
 
 		card := Card{
-			Id:        cardRow.Id,
-			Type:      cardRow.Type,
-			L1:        cardRow.L1,
-			L2:        cardRow.L2,
+			Id:         cardRow.Id,
+			L1:         cardRow.L1,
+			L2:         cardRow.L2,
+			Mnemonic12: cardRow.Mnemonic12,
+			Mnemonic21: cardRow.Mnemonic21,
+			NounGender: cardRow.NounGender,
+			Type:       cardRow.Type,
+
 			Morphemes: morphemes,
 		}
 		cards = append(cards, card)
@@ -121,12 +146,8 @@ func joinMorphemeIdsCsv(card Card) string {
 }
 
 func (model *Model) InsertCard(card Card) Card {
-	savedCardRow := db.InsertCard(model.db, db.CardRow{
-		Type:           card.Type,
-		L1:             card.L1,
-		L2:             card.L2,
-		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
-	})
+	savedCardRow := db.InsertCard(model.db, cardToCardRow(card))
+
 	card.Id = savedCardRow.Id
 
 	model.saveCardsMorphemes(card)
@@ -135,13 +156,8 @@ func (model *Model) InsertCard(card Card) Card {
 }
 
 func (model *Model) UpdateCard(card Card) Card {
-	db.UpdateCard(model.db, &db.CardRow{
-		Id:             card.Id,
-		Type:           card.Type,
-		L1:             card.L1,
-		L2:             card.L2,
-		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
-	})
+	row := cardToCardRow(card)
+	db.UpdateCard(model.db, &row)
 
 	model.saveCardsMorphemes(card)
 
