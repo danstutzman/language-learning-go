@@ -38,15 +38,17 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path == "/api/answers/top" {
+	if r.URL.Path == "/api/answers" {
 		if r.Method == "GET" {
-			api.HandleGiven1Type2Request(w, r)
+			api.HandleListAnswersRequest(w, r)
+		} else if r.Method == "POST" {
+			api.HandleAnswerGiven1Type2Request(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	} else if r.URL.Path == "/api/answers" {
-		if r.Method == "POST" {
-			api.HandleAnswerGiven1Type2Request(w, r)
+	} else if r.URL.Path == "/api/answers/top" {
+		if r.Method == "GET" {
+			api.HandleGiven1Type2Request(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

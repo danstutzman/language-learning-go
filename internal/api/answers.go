@@ -8,6 +8,21 @@ import (
 	"net/http"
 )
 
+func (api *Api) HandleListAnswersRequest(w http.ResponseWriter,
+	r *http.Request) {
+
+	setCORSHeaders(w)
+	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
+
+	answerList := api.model.ListAnswers()
+
+	bytes, err := json.Marshal(answerList)
+	if err != nil {
+		log.Fatalf("Error from json.Marshal: %s", err)
+	}
+	w.Write(bytes)
+}
+
 func (api *Api) HandleGiven1Type2Request(w http.ResponseWriter,
 	r *http.Request) {
 

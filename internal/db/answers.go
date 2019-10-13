@@ -29,6 +29,41 @@ func AssertAnswersHasCorrectSchema(db *sql.DB) {
 	}
 }
 
+func FromAnswers(db *sql.DB) []AnswerRow {
+	rows := []AnswerRow{}
+
+	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic
+	  FROM answers `
+	if LOG {
+		log.Println(query)
+	}
+	rset, err := db.Query(query)
+	if err != nil {
+		panic(err)
+	}
+	defer rset.Close()
+
+	for rset.Next() {
+		var row AnswerRow
+		err = rset.Scan(&row.Id,
+			&row.CardId,
+			&row.AnsweredL2,
+			&row.AnsweredAt,
+			&row.ShowedMnemonic)
+		if err != nil {
+			panic(err)
+		}
+		rows = append(rows, row)
+	}
+
+	err = rset.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	return rows
+}
+
 func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
 	query := fmt.Sprintf(`INSERT INTO answers
 	(type, card_id, answered_l2, answered_at, showed_mnemonic)

@@ -5,6 +5,10 @@ import (
 	"gopkg.in/guregu/null.v3"
 )
 
+type AnswerList struct {
+	Answers []Answer `json:"answers"`
+}
+
 type Answer struct {
 	Id             int         `json:"id"`
 	Type           string      `json:"type"`
@@ -23,6 +27,28 @@ func answerToAnswerRow(answer Answer) db.AnswerRow {
 		AnsweredAt:     answer.AnsweredAt,
 		ShowedMnemonic: answer.ShowedMnemonic,
 	}
+}
+
+func answerRowToAnswer(row db.AnswerRow) Answer {
+	return Answer{
+		Id:             row.Id,
+		Type:           row.Type,
+		CardId:         row.CardId,
+		AnsweredL2:     row.AnsweredL2,
+		AnsweredAt:     row.AnsweredAt,
+		ShowedMnemonic: row.ShowedMnemonic,
+	}
+}
+
+func (model *Model) ListAnswers() AnswerList {
+	answerRows := db.FromAnswers(model.db)
+
+	answers := []Answer{}
+	for _, answerRow := range answerRows {
+		answers = append(answers, answerRowToAnswer(answerRow))
+	}
+
+	return AnswerList{Answers: answers}
 }
 
 func (model *Model) InsertAnswer(answer Answer) {
