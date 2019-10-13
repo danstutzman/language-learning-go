@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -59,6 +60,10 @@ func main() {
 			break
 		} else if err != nil {
 			panic(err)
+		}
+
+		if strings.HasPrefix(values[0], "#") {
+			continue
 		}
 
 		l1 := values[l1Index]
