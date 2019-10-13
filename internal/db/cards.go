@@ -10,16 +10,13 @@ type CardRow struct {
 	Id             int
 	L1             string
 	L2             string
-	Mnemonic12     string
-	Mnemonic21     string
 	MorphemeIdsCsv string
 	NounGender     string
 	Type           string
 }
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
-	query := `SELECT id, l1, l2, mnemonic12, mnemonic21,
-	  morpheme_ids_csv, noun_gender, type
+	query := `SELECT id, l1, l2, morpheme_ids_csv, noun_gender, type
 		FROM cards LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -34,7 +31,7 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	rows := []CardRow{}
 
-	query := `SELECT id, l1, l2, mnemonic12, mnemonic21,
+	query := `SELECT id, l1, l2,
 	  morpheme_ids_csv, noun_gender, type FROM cards ` + whereLimit
 	if LOG {
 		log.Println(query)
@@ -50,8 +47,6 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 		err = rset.Scan(&row.Id,
 			&row.L1,
 			&row.L2,
-			&row.Mnemonic12,
-			&row.Mnemonic21,
 			&row.MorphemeIdsCsv,
 			&row.NounGender,
 			&row.Type)
@@ -71,12 +66,10 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 
 func InsertCard(db *sql.DB, card CardRow) CardRow {
 	query := fmt.Sprintf(`INSERT INTO cards (l1, l2, 
-	  mnemonic12, mnemonic21, morpheme_ids_csv, noun_gender, type)
-		VALUES (%s, %s, %s, %s, %s, %s, %s)`,
+	  morpheme_ids_csv, noun_gender, type)
+		VALUES (%s, %s, %s, %s, %s)`,
 		Escape(card.L1),
 		Escape(card.L2),
-		Escape(card.Mnemonic12),
-		Escape(card.Mnemonic21),
 		Escape(card.MorphemeIdsCsv),
 		Escape(card.NounGender),
 		Escape(card.Type))
@@ -100,12 +93,10 @@ func InsertCard(db *sql.DB, card CardRow) CardRow {
 
 func UpdateCard(db *sql.DB, card *CardRow) {
 	query := fmt.Sprintf(
-		`UPDATE cards SET l1=%s, l2=%s, mnemonic12=%s,
-			mnemonic21=%s, morpheme_ids_csv=%s, noun_gender=%s, type=%s WHERE id=%d`,
+		`UPDATE cards SET l1=%s, l2=%s,
+		morpheme_ids_csv=%s, noun_gender=%s, type=%s WHERE id=%d`,
 		Escape(card.L1),
 		Escape(card.L2),
-		Escape(card.Mnemonic12),
-		Escape(card.Mnemonic21),
 		Escape(card.MorphemeIdsCsv),
 		Escape(card.NounGender),
 		Escape(card.Type),

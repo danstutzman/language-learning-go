@@ -73,11 +73,11 @@ func main() {
 		mnemonic21 := values[mnemonic21Index]
 		nounGender := values[nounGenderIndex]
 
+		_ = mnemonic21
+
 		card := theModel.InsertCard(model.Card{
 			L1:         l1,
 			L2:         l2,
-			Mnemonic12: mnemonic12,
-			Mnemonic21: mnemonic21,
 			NounGender: nounGender,
 			Type:       "NOUN",
 		})
