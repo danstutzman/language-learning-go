@@ -8,15 +8,17 @@ import (
 )
 
 type AnswerRow struct {
-	Id         int
-	Type       string
-	CardId     int
-	AnsweredL2 null.String
-	AnsweredAt null.Time
+	Id             int
+	Type           string
+	CardId         int
+	AnsweredL2     null.String
+	AnsweredAt     null.Time
+	ShowedMnemonic bool
 }
 
 func AssertAnswersHasCorrectSchema(db *sql.DB) {
-	query := "SELECT id FROM answers LIMIT 1"
+	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic 
+	  FROM answers LIMIT 1`
 	if LOG {
 		log.Println(query)
 	}
@@ -29,9 +31,10 @@ func AssertAnswersHasCorrectSchema(db *sql.DB) {
 
 func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
 	query := fmt.Sprintf(`INSERT INTO answers
-	(type, card_id, answered_l2, answered_at)
-		VALUES (%s, %d, %s, %s)`, Escape(answer.Type), answer.CardId,
-		EscapeNullString(answer.AnsweredL2), EscapeNullTime(answer.AnsweredAt))
+	(type, card_id, answered_l2, answered_at, showed_mnemonic)
+		VALUES (%s, %d, %s, %s, %s)`, Escape(answer.Type), answer.CardId,
+		EscapeNullString(answer.AnsweredL2), EscapeNullTime(answer.AnsweredAt),
+		EscapeBool(answer.ShowedMnemonic))
 	if LOG {
 		log.Println(query)
 	}

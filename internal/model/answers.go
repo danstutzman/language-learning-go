@@ -6,20 +6,22 @@ import (
 )
 
 type Answer struct {
-	Id         int         `json:"id"`
-	Type       string      `json:"type"`
-	CardId     int         `json:"cardId"`
-	AnsweredL2 null.String `json:"answeredL2"`
-	AnsweredAt null.Time   `json:"answeredAt"`
+	Id             int         `json:"id"`
+	Type           string      `json:"type"`
+	CardId         int         `json:"cardId"`
+	AnsweredL2     null.String `json:"answeredL2"`
+	AnsweredAt     null.Time   `json:"answeredAt"`
+	ShowedMnemonic bool        `json:"showedMnemonic"`
 }
 
 func answerToAnswerRow(answer Answer) db.AnswerRow {
 	return db.AnswerRow{
-		Id:         answer.Id,
-		Type:       answer.Type,
-		CardId:     answer.CardId,
-		AnsweredL2: answer.AnsweredL2,
-		AnsweredAt: answer.AnsweredAt,
+		Id:             answer.Id,
+		Type:           answer.Type,
+		CardId:         answer.CardId,
+		AnsweredL2:     answer.AnsweredL2,
+		AnsweredAt:     answer.AnsweredAt,
+		ShowedMnemonic: answer.ShowedMnemonic,
 	}
 }
 

@@ -32,11 +32,12 @@ CREATE INDEX idx_cards_morphemes_morpheme_id ON cards_morphemes(morpheme_id);
 
 DROP TABLE IF EXISTS answers;
 CREATE TABLE answers (
-  id          INTEGER PRIMARY KEY NOT NULL,
-  type        TEXT NOT NULL,
-  card_id     INTEGER NOT NULL,
-  answered_l2 TEXT,
-  answered_at DATETIME NOT NULL
+  id              INTEGER PRIMARY KEY NOT NULL,
+  type            TEXT NOT NULL,
+  card_id         INTEGER NOT NULL,
+  answered_l2     TEXT,
+  answered_at     DATETIME NOT NULL,
+  showed_mnemonic BOOLEAN NOT NULL
 );
 CREATE INDEX idx_answers_card_id ON answers(card_id);
 EOF

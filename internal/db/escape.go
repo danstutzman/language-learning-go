@@ -37,3 +37,11 @@ func EscapeNullTime(time null.Time) string {
 
 	return EscapeTime(time.Time)
 }
+
+func EscapeBool(b bool) string {
+	if b {
+		return "TRUE"
+	} else {
+		return "FALSE"
+	}
+}
