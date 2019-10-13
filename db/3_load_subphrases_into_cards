@@ -39,7 +39,7 @@ CREATE TABLE answers (
   answered_at     DATETIME NOT NULL,
   showed_mnemonic BOOLEAN NOT NULL
 );
-CREATE INDEX idx_answers_card_id ON answers(card_id);
+CREATE UNIQUE INDEX idx_answers_card_id_type ON answers(card_id, type);
 EOF
 
 #$GOPATH/bin/load-subphrases-into-cards db/1_phrases.yaml db/db.sqlite3

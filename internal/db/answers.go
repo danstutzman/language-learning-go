@@ -92,8 +92,9 @@ func GetTopGiven1Type2CardId(db *sql.DB) int {
 	query := `SELECT cards.id
 	  FROM cards
 	  LEFT JOIN answers ON answers.card_id = cards.id
+  		AND answers.type = 'Given1Type2'
 		GROUP BY cards.id
-		ORDER BY MAX(answers.answered_at)
+		ORDER BY answers.answered_at
 		LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -107,6 +108,18 @@ func GetTopGiven1Type2CardId(db *sql.DB) int {
 	case nil:
 		return cardId
 	default:
+		panic(err)
+	}
+}
+
+func DeleteFromAnswers(db *sql.DB, where string) {
+	query := "DELETE FROM answers " + where
+	if LOG {
+		log.Println(query)
+	}
+
+	_, err := db.Exec(query)
+	if err != nil {
 		panic(err)
 	}
 }

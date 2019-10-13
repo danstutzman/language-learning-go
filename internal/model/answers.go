@@ -2,6 +2,7 @@ package model
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"fmt"
 	"gopkg.in/guregu/null.v3"
 )
 
@@ -51,7 +52,10 @@ func (model *Model) ListAnswers() AnswerList {
 	return AnswerList{Answers: answers}
 }
 
-func (model *Model) InsertAnswer(answer Answer) {
+func (model *Model) ReplaceAnswer(answer Answer) {
+	db.DeleteFromAnswers(model.db, fmt.Sprintf("WHERE card_id=%d AND type=%s",
+		answer.CardId, db.Escape(answer.Type)))
+
 	db.InsertAnswer(model.db, answerToAnswerRow(answer))
 }
 

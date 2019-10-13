@@ -63,7 +63,7 @@ func (api *Api) HandleAnswerGiven1Type2Request(w http.ResponseWriter,
 		panic(err)
 	}
 
-	api.model.InsertAnswer(answer)
+	api.model.ReplaceAnswer(answer)
 
 	bytes, err := json.Marshal(answer)
 	if err != nil {
