@@ -673,10 +673,22 @@
 			"revisionTime": "2019-10-05T22:38:30Z"
 		},
 		{
+			"checksumSHA1": "gdNn8lUpQ1fz0Xh5nnWM0o2kj7w=",
+			"path": "gopkg.in/guregu/null.v3",
+			"revision": "80515d440932108546bcade467bb7d6968e812e2",
+			"revisionTime": "2018-08-01T14:25:28Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "cLiP9+rJWBlh6oVFZzzAQjbyGdA=",
 			"path": "gopkg.in/yaml.v3",
 			"revision": "c8b7dadae55537a6c8367220c0f93d3205869c8a",
 			"revisionTime": "2019-09-24T16:43:51Z",
+			"tree": true
+		},
+		{
+			"path": "https://gopkg.in/guregu/null.v3",
+			"revision": "",
 			"tree": true
 		}
 	],
