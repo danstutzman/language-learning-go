@@ -38,7 +38,15 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path == "/api/cards" {
+	if r.URL.Path == "/api/given1type2" {
+		if r.Method == "GET" {
+			api.HandleGiven1Type2Request(w, r)
+		} else if r.Method == "POST" {
+			api.HandleAnswerGiven1Type2Request(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else if r.URL.Path == "/api/cards" {
 		if r.Method == "GET" {
 			api.HandleListCardsRequest(w, r)
 		} else if r.Method == "POST" {
@@ -55,12 +63,6 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 			api.HandleUpdateCardRequest(w, r, cardId)
 		} else if r.Method == "DELETE" {
 			api.HandleDeleteCardRequest(w, r, cardId)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	} else if r.URL.Path == "/api/cards/top/given1type2" {
-		if r.Method == "GET" {
-			api.HandleGiven1Type2Request(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

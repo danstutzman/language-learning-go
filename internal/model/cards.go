@@ -3,19 +3,20 @@ package model
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"fmt"
+	"gopkg.in/guregu/null.v3"
 	"strconv"
 	"strings"
 )
 
 type Card struct {
-	Id             int    `json:"id"`
-	L1             string `json:"l1"`
-	L2             string `json:"l2"`
-	LastAnsweredAt int    `json:"lastAnsweredAt"`
-	Mnemonic12     string `json:"mnemonic12"`
-	Mnemonic21     string `json:"mnemonic21"`
-	NounGender     string `json:"nounGender"`
-	Type           string `json:"type"`
+	Id             int       `json:"id"`
+	L1             string    `json:"l1"`
+	L2             string    `json:"l2"`
+	LastAnsweredAt null.Time `json:"lastAnsweredAt"`
+	Mnemonic12     string    `json:"mnemonic12"`
+	Mnemonic21     string    `json:"mnemonic21"`
+	NounGender     string    `json:"nounGender"`
+	Type           string    `json:"type"`
 
 	Morphemes []Morpheme `json:"morphemes"`
 }
@@ -77,8 +78,8 @@ func (model *Model) GetCard(id int) *Card {
 	return &card
 }
 
-func (model *Model) ListCards() CardList {
-	cardRows := db.FromCards(model.db, "")
+func (model *Model) ListCards(whereOrderLimit string) CardList {
+	cardRows := db.FromCards(model.db, whereOrderLimit)
 
 	cardIds := []int{}
 	for _, cardRow := range cardRows {
@@ -184,4 +185,8 @@ func (model *Model) saveCardsMorphemes(card Card) {
 func (model *Model) DeleteCardWithId(id int) {
 	where := fmt.Sprintf("WHERE id=%d", id)
 	db.DeleteFromCards(model.db, where)
+}
+
+func (model *Model) TouchCardLastAnsweredAt(cardId int) {
+	db.TouchCardLastAnsweredAt(model.db, cardId)
 }

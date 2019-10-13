@@ -2,7 +2,9 @@ package db
 
 import (
 	"database/sql"
+	"gopkg.in/guregu/null.v3"
 	"strings"
+	"time"
 )
 
 func Escape(s string) string {
@@ -12,14 +14,27 @@ func Escape(s string) string {
 func EscapePtr(s *string) string {
 	if s == nil {
 		return "NULL"
-	} else {
-		return "'" + strings.ReplaceAll(*s, "'", "''") + "'"
 	}
+
+	return Escape(*s)
 }
+
 func EscapeNullString(s sql.NullString) string {
 	if !s.Valid {
 		return "NULL"
-	} else {
-		return "'" + strings.ReplaceAll(s.String, "'", "''") + "'"
 	}
+
+	return Escape(s.String)
+}
+
+func EscapeTime(time time.Time) string {
+	return "'" + time.Format("2006-01-02T15:04:05Z") + "'"
+}
+
+func EscapeNullTime(time null.Time) string {
+	if !time.Valid {
+		return "NULL"
+	}
+
+	return EscapeTime(time.Time)
 }
