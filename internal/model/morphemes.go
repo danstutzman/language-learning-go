@@ -3,8 +3,8 @@ package model
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"database/sql"
 	"fmt"
+	"gopkg.in/guregu/null.v3"
 	"regexp"
 	"strings"
 )
@@ -12,19 +12,11 @@ import (
 var L2_WORD_REGEXP = regexp.MustCompile(`(?i)[a-zñáéíóúü]+`)
 
 type Morpheme struct {
-	Id          int     `json:"id"`
-	Type        string  `json:"type"`
-	L2          string  `json:"l2"`
-	Lemma       *string `json:"lemma"`
-	FreelingTag *string `json:"freeling_tag"`
-}
-
-func stringPtrToNullString(s *string) sql.NullString {
-	if s == nil {
-		return sql.NullString{Valid: false, String: ""}
-	} else {
-		return sql.NullString{Valid: true, String: *s}
-	}
+	Id          int         `json:"id"`
+	Type        string      `json:"type"`
+	L2          string      `json:"l2"`
+	Lemma       null.String `json:"lemma"`
+	FreelingTag null.String `json:"freeling_tag"`
 }
 
 func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
@@ -32,16 +24,8 @@ func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
 		Id:          morpheme.Id,
 		Type:        morpheme.Type,
 		L2:          morpheme.L2,
-		Lemma:       stringPtrToNullString(morpheme.Lemma),
-		FreelingTag: stringPtrToNullString(morpheme.FreelingTag),
-	}
-}
-
-func nullStringToStringPtr(s sql.NullString) *string {
-	if s.Valid {
-		return &s.String
-	} else {
-		return nil
+		Lemma:       morpheme.Lemma,
+		FreelingTag: morpheme.FreelingTag,
 	}
 }
 
@@ -50,8 +34,8 @@ func morphemeRowToMorpheme(row db.MorphemeRow) Morpheme {
 		Id:          row.Id,
 		Type:        row.Type,
 		L2:          row.L2,
-		Lemma:       nullStringToStringPtr(row.Lemma),
-		FreelingTag: nullStringToStringPtr(row.FreelingTag),
+		Lemma:       row.Lemma,
+		FreelingTag: row.FreelingTag,
 	}
 }
 
@@ -292,8 +276,8 @@ func (model *Model) TokenToCard(token parsing.Token) (*Card, error) {
 		morpheme := model.UpsertMorpheme(Morpheme{
 			Type:        type_,
 			L2:          token.Form,
-			Lemma:       &token.Lemma,
-			FreelingTag: &token.Tag,
+			Lemma:       null.StringFrom(token.Lemma),
+			FreelingTag: null.StringFrom(token.Tag),
 		})
 
 		card = Card{

@@ -3,20 +3,18 @@ package model
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"fmt"
-	"gopkg.in/guregu/null.v3"
 	"strconv"
 	"strings"
 )
 
 type Card struct {
-	Id             int       `json:"id"`
-	L1             string    `json:"l1"`
-	L2             string    `json:"l2"`
-	LastAnsweredAt null.Time `json:"lastAnsweredAt"`
-	Mnemonic12     string    `json:"mnemonic12"`
-	Mnemonic21     string    `json:"mnemonic21"`
-	NounGender     string    `json:"nounGender"`
-	Type           string    `json:"type"`
+	Id         int    `json:"id"`
+	L1         string `json:"l1"`
+	L2         string `json:"l2"`
+	Mnemonic12 string `json:"mnemonic12"`
+	Mnemonic21 string `json:"mnemonic21"`
+	NounGender string `json:"nounGender"`
+	Type       string `json:"type"`
 
 	Morphemes []Morpheme `json:"morphemes"`
 }
@@ -38,14 +36,13 @@ func (model *Model) cardRowToCard(row db.CardRow) Card {
 		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
 
 	return Card{
-		Id:             row.Id,
-		L1:             row.L1,
-		L2:             row.L2,
-		LastAnsweredAt: row.LastAnsweredAt,
-		Mnemonic12:     row.Mnemonic12,
-		Mnemonic21:     row.Mnemonic21,
-		NounGender:     row.NounGender,
-		Type:           row.Type,
+		Id:         row.Id,
+		L1:         row.L1,
+		L2:         row.L2,
+		Mnemonic12: row.Mnemonic12,
+		Mnemonic21: row.Mnemonic21,
+		NounGender: row.NounGender,
+		Type:       row.Type,
 
 		Morphemes: morphemes,
 	}
@@ -53,13 +50,12 @@ func (model *Model) cardRowToCard(row db.CardRow) Card {
 
 func cardToCardRow(card Card) db.CardRow {
 	return db.CardRow{
-		L1:             card.L1,
-		L2:             card.L2,
-		LastAnsweredAt: card.LastAnsweredAt,
-		Mnemonic12:     card.Mnemonic12,
-		Mnemonic21:     card.Mnemonic21,
-		NounGender:     card.NounGender,
-		Type:           card.Type,
+		L1:         card.L1,
+		L2:         card.L2,
+		Mnemonic12: card.Mnemonic12,
+		Mnemonic21: card.Mnemonic21,
+		NounGender: card.NounGender,
+		Type:       card.Type,
 
 		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	}
@@ -114,14 +110,13 @@ func (model *Model) ListCards(whereOrderLimit string) CardList {
 		}
 
 		card := Card{
-			Id:             cardRow.Id,
-			L1:             cardRow.L1,
-			L2:             cardRow.L2,
-			LastAnsweredAt: cardRow.LastAnsweredAt,
-			Mnemonic12:     cardRow.Mnemonic12,
-			Mnemonic21:     cardRow.Mnemonic21,
-			NounGender:     cardRow.NounGender,
-			Type:           cardRow.Type,
+			Id:         cardRow.Id,
+			L1:         cardRow.L1,
+			L2:         cardRow.L2,
+			Mnemonic12: cardRow.Mnemonic12,
+			Mnemonic21: cardRow.Mnemonic21,
+			NounGender: cardRow.NounGender,
+			Type:       cardRow.Type,
 
 			Morphemes: morphemes,
 		}
@@ -185,8 +180,4 @@ func (model *Model) saveCardsMorphemes(card Card) {
 func (model *Model) DeleteCardWithId(id int) {
 	where := fmt.Sprintf("WHERE id=%d", id)
 	db.DeleteFromCards(model.db, where)
-}
-
-func (model *Model) TouchCardLastAnsweredAt(cardId int) {
-	db.TouchCardLastAnsweredAt(model.db, cardId)
 }

@@ -14,7 +14,6 @@ CREATE TABLE cards (
   type              TEXT NOT NULL,
   l1                TEXT,
   l2                TEXT NOT NULL,
-  last_answered_at  DATETIME,
   mnemonic12        TEXT,
   mnemonic21        TEXT,
   morpheme_ids_csv  TEXT NOT NULL,
@@ -30,6 +29,16 @@ CREATE TABLE cards_morphemes (
 );
 CREATE INDEX idx_cards_morphemes_card_id ON cards_morphemes(card_id);
 CREATE INDEX idx_cards_morphemes_morpheme_id ON cards_morphemes(morpheme_id);
+
+DROP TABLE IF EXISTS answers;
+CREATE TABLE answers (
+  id          INTEGER PRIMARY KEY NOT NULL,
+  type        TEXT NOT NULL,
+  card_id     INTEGER NOT NULL,
+  answered_l2 TEXT,
+  answered_at DATETIME NOT NULL
+);
+CREATE INDEX idx_answers_card_id ON answers(card_id);
 EOF
 
 #$GOPATH/bin/load-subphrases-into-cards db/1_phrases.yaml db/db.sqlite3

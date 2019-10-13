@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"gopkg.in/guregu/null.v3"
 	"strings"
 	"time"
@@ -19,7 +18,7 @@ func EscapePtr(s *string) string {
 	return Escape(*s)
 }
 
-func EscapeNullString(s sql.NullString) string {
+func EscapeNullString(s null.String) string {
 	if !s.Valid {
 		return "NULL"
 	}

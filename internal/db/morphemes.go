@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"gopkg.in/guregu/null.v3"
 	"log"
 )
 
@@ -10,8 +11,8 @@ type MorphemeRow struct {
 	Id          int
 	Type        string
 	L2          string
-	Lemma       sql.NullString
-	FreelingTag sql.NullString
+	Lemma       null.String
+	FreelingTag null.String
 }
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
