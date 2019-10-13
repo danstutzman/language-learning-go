@@ -16,8 +16,10 @@ type Challenge struct {
 	CardId         int         `json:"cardId"`
 	AnsweredL2     null.String `json:"answeredL2"`
 	AnsweredAt     null.Time   `json:"answeredAt"`
-	ShowedMnemonic bool        `json:"showedMnemonic"`
-	Card           *Card       `json:"card"`
+	ShowedMnemonic null.Bool   `json:"showedMnemonic"`
+	Mnemonic       null.String `json:"mnemonic"`
+
+	Card *Card `json:"card"`
 }
 
 func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
@@ -28,6 +30,7 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 		AnsweredL2:     challenge.AnsweredL2,
 		AnsweredAt:     challenge.AnsweredAt,
 		ShowedMnemonic: challenge.ShowedMnemonic,
+		Mnemonic:       challenge.Mnemonic,
 	}
 }
 
@@ -39,7 +42,18 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 		AnsweredL2:     row.AnsweredL2,
 		AnsweredAt:     row.AnsweredAt,
 		ShowedMnemonic: row.ShowedMnemonic,
+		Mnemonic:       row.Mnemonic,
 	}
+}
+
+func (model *Model) challengeRowToChallengeJoinCard(
+	row db.ChallengeRow) Challenge {
+
+	challenge := challengeRowToChallenge(row)
+	cards := db.FromCards(model.db, fmt.Sprintf("WHERE id=%d", row.CardId))
+	card := model.cardRowToCard(cards[0])
+	challenge.Card = &card
+	return challenge
 }
 
 func (model *Model) ListChallenges() ChallengeList {
@@ -78,17 +92,11 @@ func (model *Model) ReplaceChallenge(challenge Challenge) {
 }
 
 func (model *Model) GetTopGiven1Type2Challenge() *Challenge {
-	cardId := db.GetTopGiven1Type2CardId(model.db)
-	if cardId == 0 {
+	challengeRows := db.FromChallenges(model.db, "ORDER BY answered_at")
+	if len(challengeRows) == 0 {
 		return nil
 	}
-
-	challengeRows := db.FromChallenges(model.db, "WHERE type='Given1Type2'")
-	challenge := challengeRowToChallenge(challengeRows[0])
-
-	cards := db.FromCards(model.db, fmt.Sprintf("WHERE id=%d", challenge.CardId))
-	card := model.cardRowToCard(cards[0])
-	challenge.Card = &card
+	challenge := model.challengeRowToChallengeJoinCard(challengeRows[0])
 
 	return &challenge
 }

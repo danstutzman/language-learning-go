@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/guregu/null.v3"
 	"io"
 	"log"
 	"os"
@@ -72,13 +73,19 @@ func main() {
 		mnemonic21 := values[mnemonic21Index]
 		nounGender := values[nounGenderIndex]
 
-		theModel.InsertCard(model.Card{
+		card := theModel.InsertCard(model.Card{
 			L1:         l1,
 			L2:         l2,
 			Mnemonic12: mnemonic12,
 			Mnemonic21: mnemonic21,
 			NounGender: nounGender,
 			Type:       "NOUN",
+		})
+
+		theModel.ReplaceChallenge(model.Challenge{
+			Type:     "Given1Type2",
+			CardId:   card.Id,
+			Mnemonic: null.StringFrom(mnemonic12),
 		})
 	}
 }

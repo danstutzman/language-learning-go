@@ -36,8 +36,9 @@ CREATE TABLE challenges (
   type            TEXT NOT NULL,
   card_id         INTEGER NOT NULL,
   answered_l2     TEXT,
-  answered_at     DATETIME NOT NULL,
-  showed_mnemonic BOOLEAN NOT NULL
+  answered_at     DATETIME,
+  showed_mnemonic BOOLEAN,
+  mnemonic        TEXT
 );
 CREATE UNIQUE INDEX idx_challenges_card_id_type ON challenges(card_id, type);
 EOF

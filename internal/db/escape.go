@@ -45,3 +45,11 @@ func EscapeBool(b bool) string {
 		return "FALSE"
 	}
 }
+
+func EscapeNullBool(b null.Bool) string {
+	if !b.Valid {
+		return "NULL"
+	}
+
+	return EscapeBool(b.Bool)
+}

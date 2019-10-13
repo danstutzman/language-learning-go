@@ -13,11 +13,13 @@ type ChallengeRow struct {
 	CardId         int
 	AnsweredL2     null.String
 	AnsweredAt     null.Time
-	ShowedMnemonic bool
+	ShowedMnemonic null.Bool
+	Mnemonic       null.String
 }
 
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
-	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic 
+	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic,
+	  mnemonic
 	  FROM challenges LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -32,7 +34,8 @@ func AssertChallengesHasCorrectSchema(db *sql.DB) {
 func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	rows := []ChallengeRow{}
 
-	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic
+	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic,
+	  mnemonic
 	  FROM challenges ` + where
 	if LOG {
 		log.Println(query)
@@ -49,7 +52,8 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 			&row.CardId,
 			&row.AnsweredL2,
 			&row.AnsweredAt,
-			&row.ShowedMnemonic)
+			&row.ShowedMnemonic,
+			&row.Mnemonic)
 		if err != nil {
 			panic(err)
 		}
@@ -66,11 +70,12 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 
 func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	query := fmt.Sprintf(`INSERT INTO challenges
-	(type, card_id, answered_l2, answered_at, showed_mnemonic)
-		VALUES (%s, %d, %s, %s, %s)`, Escape(challenge.Type), challenge.CardId,
+	(type, card_id, answered_l2, answered_at, showed_mnemonic, mnemonic)
+		VALUES (%s, %d, %s, %s, %s, %s)`, Escape(challenge.Type), challenge.CardId,
 		EscapeNullString(challenge.AnsweredL2),
 		EscapeNullTime(challenge.AnsweredAt),
-		EscapeBool(challenge.ShowedMnemonic))
+		EscapeNullBool(challenge.ShowedMnemonic),
+		EscapeNullString(challenge.Mnemonic))
 	if LOG {
 		log.Println(query)
 	}
@@ -87,28 +92,6 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	challenge.Id = int(id)
 
 	return challenge
-}
-
-func GetTopGiven1Type2CardId(db *sql.DB) int {
-	query := `SELECT card_id
-		FROM challenges
-    WHERE challenges.type = 'Given1Type2'
-		ORDER BY answered_at
-		LIMIT 1`
-	if LOG {
-		log.Println(query)
-	}
-
-	var cardId int
-	rset := db.QueryRow(query)
-	switch err := rset.Scan(&cardId); err {
-	case sql.ErrNoRows:
-		return 0
-	case nil:
-		return cardId
-	default:
-		panic(err)
-	}
 }
 
 func DeleteFromChallenges(db *sql.DB, where string) {
