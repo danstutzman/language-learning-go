@@ -42,13 +42,13 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			api.HandleListChallengesRequest(w, r)
 		} else if r.Method == "POST" {
-			api.HandleAnswerGiven1Type2Request(w, r)
+			api.HandleAnswerChallengeRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	} else if r.URL.Path == "/api/challenges/top" {
 		if r.Method == "GET" {
-			api.HandleGiven1Type2Request(w, r)
+			api.HandleGetTopChallengeRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

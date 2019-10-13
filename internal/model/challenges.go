@@ -14,6 +14,7 @@ type Challenge struct {
 	Id             int         `json:"id"`
 	Type           string      `json:"type"`
 	CardId         int         `json:"cardId"`
+	AnsweredL1     null.String `json:"answeredL1"`
 	AnsweredL2     null.String `json:"answeredL2"`
 	AnsweredAt     null.Time   `json:"answeredAt"`
 	ShowedMnemonic null.Bool   `json:"showedMnemonic"`
@@ -27,6 +28,7 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 		Id:             challenge.Id,
 		Type:           challenge.Type,
 		CardId:         challenge.CardId,
+		AnsweredL1:     challenge.AnsweredL1,
 		AnsweredL2:     challenge.AnsweredL2,
 		AnsweredAt:     challenge.AnsweredAt,
 		ShowedMnemonic: challenge.ShowedMnemonic,
@@ -39,6 +41,7 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 		Id:             row.Id,
 		Type:           row.Type,
 		CardId:         row.CardId,
+		AnsweredL1:     row.AnsweredL1,
 		AnsweredL2:     row.AnsweredL2,
 		AnsweredAt:     row.AnsweredAt,
 		ShowedMnemonic: row.ShowedMnemonic,
@@ -91,8 +94,9 @@ func (model *Model) ReplaceChallenge(challenge Challenge) {
 	db.InsertChallenge(model.db, challengeToChallengeRow(challenge))
 }
 
-func (model *Model) GetTopGiven1Type2Challenge() *Challenge {
-	challengeRows := db.FromChallenges(model.db, "ORDER BY answered_at")
+func (model *Model) GetTopChallenge(type_ string) *Challenge {
+	challengeRows := db.FromChallenges(model.db,
+		"WHERE type = "+db.Escape(type_)+" ORDER BY answered_at")
 	if len(challengeRows) == 0 {
 		return nil
 	}

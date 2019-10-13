@@ -23,13 +23,20 @@ func (api *Api) HandleListChallengesRequest(w http.ResponseWriter,
 	w.Write(bytes)
 }
 
-func (api *Api) HandleGiven1Type2Request(w http.ResponseWriter,
+func (api *Api) HandleGetTopChallengeRequest(w http.ResponseWriter,
 	r *http.Request) {
 
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	challenge := api.model.GetTopGiven1Type2Challenge()
+	type_ := r.URL.Query()["type"]
+	if len(type_) != 1 || type_[0] == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Bad Request"))
+		return
+	}
+
+	challenge := api.model.GetTopChallenge(type_[0])
 	if challenge == nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Not Found"))
@@ -43,7 +50,7 @@ func (api *Api) HandleGiven1Type2Request(w http.ResponseWriter,
 	w.Write(bytes)
 }
 
-func (api *Api) HandleAnswerGiven1Type2Request(w http.ResponseWriter,
+func (api *Api) HandleAnswerChallengeRequest(w http.ResponseWriter,
 	r *http.Request) {
 
 	setCORSHeaders(w)

@@ -73,8 +73,6 @@ func main() {
 		mnemonic21 := values[mnemonic21Index]
 		nounGender := values[nounGenderIndex]
 
-		_ = mnemonic21
-
 		card := theModel.InsertCard(model.Card{
 			L1:         l1,
 			L2:         l2,
@@ -86,6 +84,11 @@ func main() {
 			Type:     "Given1Type2",
 			CardId:   card.Id,
 			Mnemonic: null.StringFrom(mnemonic12),
+		})
+		theModel.ReplaceChallenge(model.Challenge{
+			Type:     "Given2Type1",
+			CardId:   card.Id,
+			Mnemonic: null.StringFrom(mnemonic21),
 		})
 	}
 }
