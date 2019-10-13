@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-func (api *Api) HandleListAnswersRequest(w http.ResponseWriter,
+func (api *Api) HandleListChallengesRequest(w http.ResponseWriter,
 	r *http.Request) {
 
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	answerList := api.model.ListAnswers()
+	answerList := api.model.ListChallenges()
 
 	bytes, err := json.Marshal(answerList)
 	if err != nil {
@@ -57,15 +57,15 @@ func (api *Api) HandleAnswerGiven1Type2Request(w http.ResponseWriter,
 	}
 	defer r.Body.Close()
 
-	var answer model.Answer
-	err = json.Unmarshal(body, &answer)
+	var challenge model.Challenge
+	err = json.Unmarshal(body, &challenge)
 	if err != nil {
 		panic(err)
 	}
 
-	api.model.ReplaceAnswer(answer)
+	api.model.ReplaceChallenge(challenge)
 
-	bytes, err := json.Marshal(answer)
+	bytes, err := json.Marshal(challenge)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}

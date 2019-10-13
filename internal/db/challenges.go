@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-type AnswerRow struct {
+type ChallengeRow struct {
 	Id             int
 	Type           string
 	CardId         int
@@ -16,9 +16,9 @@ type AnswerRow struct {
 	ShowedMnemonic bool
 }
 
-func AssertAnswersHasCorrectSchema(db *sql.DB) {
+func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic 
-	  FROM answers LIMIT 1`
+	  FROM challenges LIMIT 1`
 	if LOG {
 		log.Println(query)
 	}
@@ -29,11 +29,11 @@ func AssertAnswersHasCorrectSchema(db *sql.DB) {
 	}
 }
 
-func FromAnswers(db *sql.DB) []AnswerRow {
-	rows := []AnswerRow{}
+func FromChallenges(db *sql.DB) []ChallengeRow {
+	rows := []ChallengeRow{}
 
 	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic
-	  FROM answers `
+	  FROM challenges `
 	if LOG {
 		log.Println(query)
 	}
@@ -44,7 +44,7 @@ func FromAnswers(db *sql.DB) []AnswerRow {
 	defer rset.Close()
 
 	for rset.Next() {
-		var row AnswerRow
+		var row ChallengeRow
 		err = rset.Scan(&row.Id,
 			&row.CardId,
 			&row.AnsweredL2,
@@ -64,12 +64,13 @@ func FromAnswers(db *sql.DB) []AnswerRow {
 	return rows
 }
 
-func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
-	query := fmt.Sprintf(`INSERT INTO answers
+func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
+	query := fmt.Sprintf(`INSERT INTO challenges
 	(type, card_id, answered_l2, answered_at, showed_mnemonic)
-		VALUES (%s, %d, %s, %s, %s)`, Escape(answer.Type), answer.CardId,
-		EscapeNullString(answer.AnsweredL2), EscapeNullTime(answer.AnsweredAt),
-		EscapeBool(answer.ShowedMnemonic))
+		VALUES (%s, %d, %s, %s, %s)`, Escape(challenge.Type), challenge.CardId,
+		EscapeNullString(challenge.AnsweredL2),
+		EscapeNullTime(challenge.AnsweredAt),
+		EscapeBool(challenge.ShowedMnemonic))
 	if LOG {
 		log.Println(query)
 	}
@@ -83,18 +84,18 @@ func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
 	if err != nil {
 		panic(err)
 	}
-	answer.Id = int(id)
+	challenge.Id = int(id)
 
-	return answer
+	return challenge
 }
 
 func GetTopGiven1Type2CardId(db *sql.DB) int {
 	query := `SELECT cards.id
 	  FROM cards
-	  LEFT JOIN answers ON answers.card_id = cards.id
-  		AND answers.type = 'Given1Type2'
+	  LEFT JOIN challenges ON challenges.card_id = cards.id
+  		AND challenges.type = 'Given1Type2'
 		GROUP BY cards.id
-		ORDER BY answers.answered_at
+		ORDER BY challenges.answered_at
 		LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -112,8 +113,8 @@ func GetTopGiven1Type2CardId(db *sql.DB) int {
 	}
 }
 
-func DeleteFromAnswers(db *sql.DB, where string) {
-	query := "DELETE FROM answers " + where
+func DeleteFromChallenges(db *sql.DB, where string) {
+	query := "DELETE FROM challenges " + where
 	if LOG {
 		log.Println(query)
 	}
