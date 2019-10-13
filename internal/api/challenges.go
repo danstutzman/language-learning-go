@@ -29,16 +29,14 @@ func (api *Api) HandleGiven1Type2Request(w http.ResponseWriter,
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	cardId := api.model.GetTopGiven1Type2CardId()
-	if cardId == 0 {
+	challenge := api.model.GetTopGiven1Type2Challenge()
+	if challenge == nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Not Found"))
 		return
 	}
 
-	card := api.model.GetCard(cardId)
-
-	bytes, err := json.Marshal(card)
+	bytes, err := json.Marshal(challenge)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}

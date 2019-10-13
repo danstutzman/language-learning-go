@@ -24,17 +24,6 @@ type CardList struct {
 }
 
 func (model *Model) cardRowToCard(row db.CardRow) Card {
-	cardsMorphemes := db.FromCardsMorphemes(model.db,
-		fmt.Sprintf("WHERE card_id=%d", row.Id))
-
-	morphemeIds := []int{}
-	for _, cardsMorphemes := range cardsMorphemes {
-		morphemeIds = append(morphemeIds, cardsMorphemes.MorphemeId)
-	}
-
-	morphemes := morphemeRowsToMorphemes(
-		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
-
 	return Card{
 		Id:         row.Id,
 		L1:         row.L1,
@@ -43,9 +32,25 @@ func (model *Model) cardRowToCard(row db.CardRow) Card {
 		Mnemonic21: row.Mnemonic21,
 		NounGender: row.NounGender,
 		Type:       row.Type,
-
-		Morphemes: morphemes,
+		Morphemes:  []Morpheme{},
 	}
+}
+
+func (model *Model) cardRowToCardJoinMorphemes(row db.CardRow) Card {
+	card := model.cardRowToCard(row)
+
+	cardsMorphemes := db.FromCardsMorphemes(model.db,
+		fmt.Sprintf("WHERE card_id=%d", row.Id))
+
+	morphemeIds := []int{}
+	for _, cardsMorphemes := range cardsMorphemes {
+		morphemeIds = append(morphemeIds, cardsMorphemes.MorphemeId)
+	}
+
+	card.Morphemes = morphemeRowsToMorphemes(
+		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
+
+	return card
 }
 
 func cardToCardRow(card Card) db.CardRow {
@@ -61,7 +66,7 @@ func cardToCardRow(card Card) db.CardRow {
 	}
 }
 
-func (model *Model) GetCard(id int) *Card {
+func (model *Model) GetCardJoinMorphemes(id int) *Card {
 	cardRows := db.FromCards(model.db, fmt.Sprintf("WHERE id=%d", id))
 	if len(cardRows) == 0 {
 		return nil
@@ -69,20 +74,19 @@ func (model *Model) GetCard(id int) *Card {
 		panic("Too many cards")
 	}
 	cardRow := cardRows[0]
-	card := model.cardRowToCard(cardRow)
+	card := model.cardRowToCardJoinMorphemes(cardRow)
 
 	return &card
 }
 
-func (model *Model) ListCards(whereOrderLimit string) CardList {
-	cardRows := db.FromCards(model.db, whereOrderLimit)
-
+func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 	cardIds := []int{}
 	for _, cardRow := range cardRows {
 		cardIds = append(cardIds, cardRow.Id)
 	}
 
-	cardsMorphemes := db.FromCardsMorphemes(model.db, "WHERE "+db.InIntList("card_id", cardIds))
+	cardsMorphemes := db.FromCardsMorphemes(model.db,
+		"WHERE "+db.InIntList("card_id", cardIds))
 
 	allMorphemeIds := []int{}
 	morphemeIdsByCardId := map[int][]int{}
@@ -91,7 +95,8 @@ func (model *Model) ListCards(whereOrderLimit string) CardList {
 		morphemeId := cardsMorphemes.MorphemeId
 
 		allMorphemeIds = append(allMorphemeIds, morphemeId)
-		morphemeIdsByCardId[cardId] = append(morphemeIdsByCardId[cardId], morphemeId)
+		morphemeIdsByCardId[cardId] =
+			append(morphemeIdsByCardId[cardId], morphemeId)
 	}
 
 	allMorphemeRows := db.FromMorphemes(model.db,
@@ -122,6 +127,13 @@ func (model *Model) ListCards(whereOrderLimit string) CardList {
 		}
 		cards = append(cards, card)
 	}
+	return cards
+}
+
+func (model *Model) ListCardsJoinMorphemes(whereOrderLimit string) CardList {
+	cardRows := db.FromCards(model.db, whereOrderLimit)
+
+	cards := model.cardRowsToCardsJoinMorphemes(cardRows)
 
 	return CardList{Cards: cards}
 }

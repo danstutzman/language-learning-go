@@ -17,7 +17,7 @@ func (api *Api) HandleListCardsRequest(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	cardList := api.model.ListCards("")
+	cardList := api.model.ListCardsJoinMorphemes("")
 
 	bytes, err := json.Marshal(cardList)
 	if err != nil {
@@ -31,7 +31,7 @@ func (api *Api) HandleShowCardRequest(w http.ResponseWriter, r *http.Request,
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	card := api.model.GetCard(cardId)
+	card := api.model.GetCardJoinMorphemes(cardId)
 	if card == nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Not Found"))

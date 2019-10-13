@@ -17,6 +17,7 @@ type Challenge struct {
 	AnsweredL2     null.String `json:"answeredL2"`
 	AnsweredAt     null.Time   `json:"answeredAt"`
 	ShowedMnemonic bool        `json:"showedMnemonic"`
+	Card           *Card       `json:"card"`
 }
 
 func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
@@ -42,11 +43,28 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 }
 
 func (model *Model) ListChallenges() ChallengeList {
-	challengeRows := db.FromChallenges(model.db)
+	challengeRows := db.FromChallenges(model.db, "")
 
 	challenges := []Challenge{}
 	for _, challengeRow := range challengeRows {
 		challenges = append(challenges, challengeRowToChallenge(challengeRow))
+	}
+
+	cardIds := []int{}
+	for _, challenge := range challenges {
+		cardIds = append(cardIds, challenge.CardId)
+	}
+
+	cardRows := db.FromCards(model.db, "WHERE "+db.InIntList("id", cardIds))
+
+	cardById := map[int]Card{}
+	for _, row := range cardRows {
+		cardById[row.Id] = model.cardRowToCardJoinMorphemes(row)
+	}
+
+	for i, _ := range challenges {
+		card := cardById[challenges[i].CardId]
+		challenges[i].Card = &card
 	}
 
 	return ChallengeList{Challenges: challenges}
@@ -59,6 +77,18 @@ func (model *Model) ReplaceChallenge(challenge Challenge) {
 	db.InsertChallenge(model.db, challengeToChallengeRow(challenge))
 }
 
-func (model *Model) GetTopGiven1Type2CardId() int {
-	return db.GetTopGiven1Type2CardId(model.db)
+func (model *Model) GetTopGiven1Type2Challenge() *Challenge {
+	cardId := db.GetTopGiven1Type2CardId(model.db)
+	if cardId == 0 {
+		return nil
+	}
+
+	challengeRows := db.FromChallenges(model.db, "WHERE type='Given1Type2'")
+	challenge := challengeRowToChallenge(challengeRows[0])
+
+	cards := db.FromCards(model.db, fmt.Sprintf("WHERE id=%d", challenge.CardId))
+	card := model.cardRowToCard(cards[0])
+	challenge.Card = &card
+
+	return &challenge
 }

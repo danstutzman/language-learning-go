@@ -29,11 +29,11 @@ func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	}
 }
 
-func FromChallenges(db *sql.DB) []ChallengeRow {
+func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	rows := []ChallengeRow{}
 
 	query := `SELECT id, card_id, answered_l2, answered_at, showed_mnemonic
-	  FROM challenges `
+	  FROM challenges ` + where
 	if LOG {
 		log.Println(query)
 	}
@@ -90,12 +90,10 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 }
 
 func GetTopGiven1Type2CardId(db *sql.DB) int {
-	query := `SELECT cards.id
-	  FROM cards
-	  LEFT JOIN challenges ON challenges.card_id = cards.id
-  		AND challenges.type = 'Given1Type2'
-		GROUP BY cards.id
-		ORDER BY challenges.answered_at
+	query := `SELECT card_id
+		FROM challenges
+    WHERE challenges.type = 'Given1Type2'
+		ORDER BY answered_at
 		LIMIT 1`
 	if LOG {
 		log.Println(query)
