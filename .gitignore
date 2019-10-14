@@ -1,3 +1,4 @@
 /db/db.sqlite3
 /db/1_parses
+/db/4_corpus_scrapes
 .*.swp
