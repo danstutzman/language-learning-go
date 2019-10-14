@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2+1 || strings.TrimSpace(os.Args[1]) == "" {
-		log.Fatalf("1st arg: x2 or x3")
+		log.Fatalf("1st arg: search-list, search-collocates, or see-context")
 		log.Fatalf("2nd arg: query (for example: 'cara J')")
 	}
 	page := os.Args[1]
@@ -23,13 +23,32 @@ func main() {
 	var err error
 	if page == "x2" {
 		params := url.Values{}
-		params.Add("chooser", "seq")
-		params.Add("wl", "4")
-		params.Add("wr", "4")
-		params.Add("p", query)
-		params.Add("sortBy", "freq")
-		params.Add("numhits", "100")
-		params.Add("groupBy", "words")
+		if true {
+			// if search-collocates
+			params.Add("chooser", "collocates")
+			params.Add("wl", "4")
+			params.Add("wr", "4")
+			params.Add("p", query)
+			params.Add("w2", "*")
+			params.Add("sortBy", "freq")
+			params.Add("sortByDo2", "freq")
+			params.Add("minfreq1", "mi")
+			params.Add("limfreq1", "ON")
+			params.Add("freq1", "3")
+			params.Add("freq2", "0")
+			params.Add("numhits", "100")
+			params.Add("kh", "200")
+			params.Add("groupBy", "words")
+		} else {
+			// if search-list
+			params.Add("chooser", "seq")
+			params.Add("wl", "4")
+			params.Add("wr", "4")
+			params.Add("p", query)
+			params.Add("sortBy", "freq")
+			params.Add("numhits", "100")
+			params.Add("groupBy", "words")
+		}
 
 		req, err = http.NewRequest("POST",
 			"https://www.corpusdelespanol.org/now/x2.asp",
@@ -41,8 +60,10 @@ func main() {
 			panic(err)
 		}
 	} else if page == "x3" {
+		// if click see-context for search-list
+
 		params := url.Values{}
-		params.Add("xx", "1")
+		params.Add("xx", "1") // this is the number row that was clicked on?
 		params.Add("w11", "cara")
 		//params.Add("w12", "nueva.[n*]")
 		params.Add("w12", "es")
