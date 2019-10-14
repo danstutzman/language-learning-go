@@ -13,7 +13,10 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
+
+var ZERO_TIME = time.Time{}
 
 func main() {
 	if len(os.Args) != 2+1 { // Args[0] is name of program
@@ -80,15 +83,21 @@ func main() {
 			Type:       "NOUN",
 		})
 
-		theModel.ReplaceChallenge(model.Challenge{
-			Type:     "Given1Type2",
-			CardId:   card.Id,
-			Mnemonic: null.StringFrom(mnemonic12),
+		theModel.InsertChallenge(model.Challenge{
+			Type:   "Given1Type2",
+			CardId: card.Id,
+
+			Expectation: "NO_MNEMONIC",
+			HideUntil:   ZERO_TIME,
+			Mnemonic:    null.StringFrom(mnemonic12),
 		})
-		theModel.ReplaceChallenge(model.Challenge{
-			Type:     "Given2Type1",
-			CardId:   card.Id,
-			Mnemonic: null.StringFrom(mnemonic21),
+		theModel.InsertChallenge(model.Challenge{
+			Type:   "Given2Type1",
+			CardId: card.Id,
+
+			Expectation: "NO_MNEMONIC",
+			HideUntil:   ZERO_TIME,
+			Mnemonic:    null.StringFrom(mnemonic21),
 		})
 	}
 }

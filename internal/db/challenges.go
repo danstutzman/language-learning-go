@@ -5,23 +5,46 @@ import (
 	"fmt"
 	"gopkg.in/guregu/null.v3"
 	"log"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type ChallengeRow struct {
-	Id             int
-	Type           string
-	CardId         int
+	Id     int
+	Type   string
+	CardId int
+
+	Expectation string
+	HideUntil   time.Time
+	Mnemonic    null.String
+
 	AnsweredL1     null.String
 	AnsweredL2     null.String
 	AnsweredAt     null.Time
 	ShowedMnemonic null.Bool
-	Mnemonic       null.String
+
+	Grade null.String
+}
+
+type ChallengeUpdate struct {
+	Id int
+
+	AnsweredL1     null.String
+	AnsweredL2     null.String
+	AnsweredAt     null.Time
+	ShowedMnemonic null.Bool
+
+	Grade null.String
 }
 
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
-	query := `SELECT id, type, card_id, answered_l1, answered_l2, answered_at,
-	  showed_mnemonic, mnemonic
-	  FROM challenges LIMIT 1`
+	query := `SELECT id, type, card_id,
+  		expectation, hide_until, mnemonic,
+	    answered_l1, answered_l2, answered_at, showed_mnemonic
+		  grade
+	  FROM challenges
+		LIMIT 1`
 	if LOG {
 		log.Println(query)
 	}
@@ -35,8 +58,10 @@ func AssertChallengesHasCorrectSchema(db *sql.DB) {
 func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	rows := []ChallengeRow{}
 
-	query := `SELECT id, type, card_id, answered_l1, answered_l2, answered_at,
-	  showed_mnemonic, mnemonic
+	query := `SELECT id, type, card_id,
+  	expectation, hide_until, mnemonic,
+	  answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  grade
 	  FROM challenges ` + where
 	if LOG {
 		log.Println(query)
@@ -49,14 +74,10 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 
 	for rset.Next() {
 		var row ChallengeRow
-		err = rset.Scan(&row.Id,
-			&row.Type,
-			&row.CardId,
-			&row.AnsweredL1,
-			&row.AnsweredL2,
-			&row.AnsweredAt,
-			&row.ShowedMnemonic,
-			&row.Mnemonic)
+		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
+			&row.Expectation, &row.HideUntil, &row.Mnemonic,
+			&row.AnsweredL1, &row.AnsweredL2, &row.AnsweredAt, &row.ShowedMnemonic,
+			&row.Grade)
 		if err != nil {
 			panic(err)
 		}
@@ -73,16 +94,29 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 
 func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	query := fmt.Sprintf(`INSERT INTO challenges
-	(type, card_id, answered_l1, answered_l2, answered_at, showed_mnemonic,
-	  mnemonic)
-		VALUES (%s, %d, %s, %s, %s, %s, %s)`,
+	(type, card_id, grade,
+		expectation, hide_until, mnemonic,
+	  answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  grade)
+		VALUES (%s, %d, %s,
+		  %s, %s, %s,
+		  %s, %s, %s, %s,
+			%s)`,
 		Escape(challenge.Type),
 		challenge.CardId,
+		EscapeNullString(challenge.Grade),
+
+		Escape(challenge.Expectation),
+		EscapeTime(challenge.HideUntil),
+		EscapeNullString(challenge.Mnemonic),
+
 		EscapeNullString(challenge.AnsweredL1),
 		EscapeNullString(challenge.AnsweredL2),
 		EscapeNullTime(challenge.AnsweredAt),
 		EscapeNullBool(challenge.ShowedMnemonic),
-		EscapeNullString(challenge.Mnemonic))
+
+		EscapeNullString(challenge.Grade))
+
 	if LOG {
 		log.Println(query)
 	}
@@ -99,6 +133,42 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	challenge.Id = int(id)
 
 	return challenge
+}
+
+func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
+	pairs := []string{}
+	if update.AnsweredL1.Valid {
+		pairs = append(pairs, "answered_l1="+EscapeNullString(update.AnsweredL1))
+	}
+	if update.AnsweredL2.Valid {
+		pairs = append(pairs, "answered_l2="+EscapeNullString(update.AnsweredL2))
+	}
+	if update.AnsweredAt.Valid {
+		pairs = append(pairs, "answered_at="+EscapeNullTime(update.AnsweredAt))
+	}
+	if update.Grade.Valid {
+		pairs = append(pairs, "grade="+EscapeNullString(update.Grade))
+	}
+	if update.ShowedMnemonic.Valid {
+		pairs = append(pairs, "showed_mnemonic="+
+			EscapeNullBool(update.ShowedMnemonic))
+	}
+
+	if len(pairs) == 0 {
+		return
+	}
+
+	query := "UPDATE challenges SET " +
+		strings.Join(pairs, ", ") +
+		" WHERE id=" + strconv.Itoa(update.Id)
+	if LOG {
+		log.Println(query)
+	}
+
+	_, err := db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func DeleteFromChallenges(db *sql.DB, where string) {

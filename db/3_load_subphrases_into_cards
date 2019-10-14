@@ -33,13 +33,18 @@ CREATE TABLE challenges (
   id              INTEGER PRIMARY KEY NOT NULL,
   type            TEXT NOT NULL,
   card_id         INTEGER NOT NULL,
+
+  expectation     TEXT NOT NULL,
+  hide_until      DATETIME NOT NULL,
+  mnemonic        TEXT,
+
   answered_l1     TEXT,
   answered_l2     TEXT,
   answered_at     DATETIME,
   showed_mnemonic BOOLEAN,
-  mnemonic        TEXT
+
+  grade           TEXT
 );
-CREATE UNIQUE INDEX idx_challenges_card_id_type ON challenges(card_id, type);
 EOF
 
 #$GOPATH/bin/load-subphrases-into-cards db/1_phrases.yaml db/db.sqlite3

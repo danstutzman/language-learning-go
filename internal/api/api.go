@@ -21,7 +21,8 @@ func NewApi(model *model.Model, googleTranslateApiKey string) *Api {
 
 func setCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Methods",
+		"DELETE, GET, PATCH, POST, PUT")
 }
 
 func MustAtoi(s string) int {
@@ -41,8 +42,16 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/api/challenges" {
 		if r.Method == "GET" {
 			api.HandleListChallengesRequest(w, r)
-		} else if r.Method == "POST" {
-			api.HandleAnswerChallengeRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else if match := regexp.MustCompile(
+		`^/api/challenges/(-?[0-9]+)$`).FindStringSubmatch(r.URL.Path); match != nil {
+		challengeId := MustAtoi(match[1])
+		if r.Method == "GET" {
+			api.HandleListChallengesRequest(w, r)
+		} else if r.Method == "PATCH" {
+			api.HandleAnswerChallengeRequest(w, r, challengeId)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

@@ -27,7 +27,7 @@ func EscapeNullString(s null.String) string {
 }
 
 func EscapeTime(time time.Time) string {
-	return "'" + time.Format("2006-01-02T15:04:05Z") + "'"
+	return "'" + time.UTC().Format("2006-01-02T15:04:05Z") + "'"
 }
 
 func EscapeNullTime(time null.Time) string {

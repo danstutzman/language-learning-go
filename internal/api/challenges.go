@@ -1,7 +1,7 @@
 package api
 
 import (
-	"bitbucket.org/danstutzman/language-learning-go/internal/model"
+	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -51,7 +51,7 @@ func (api *Api) HandleGetTopChallengeRequest(w http.ResponseWriter,
 }
 
 func (api *Api) HandleAnswerChallengeRequest(w http.ResponseWriter,
-	r *http.Request) {
+	r *http.Request, challengeId int) {
 
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
@@ -62,15 +62,15 @@ func (api *Api) HandleAnswerChallengeRequest(w http.ResponseWriter,
 	}
 	defer r.Body.Close()
 
-	var challenge model.Challenge
-	err = json.Unmarshal(body, &challenge)
+	var update db.ChallengeUpdate
+	err = json.Unmarshal(body, &update)
 	if err != nil {
 		panic(err)
 	}
 
-	api.model.ReplaceChallenge(challenge)
+	updatedChallenge := api.model.UpdateChallengeAndCreateNew(update)
 
-	bytes, err := json.Marshal(challenge)
+	bytes, err := json.Marshal(updatedChallenge)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}
