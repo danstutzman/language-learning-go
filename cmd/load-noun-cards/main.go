@@ -73,27 +73,13 @@ func main() {
 		mnemonic21 := values[mnemonic21Index]
 		nounGender := values[nounGenderIndex]
 
-		card := theModel.InsertCard(model.Card{
+		theModel.InsertCard(model.Card{
 			L1:         l1,
 			L2:         l2,
 			Mnemonic12: null.StringFrom(mnemonic12),
 			Mnemonic21: null.StringFrom(mnemonic21),
 			NounGender: null.StringFrom(nounGender),
 			Type:       "NOUN",
-		})
-
-		theModel.InsertChallenge(model.Challenge{
-			Type:   "Given1Type2",
-			CardId: card.Id,
-
-			Expectation: "NO_MNEMONIC",
-		})
-
-		theModel.InsertChallenge(model.Challenge{
-			Type:   "Given2Type1",
-			CardId: card.Id,
-
-			Expectation: "NO_MNEMONIC",
 		})
 	}
 }

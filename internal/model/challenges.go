@@ -4,7 +4,9 @@ import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"fmt"
 	"gopkg.in/guregu/null.v3"
+	"sort"
 	"strconv"
+	"time"
 )
 
 type ChallengeList struct {
@@ -73,7 +75,7 @@ func (model *Model) challengeRowToChallengeJoinCard(
 
 func (model *Model) ListChallenges() ChallengeList {
 	challengeRows := db.FromChallenges(model.db,
-		"WHERE type='Given2Type1' ORDER BY card_id")
+		"WHERE type='Given2Type1' ORDER BY card_id, id")
 
 	challenges := []Challenge{}
 	for _, challengeRow := range challengeRows {
@@ -113,13 +115,31 @@ func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
 }
 
 func (model *Model) GetTopChallenge(type_ string) *Challenge {
-	where := "WHERE type = " + db.Escape(type_) +
-		" AND answered_at IS NULL"
-	challengeRows := db.FromChallenges(model.db, where)
-	if len(challengeRows) == 0 {
-		return nil
-	}
-	challenge := model.challengeRowToChallengeJoinCard(challengeRows[0])
+	challenges := db.FromChallenges(model.db,
+		"WHERE type="+db.Escape(type_))
 
-	return &challenge
+	lastAnsweredAtByCardId := map[int]time.Time{}
+	for _, challenge := range challenges {
+		cardId := challenge.CardId
+		answeredAt := challenge.AnsweredAt.Time
+
+		if answeredAt.After(lastAnsweredAtByCardId[cardId]) {
+			lastAnsweredAtByCardId[cardId] = answeredAt
+		}
+	}
+
+	cards := db.FromCards(model.db, "")
+	sort.Slice(cards, func(i, j int) bool {
+		return lastAnsweredAtByCardId[cards[i].Id].Before(
+			lastAnsweredAtByCardId[cards[j].Id])
+	})
+	card := cards[0]
+
+	newChallenge := model.challengeRowToChallengeJoinCard(
+		db.InsertChallenge(model.db, db.ChallengeRow{
+			Type:   type_,
+			CardId: card.Id,
+		}))
+
+	return &newChallenge
 }
