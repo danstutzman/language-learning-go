@@ -115,6 +115,13 @@
 			"tree": true
 		},
 		{
+			"checksumSHA1": "kQaoRMduod6IOjBBdWgp6YGMGis=",
+			"path": "github.com/paulrosania/go-charset",
+			"revision": "55c9d7a5834c4d034b34bf042103dbc646887f4f",
+			"revisionTime": "2019-03-26T05:33:56Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "wRhNUFKjZsR7+vNxxmiW9LH2AU8=",
 			"path": "github.com/shurcool/httpgzip",
 			"revision": "b1c53ac65af9fd3d354d6f9ad30a0cca35e173ed",
