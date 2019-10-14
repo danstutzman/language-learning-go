@@ -17,7 +17,6 @@ type ChallengeRow struct {
 
 	Expectation string
 	HideUntil   time.Time
-	Mnemonic    null.String
 
 	AnsweredL1     null.String
 	AnsweredL2     null.String
@@ -40,7 +39,7 @@ type ChallengeUpdate struct {
 
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, type, card_id,
-  		expectation, hide_until, mnemonic,
+  		expectation, hide_until,
 	    answered_l1, answered_l2, answered_at, showed_mnemonic
 		  grade
 	  FROM challenges
@@ -59,7 +58,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	rows := []ChallengeRow{}
 
 	query := `SELECT id, type, card_id,
-  	expectation, hide_until, mnemonic,
+  	expectation, hide_until,
 	  answered_l1, answered_l2, answered_at, showed_mnemonic,
 	  grade
 	  FROM challenges ` + where
@@ -75,7 +74,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	for rset.Next() {
 		var row ChallengeRow
 		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
-			&row.Expectation, &row.HideUntil, &row.Mnemonic,
+			&row.Expectation, &row.HideUntil,
 			&row.AnsweredL1, &row.AnsweredL2, &row.AnsweredAt, &row.ShowedMnemonic,
 			&row.Grade)
 		if err != nil {
@@ -95,11 +94,11 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	query := fmt.Sprintf(`INSERT INTO challenges
 	(type, card_id, grade,
-		expectation, hide_until, mnemonic,
+		expectation, hide_until,
 	  answered_l1, answered_l2, answered_at, showed_mnemonic,
 	  grade)
 		VALUES (%s, %d, %s,
-		  %s, %s, %s,
+		  %s, %s,
 		  %s, %s, %s, %s,
 			%s)`,
 		Escape(challenge.Type),
@@ -108,7 +107,6 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 
 		Escape(challenge.Expectation),
 		EscapeTime(challenge.HideUntil),
-		EscapeNullString(challenge.Mnemonic),
 
 		EscapeNullString(challenge.AnsweredL1),
 		EscapeNullString(challenge.AnsweredL2),

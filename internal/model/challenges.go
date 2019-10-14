@@ -18,9 +18,8 @@ type Challenge struct {
 	CardId int    `json:"cardId"`
 	Card   *Card  `json:"card"`
 
-	Expectation string      `json:"expectation"`
-	HideUntil   time.Time   `json:"hideUntil"`
-	Mnemonic    null.String `json:"mnemonic"`
+	Expectation string    `json:"expectation"`
+	HideUntil   time.Time `json:"hideUntil"`
 
 	AnsweredL1     null.String `json:"answeredL1"`
 	AnsweredL2     null.String `json:"answeredL2"`
@@ -38,7 +37,6 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 
 		Expectation: challenge.Expectation,
 		HideUntil:   challenge.HideUntil,
-		Mnemonic:    challenge.Mnemonic,
 
 		AnsweredL1:     challenge.AnsweredL1,
 		AnsweredL2:     challenge.AnsweredL2,
@@ -57,7 +55,6 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 
 		Expectation: row.Expectation,
 		HideUntil:   row.HideUntil,
-		Mnemonic:    row.Mnemonic,
 
 		AnsweredL1:     row.AnsweredL1,
 		AnsweredL2:     row.AnsweredL2,
@@ -129,7 +126,6 @@ func (model *Model) UpdateChallengeAndCreateNew(
 			Expectation: oldChallenge.Expectation,
 			// HideUntil:   time.Now().UTC().AddDate(0, 0, 1),
 			HideUntil: time.Now().UTC().Add(time.Minute * time.Duration(1)),
-			Mnemonic:  oldChallenge.Mnemonic,
 		})
 	}
 

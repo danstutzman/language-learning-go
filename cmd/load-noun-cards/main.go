@@ -8,7 +8,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"gopkg.in/guregu/null.v3"
 	"io"
 	"log"
 	"os"
@@ -89,16 +88,18 @@ func main() {
 
 			Expectation: "NO_MNEMONIC",
 			HideUntil:   ZERO_TIME,
-			Mnemonic:    null.StringFrom(mnemonic12),
 		})
+
 		theModel.InsertChallenge(model.Challenge{
 			Type:   "Given2Type1",
 			CardId: card.Id,
 
 			Expectation: "NO_MNEMONIC",
 			HideUntil:   ZERO_TIME,
-			Mnemonic:    null.StringFrom(mnemonic21),
 		})
+
+		_ = mnemonic12
+		_ = mnemonic21
 	}
 }
 

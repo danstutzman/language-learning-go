@@ -36,7 +36,6 @@ CREATE TABLE challenges (
 
   expectation     TEXT NOT NULL,
   hide_until      DATETIME NOT NULL,
-  mnemonic        TEXT,
 
   answered_l1     TEXT,
   answered_l2     TEXT,
