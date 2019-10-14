@@ -37,7 +37,6 @@ CREATE TABLE challenges (
   card_id         INTEGER NOT NULL,
 
   expectation     TEXT NOT NULL,
-  hide_until      DATETIME NOT NULL,
 
   answered_l1     TEXT,
   answered_l2     TEXT,

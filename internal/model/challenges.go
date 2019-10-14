@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gopkg.in/guregu/null.v3"
 	"strconv"
-	"time"
 )
 
 type ChallengeList struct {
@@ -18,8 +17,7 @@ type Challenge struct {
 	CardId int    `json:"cardId"`
 	Card   *Card  `json:"card"`
 
-	Expectation string    `json:"expectation"`
-	HideUntil   time.Time `json:"hideUntil"`
+	Expectation string `json:"expectation"`
 
 	AnsweredL1     null.String `json:"answeredL1"`
 	AnsweredL2     null.String `json:"answeredL2"`
@@ -36,7 +34,6 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 		CardId: challenge.CardId,
 
 		Expectation: challenge.Expectation,
-		HideUntil:   challenge.HideUntil,
 
 		AnsweredL1:     challenge.AnsweredL1,
 		AnsweredL2:     challenge.AnsweredL2,
@@ -54,7 +51,6 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 		CardId: row.CardId,
 
 		Expectation: row.Expectation,
-		HideUntil:   row.HideUntil,
 
 		AnsweredL1:     row.AnsweredL1,
 		AnsweredL2:     row.AnsweredL2,
@@ -108,34 +104,17 @@ func (model *Model) InsertChallenge(challenge Challenge) {
 	db.InsertChallenge(model.db, challengeToChallengeRow(challenge))
 }
 
-// Returns old (updated) challenge, not the new challenge
-func (model *Model) UpdateChallengeAndCreateNew(
-	update db.ChallengeUpdate) Challenge {
-
+func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
 	db.UpdateChallenge(model.db, update)
 
 	challengeRows := db.FromChallenges(model.db,
 		"WHERE id="+strconv.Itoa(update.Id))
-	oldChallenge := challengeRowToChallenge(challengeRows[0])
-
-	if update.Grade.String == "RIGHT" {
-		db.InsertChallenge(model.db, db.ChallengeRow{
-			Type:   oldChallenge.Type,
-			CardId: oldChallenge.CardId,
-
-			Expectation: oldChallenge.Expectation,
-			// HideUntil:   time.Now().UTC().AddDate(0, 0, 1),
-			HideUntil: time.Now().UTC().Add(time.Minute * time.Duration(1)),
-		})
-	}
-
-	return oldChallenge
+	return challengeRowToChallenge(challengeRows[0])
 }
 
 func (model *Model) GetTopChallenge(type_ string) *Challenge {
 	where := "WHERE type = " + db.Escape(type_) +
-		" AND answered_at IS NULL" +
-		" AND STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'now') >= HIDE_UNTIL"
+		" AND answered_at IS NULL"
 	challengeRows := db.FromChallenges(model.db, where)
 	if len(challengeRows) == 0 {
 		return nil

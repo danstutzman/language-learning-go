@@ -68,9 +68,9 @@ func (api *Api) HandleAnswerChallengeRequest(w http.ResponseWriter,
 		panic(err)
 	}
 
-	updatedChallenge := api.model.UpdateChallengeAndCreateNew(update)
+	challenge := api.model.UpdateChallenge(update)
 
-	bytes, err := json.Marshal(updatedChallenge)
+	bytes, err := json.Marshal(challenge)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}

@@ -13,10 +13,7 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 )
-
-var ZERO_TIME = time.Time{}
 
 func main() {
 	if len(os.Args) != 2+1 { // Args[0] is name of program
@@ -90,7 +87,6 @@ func main() {
 			CardId: card.Id,
 
 			Expectation: "NO_MNEMONIC",
-			HideUntil:   ZERO_TIME,
 		})
 
 		theModel.InsertChallenge(model.Challenge{
@@ -98,7 +94,6 @@ func main() {
 			CardId: card.Id,
 
 			Expectation: "NO_MNEMONIC",
-			HideUntil:   ZERO_TIME,
 		})
 	}
 }
