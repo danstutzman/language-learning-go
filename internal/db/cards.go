@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"gopkg.in/guregu/null.v3"
 	"log"
 )
 
@@ -10,13 +11,16 @@ type CardRow struct {
 	Id             int
 	L1             string
 	L2             string
+	Mnemonic12     null.String
+	Mnemonic21     null.String
 	MorphemeIdsCsv string
-	NounGender     string
+	NounGender     null.String
 	Type           string
 }
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
-	query := `SELECT id, l1, l2, morpheme_ids_csv, noun_gender, type
+	query := `SELECT id, l1, l2, mnemonic12, mnemonic21, morpheme_ids_csv,
+	  noun_gender, type
 		FROM cards LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -31,7 +35,7 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	rows := []CardRow{}
 
-	query := `SELECT id, l1, l2,
+	query := `SELECT id, l1, l2, mnemonic12, mnemonic21,
 	  morpheme_ids_csv, noun_gender, type FROM cards ` + whereLimit
 	if LOG {
 		log.Println(query)
@@ -47,6 +51,8 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 		err = rset.Scan(&row.Id,
 			&row.L1,
 			&row.L2,
+			&row.Mnemonic12,
+			&row.Mnemonic21,
 			&row.MorphemeIdsCsv,
 			&row.NounGender,
 			&row.Type)
@@ -65,13 +71,15 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 }
 
 func InsertCard(db *sql.DB, card CardRow) CardRow {
-	query := fmt.Sprintf(`INSERT INTO cards (l1, l2, 
+	query := fmt.Sprintf(`INSERT INTO cards (l1, l2, mnemonic12, mnemonic21,
 	  morpheme_ids_csv, noun_gender, type)
-		VALUES (%s, %s, %s, %s, %s)`,
+		VALUES (%s, %s, %s, %s, %s, %s, %s)`,
 		Escape(card.L1),
 		Escape(card.L2),
+		EscapeNullString(card.Mnemonic12),
+		EscapeNullString(card.Mnemonic21),
 		Escape(card.MorphemeIdsCsv),
-		Escape(card.NounGender),
+		EscapeNullString(card.NounGender),
 		Escape(card.Type))
 	if LOG {
 		log.Println(query)
@@ -98,7 +106,7 @@ func UpdateCard(db *sql.DB, card *CardRow) {
 		Escape(card.L1),
 		Escape(card.L2),
 		Escape(card.MorphemeIdsCsv),
-		Escape(card.NounGender),
+		EscapeNullString(card.NounGender),
 		Escape(card.Type),
 		card.Id)
 	if LOG {

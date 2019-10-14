@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/guregu/null.v3"
 	"io"
 	"log"
 	"os"
@@ -78,7 +79,9 @@ func main() {
 		card := theModel.InsertCard(model.Card{
 			L1:         l1,
 			L2:         l2,
-			NounGender: nounGender,
+			Mnemonic12: null.StringFrom(mnemonic12),
+			Mnemonic21: null.StringFrom(mnemonic21),
+			NounGender: null.StringFrom(nounGender),
 			Type:       "NOUN",
 		})
 
@@ -97,9 +100,6 @@ func main() {
 			Expectation: "NO_MNEMONIC",
 			HideUntil:   ZERO_TIME,
 		})
-
-		_ = mnemonic12
-		_ = mnemonic21
 	}
 }
 
