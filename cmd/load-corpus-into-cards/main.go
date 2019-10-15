@@ -11,18 +11,19 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 )
+
+const PARSE_DIR = "db/1_parses"
 
 func main() {
 	if len(os.Args) != 2+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to stories.yaml
+		Argument 1: path to corpus (.yaml or .csv or .txt file)
 		Argument 2: path to sqlite3 database file`)
 	}
-	storiesYamlPath := os.Args[1]
+	corpusPath := os.Args[1]
 	dbPath := os.Args[2]
-
-	parseDir := "db/1_parses"
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -37,10 +38,19 @@ func main() {
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 	theModel := model.NewModel(dbConn)
 
-	phrases := parsing.ImportStoriesYaml(storiesYamlPath, parseDir)
+	var phrases []string
+	if strings.HasSuffix(corpusPath, ".yaml") {
+		phrases = parsing.ListPhrasesInCorpusYaml(corpusPath)
+	} else if strings.HasSuffix(corpusPath, ".csv") {
+		phrases = parsing.ListPhrasesInCorpusCsv(corpusPath)
+	} else if strings.HasSuffix(corpusPath, ".txt") {
+		phrases = parsing.ListPhrasesInCorpusTxt(corpusPath)
+	} else {
+		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
+	}
 
 	for _, phrase := range phrases {
-		output := parsing.LoadSavedParse(phrase, parseDir)
+		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
 		errorLists := importPhrase(output.Phrase, output.Parse, theModel)
 		for _, errorList := range errorLists {

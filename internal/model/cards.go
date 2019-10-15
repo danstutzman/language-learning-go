@@ -3,17 +3,14 @@ package model
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"fmt"
-	"gopkg.in/guregu/null.v3"
 	"strconv"
 	"strings"
 )
 
 type Card struct {
-	Id         int         `json:"id"`
-	L2         string      `json:"l2"`
-	Mnemonic21 null.String `json:"mnemonic21"`
-	NounGender null.String `json:"nounGender"`
-	Type       string      `json:"type"`
+	Id   int    `json:"id"`
+	L2   string `json:"l2"`
+	Type string `json:"type"`
 
 	Morphemes []Morpheme `json:"morphemes"`
 }
@@ -24,12 +21,10 @@ type CardList struct {
 
 func (model *Model) cardRowToCard(row db.CardRow) Card {
 	return Card{
-		Id:         row.Id,
-		L2:         row.L2,
-		NounGender: row.NounGender,
-		Type:       row.Type,
-		Mnemonic21: row.Mnemonic21,
-		Morphemes:  []Morpheme{},
+		Id:        row.Id,
+		L2:        row.L2,
+		Type:      row.Type,
+		Morphemes: []Morpheme{},
 	}
 }
 
@@ -52,10 +47,8 @@ func (model *Model) cardRowToCardJoinMorphemes(row db.CardRow) Card {
 
 func cardToCardRow(card Card) db.CardRow {
 	return db.CardRow{
-		L2:         card.L2,
-		Mnemonic21: card.Mnemonic21,
-		NounGender: card.NounGender,
-		Type:       card.Type,
+		L2:   card.L2,
+		Type: card.Type,
 
 		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	}
@@ -110,11 +103,9 @@ func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 		}
 
 		card := Card{
-			Id:         cardRow.Id,
-			L2:         cardRow.L2,
-			Mnemonic21: cardRow.Mnemonic21,
-			NounGender: cardRow.NounGender,
-			Type:       cardRow.Type,
+			Id:   cardRow.Id,
+			L2:   cardRow.L2,
+			Type: cardRow.Type,
 
 			Morphemes: morphemes,
 		}

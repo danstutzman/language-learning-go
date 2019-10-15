@@ -13,9 +13,7 @@ CREATE TABLE cards (
   id                INTEGER PRIMARY KEY NOT NULL,
   type              TEXT NOT NULL,
   l2                TEXT NOT NULL,
-  mnemonic21        TEXT,
-  morpheme_ids_csv  TEXT NOT NULL,
-  noun_gender       TEXT
+  morpheme_ids_csv  TEXT NOT NULL
 );
 CREATE INDEX idx_cards_l2 ON cards(l2);
 
@@ -44,5 +42,6 @@ CREATE TABLE challenges (
 );
 EOF
 
-$GOPATH/bin/load-corpus-into-cards db/corpora/spanishpod.yaml db/db.sqlite3
-#$GOPATH/bin/load-noun-cards db/1_nouns.csv db/db.sqlite3
+#$GOPATH/bin/load-corpus-into-cards db/corpora/spanishpod.yaml db/db.sqlite3
+#$GOPATH/bin/load-corpus-into-cards db/corpora/nouns.csv db/db.sqlite3
+$GOPATH/bin/load-corpus-into-cards db/corpora/conjugations.txt db/db.sqlite3
