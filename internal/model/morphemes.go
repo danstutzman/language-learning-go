@@ -268,6 +268,8 @@ func (model *Model) TokenToCard(token parsing.Token,
 			type_ = "INTERJECTION"
 		} else if token.IsNoun() {
 			type_ = "NOUN"
+		} else if token.IsPreposition() {
+			type_ = "PREPOSITION"
 		} else if token.IsPronoun() {
 			type_ = "PRONOUN"
 		} else if token.IsPunctuation() {
