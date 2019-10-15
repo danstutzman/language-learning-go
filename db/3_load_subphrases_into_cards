@@ -44,5 +44,5 @@ CREATE TABLE challenges (
 );
 EOF
 
-$GOPATH/bin/load-subphrases-into-cards db/1_phrases.yaml db/db.sqlite3
+$GOPATH/bin/load-subphrases-into-cards db/corpora/spanishpod.yaml db/db.sqlite3
 #$GOPATH/bin/load-noun-cards db/1_nouns.csv db/db.sqlite3

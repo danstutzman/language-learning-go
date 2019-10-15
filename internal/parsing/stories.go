@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-type Story struct {
-	Url   string        `yaml:"url"`
-	Lines []interface{} `yaml:"lines"`
-}
-
 func ImportStoriesYaml(path, parseDir string) []string {
 	file, err := os.Open(path)
 	if err != nil {
@@ -21,15 +16,15 @@ func ImportStoriesYaml(path, parseDir string) []string {
 	phrases := []string{}
 	decoder := yaml.NewDecoder(bufio.NewReader(file))
 	for {
-		var story Story
-		err = decoder.Decode(&story)
+		var lines []interface{}
+		err = decoder.Decode(&lines)
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			panic(err)
 		}
 
-		for _, line := range story.Lines {
+		for _, line := range lines {
 			var l2BySpeaker = line.(map[string]interface{})
 			for _, l2 := range l2BySpeaker {
 				phrase := l2.(string)
