@@ -101,12 +101,6 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	} else if r.URL.Path == "/api/translate" {
-		if r.Method == "GET" {
-			api.HandleTranslateRequest(w, r)
-		} else if r.Method == "POST" {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
 	} else {
 		http.Error(w, "Not found", http.StatusNotFound)
 	}

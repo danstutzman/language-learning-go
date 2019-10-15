@@ -7,6 +7,8 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"log"
 	"os"
 	"sort"
@@ -39,22 +41,35 @@ func main() {
 
 	phrases := parsing.ImportStoriesYaml(storiesYamlPath, parseDir)
 
+	l1ByL2Yaml, err := ioutil.ReadFile("db/1_translations.yaml")
+	if err != nil {
+		panic(err)
+	}
+
+	l1ByL2 := map[string]string{}
+	err = yaml.Unmarshal(l1ByL2Yaml, &l1ByL2)
+	if err != nil {
+		panic(err)
+	}
+
 	for _, phrase := range phrases {
 		output := parsing.LoadSavedParse(phrase, parseDir)
 
-		errors := importPhrase(output.Phrase, output.Parse, theModel)
-		for _, err := range errors {
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s\n", err)
+		errorLists := importPhrase(output.Phrase, output.Parse, l1ByL2, theModel)
+		for _, errorList := range errorLists {
+			for _, err := range errorList {
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s\n", err)
+				}
 			}
 		}
 	}
 }
 
-func importPhrase(phrase string, parse parsing.Parse,
-	theModel *model.Model) []error {
+func importPhrase(phrase string, parse parsing.Parse, l1ByL2 map[string]string,
+	theModel *model.Model) [][]error {
 
-	errors := make([]error, len(parse.Sentences))
+	errors := make([][]error, len(parse.Sentences))
 	for sentenceNum, sentence := range parse.Sentences {
 		tokenById := map[string]parsing.Token{}
 		for _, token := range sentence.Tokens {
@@ -72,27 +87,30 @@ func importPhrase(phrase string, parse parsing.Parse,
 		}
 
 		cardByTokenId := map[string]model.Card{}
+		errors[sentenceNum] = []error{}
 		for _, token := range sentence.Tokens {
-			unsavedCard, err := theModel.TokenToCard(token)
-			if err != nil {
-				errors[sentenceNum] = err
+			unsavedCard, err := theModel.TokenToCard(token, l1ByL2)
+			if err == nil {
+				card := theModel.InsertCardIfNotExists(*unsavedCard)
+				cardByTokenId[token.Id] = card
+			} else {
+				errors[sentenceNum] = append(errors[sentenceNum], err)
 			}
-
-			card := theModel.InsertCardIfNotExists(*unsavedCard)
-			cardByTokenId[token.Id] = card
 		}
 
-		for _, constituent := range sentence.Constituents {
-			importConstituent(constituent, cardByTokenId, tokenById, theModel)
+		if len(errors[sentenceNum]) == 0 {
+			for _, constituent := range sentence.Constituents {
+				importConstituent(constituent, cardByTokenId, tokenById, l1ByL2,
+					theModel)
+			}
 		}
-
 	}
 	return errors
 }
 
 func importConstituent(constituent parsing.Constituent,
 	cardByTokenId map[string]model.Card, tokenById map[string]parsing.Token,
-	theModel *model.Model) model.Card {
+	l1ByL2 map[string]string, theModel *model.Model) model.Card {
 
 	tokens := getTokensForConstituent(constituent, tokenById)
 
@@ -110,7 +128,7 @@ func importConstituent(constituent parsing.Constituent,
 	}
 
 	for _, child := range constituent.Children {
-		importConstituent(child, cardByTokenId, tokenById, theModel)
+		importConstituent(child, cardByTokenId, tokenById, l1ByL2, theModel)
 	}
 
 	if constituent.Leaf == "1" {
@@ -118,6 +136,7 @@ func importConstituent(constituent parsing.Constituent,
 	} else {
 		card := theModel.InsertCardIfNotExists(model.Card{
 			Type:      constituent.Label,
+			L1:        l1ByL2[l2],
 			L2:        l2,
 			Morphemes: morphemes,
 		})

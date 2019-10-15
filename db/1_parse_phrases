@@ -8,4 +8,6 @@ popd
 go install -v bitbucket.org/danstutzman/language-learning-go/...
 
 mkdir -p db/1_parses
-DB_PATH=db/db.sqlite3 $GOPATH/bin/parse-phrases db/1_phrases.yaml "$@"
+DB_PATH=db/db.sqlite3 \
+  GOOGLE_TRANSLATE_API_KEY=`cat ~/.google_translate_api_key` \
+  $GOPATH/bin/parse-phrases db/1_phrases.yaml "$@"
