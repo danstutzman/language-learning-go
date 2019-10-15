@@ -17,7 +17,6 @@ type ChallengeRow struct {
 	Expectation string
 
 	AnsweredL1     null.String
-	AnsweredL2     null.String
 	AnsweredAt     null.Time
 	ShowedMnemonic null.Bool
 
@@ -28,7 +27,6 @@ type ChallengeUpdate struct {
 	Id int
 
 	AnsweredL1     null.String
-	AnsweredL2     null.String
 	AnsweredAt     null.Time
 	ShowedMnemonic null.Bool
 
@@ -38,7 +36,7 @@ type ChallengeUpdate struct {
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, type, card_id,
   		expectation,
-	    answered_l1, answered_l2, answered_at, showed_mnemonic
+	    answered_l1, answered_at, showed_mnemonic
 		  grade
 	  FROM challenges
 		LIMIT 1`
@@ -57,7 +55,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 
 	query := `SELECT id, type, card_id,
   	expectation,
-	  answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  answered_l1, answered_at, showed_mnemonic,
 	  grade
 	  FROM challenges ` + where
 	if LOG {
@@ -73,7 +71,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 		var row ChallengeRow
 		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
 			&row.Expectation,
-			&row.AnsweredL1, &row.AnsweredL2, &row.AnsweredAt, &row.ShowedMnemonic,
+			&row.AnsweredL1, &row.AnsweredAt, &row.ShowedMnemonic,
 			&row.Grade)
 		if err != nil {
 			panic(err)
@@ -93,11 +91,11 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	query := fmt.Sprintf(`INSERT INTO challenges
 	(type, card_id, grade,
 		expectation,
-	  answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  answered_l1, answered_at, showed_mnemonic,
 	  grade)
 		VALUES (%s, %d, %s,
 		  %s,
-		  %s, %s, %s, %s,
+		  %s, %s, %s,
 			%s)`,
 		Escape(challenge.Type),
 		challenge.CardId,
@@ -106,7 +104,6 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 		Escape(challenge.Expectation),
 
 		EscapeNullString(challenge.AnsweredL1),
-		EscapeNullString(challenge.AnsweredL2),
 		EscapeNullTime(challenge.AnsweredAt),
 		EscapeNullBool(challenge.ShowedMnemonic),
 
@@ -134,9 +131,6 @@ func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
 	pairs := []string{}
 	if update.AnsweredL1.Valid {
 		pairs = append(pairs, "answered_l1="+EscapeNullString(update.AnsweredL1))
-	}
-	if update.AnsweredL2.Valid {
-		pairs = append(pairs, "answered_l2="+EscapeNullString(update.AnsweredL2))
 	}
 	if update.AnsweredAt.Valid {
 		pairs = append(pairs, "answered_at="+EscapeNullTime(update.AnsweredAt))

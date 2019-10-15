@@ -10,9 +10,7 @@ import (
 
 type Card struct {
 	Id         int         `json:"id"`
-	L1         string      `json:"l1"`
 	L2         string      `json:"l2"`
-	Mnemonic12 null.String `json:"mnemonic12"`
 	Mnemonic21 null.String `json:"mnemonic21"`
 	NounGender null.String `json:"nounGender"`
 	Type       string      `json:"type"`
@@ -27,11 +25,9 @@ type CardList struct {
 func (model *Model) cardRowToCard(row db.CardRow) Card {
 	return Card{
 		Id:         row.Id,
-		L1:         row.L1,
 		L2:         row.L2,
 		NounGender: row.NounGender,
 		Type:       row.Type,
-		Mnemonic12: row.Mnemonic12,
 		Mnemonic21: row.Mnemonic21,
 		Morphemes:  []Morpheme{},
 	}
@@ -56,9 +52,7 @@ func (model *Model) cardRowToCardJoinMorphemes(row db.CardRow) Card {
 
 func cardToCardRow(card Card) db.CardRow {
 	return db.CardRow{
-		L1:         card.L1,
 		L2:         card.L2,
-		Mnemonic12: card.Mnemonic12,
 		Mnemonic21: card.Mnemonic21,
 		NounGender: card.NounGender,
 		Type:       card.Type,
@@ -117,9 +111,7 @@ func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 
 		card := Card{
 			Id:         cardRow.Id,
-			L1:         cardRow.L1,
 			L2:         cardRow.L2,
-			Mnemonic12: cardRow.Mnemonic12,
 			Mnemonic21: cardRow.Mnemonic21,
 			NounGender: cardRow.NounGender,
 			Type:       cardRow.Type,

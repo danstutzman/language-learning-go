@@ -9,9 +9,7 @@ import (
 
 type CardRow struct {
 	Id             int
-	L1             string
 	L2             string
-	Mnemonic12     null.String
 	Mnemonic21     null.String
 	MorphemeIdsCsv string
 	NounGender     null.String
@@ -19,7 +17,7 @@ type CardRow struct {
 }
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
-	query := `SELECT id, l1, l2, mnemonic12, mnemonic21, morpheme_ids_csv,
+	query := `SELECT id, l2, mnemonic21, morpheme_ids_csv,
 	  noun_gender, type
 		FROM cards LIMIT 1`
 	if LOG {
@@ -35,7 +33,7 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	rows := []CardRow{}
 
-	query := `SELECT id, l1, l2, mnemonic12, mnemonic21,
+	query := `SELECT id, l2, mnemonic21,
 	  morpheme_ids_csv, noun_gender, type FROM cards ` + whereLimit
 	if LOG {
 		log.Println(query)
@@ -49,9 +47,7 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	for rset.Next() {
 		var row CardRow
 		err = rset.Scan(&row.Id,
-			&row.L1,
 			&row.L2,
-			&row.Mnemonic12,
 			&row.Mnemonic21,
 			&row.MorphemeIdsCsv,
 			&row.NounGender,
@@ -71,12 +67,10 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 }
 
 func InsertCard(db *sql.DB, card CardRow) CardRow {
-	query := fmt.Sprintf(`INSERT INTO cards (l1, l2, mnemonic12, mnemonic21,
+	query := fmt.Sprintf(`INSERT INTO cards (l2, mnemonic21,
 	  morpheme_ids_csv, noun_gender, type)
-		VALUES (%s, %s, %s, %s, %s, %s, %s)`,
-		Escape(card.L1),
+		VALUES (%s, %s, %s, %s, %s)`,
 		Escape(card.L2),
-		EscapeNullString(card.Mnemonic12),
 		EscapeNullString(card.Mnemonic21),
 		Escape(card.MorphemeIdsCsv),
 		EscapeNullString(card.NounGender),
@@ -101,9 +95,8 @@ func InsertCard(db *sql.DB, card CardRow) CardRow {
 
 func UpdateCard(db *sql.DB, card *CardRow) {
 	query := fmt.Sprintf(
-		`UPDATE cards SET l1=%s, l2=%s,
+		`UPDATE cards SET l2=%s,
 		morpheme_ids_csv=%s, noun_gender=%s, type=%s WHERE id=%d`,
-		Escape(card.L1),
 		Escape(card.L2),
 		Escape(card.MorphemeIdsCsv),
 		EscapeNullString(card.NounGender),

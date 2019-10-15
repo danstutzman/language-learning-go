@@ -7,8 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
 	"os"
 	"sort"
@@ -41,21 +39,10 @@ func main() {
 
 	phrases := parsing.ImportStoriesYaml(storiesYamlPath, parseDir)
 
-	l1ByL2Yaml, err := ioutil.ReadFile("db/1_translations.yaml")
-	if err != nil {
-		panic(err)
-	}
-
-	l1ByL2 := map[string]string{}
-	err = yaml.Unmarshal(l1ByL2Yaml, &l1ByL2)
-	if err != nil {
-		panic(err)
-	}
-
 	for _, phrase := range phrases {
 		output := parsing.LoadSavedParse(phrase, parseDir)
 
-		errorLists := importPhrase(output.Phrase, output.Parse, l1ByL2, theModel)
+		errorLists := importPhrase(output.Phrase, output.Parse, theModel)
 		for _, errorList := range errorLists {
 			for _, err := range errorList {
 				if err != nil {
@@ -66,7 +53,7 @@ func main() {
 	}
 }
 
-func importPhrase(phrase string, parse parsing.Parse, l1ByL2 map[string]string,
+func importPhrase(phrase string, parse parsing.Parse,
 	theModel *model.Model) [][]error {
 
 	errors := make([][]error, len(parse.Sentences))
@@ -89,7 +76,7 @@ func importPhrase(phrase string, parse parsing.Parse, l1ByL2 map[string]string,
 		cardByTokenId := map[string]model.Card{}
 		errors[sentenceNum] = []error{}
 		for _, token := range sentence.Tokens {
-			unsavedCard, err := theModel.TokenToCard(token, l1ByL2)
+			unsavedCard, err := theModel.TokenToCard(token)
 			if err == nil {
 				card := theModel.InsertCardIfNotExists(*unsavedCard)
 				cardByTokenId[token.Id] = card
@@ -100,8 +87,7 @@ func importPhrase(phrase string, parse parsing.Parse, l1ByL2 map[string]string,
 
 		if len(errors[sentenceNum]) == 0 {
 			for _, constituent := range sentence.Constituents {
-				importConstituent(constituent, cardByTokenId, tokenById, l1ByL2,
-					theModel)
+				importConstituent(constituent, cardByTokenId, tokenById, theModel)
 			}
 		}
 	}
@@ -110,7 +96,7 @@ func importPhrase(phrase string, parse parsing.Parse, l1ByL2 map[string]string,
 
 func importConstituent(constituent parsing.Constituent,
 	cardByTokenId map[string]model.Card, tokenById map[string]parsing.Token,
-	l1ByL2 map[string]string, theModel *model.Model) model.Card {
+	theModel *model.Model) model.Card {
 
 	tokens := getTokensForConstituent(constituent, tokenById)
 
@@ -128,7 +114,7 @@ func importConstituent(constituent parsing.Constituent,
 	}
 
 	for _, child := range constituent.Children {
-		importConstituent(child, cardByTokenId, tokenById, l1ByL2, theModel)
+		importConstituent(child, cardByTokenId, tokenById, theModel)
 	}
 
 	if constituent.Leaf == "1" {
@@ -136,7 +122,6 @@ func importConstituent(constituent parsing.Constituent,
 	} else {
 		card := theModel.InsertCardIfNotExists(model.Card{
 			Type:      constituent.Label,
-			L1:        l1ByL2[l2],
 			L2:        l2,
 			Morphemes: morphemes,
 		})

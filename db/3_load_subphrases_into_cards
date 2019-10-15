@@ -12,9 +12,7 @@ DROP TABLE IF EXISTS cards;
 CREATE TABLE cards (
   id                INTEGER PRIMARY KEY NOT NULL,
   type              TEXT NOT NULL,
-  l1                TEXT,
   l2                TEXT NOT NULL,
-  mnemonic12        TEXT,
   mnemonic21        TEXT,
   morpheme_ids_csv  TEXT NOT NULL,
   noun_gender       TEXT
@@ -39,7 +37,6 @@ CREATE TABLE challenges (
   expectation     TEXT NOT NULL,
 
   answered_l1     TEXT,
-  answered_l2     TEXT,
   answered_at     DATETIME,
   showed_mnemonic BOOLEAN,
 

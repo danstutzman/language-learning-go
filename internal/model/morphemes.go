@@ -238,8 +238,7 @@ func (model *Model) LowercaseToken(token parsing.Token) parsing.Token {
 	return token
 }
 
-func (model *Model) TokenToCard(token parsing.Token,
-	l1ByL2 map[string]string) (*Card, error) {
+func (model *Model) TokenToCard(token parsing.Token) (*Card, error) {
 
 	var card Card
 	if token.IsVerb() {
@@ -250,7 +249,6 @@ func (model *Model) TokenToCard(token parsing.Token,
 
 		card = Card{
 			Type:      "VERB",
-			L1:        l1ByL2[token.Form],
 			L2:        token.Form,
 			Morphemes: morphemes,
 		}
@@ -287,7 +285,6 @@ func (model *Model) TokenToCard(token parsing.Token,
 
 		card = Card{
 			Type:      type_,
-			L1:        l1ByL2[token.Form],
 			L2:        token.Form,
 			Morphemes: []Morpheme{morpheme},
 		}
