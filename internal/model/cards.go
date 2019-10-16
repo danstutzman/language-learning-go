@@ -126,7 +126,7 @@ func (model *Model) InsertCardIfNotExists(card Card) Card {
 	cardRows := db.FromCards(model.db,
 		"WHERE morpheme_ids_csv="+db.Escape(joinMorphemeIdsCsv(card)))
 	if len(cardRows) == 1 {
-		return model.cardRowToCard(cardRows[0])
+		return *model.GetCardJoinMorphemes(cardRows[0].Id)
 	} else {
 		return model.InsertCard(card)
 	}
