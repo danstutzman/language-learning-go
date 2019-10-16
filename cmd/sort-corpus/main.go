@@ -12,6 +12,13 @@ import (
 
 const PARSE_DIR = "db/1_parses"
 
+// Summary of a constituent
+type Summary struct {
+	firstTokenBegin int
+	sexp            []string
+	verbTypes       []string
+}
+
 func main() {
 	if len(os.Args) != 1+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
@@ -34,14 +41,32 @@ func main() {
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
 		summary := summarizePhrase(output.Phrase, output.Parse)
-		fmt.Printf("%-20s %s\n", strings.Join(summary.sexp, ""), phrase)
+
+		//fmt.Printf("%-20s %s\n", strings.Join(summary.sexp, ""), phrase)
+
+		if hasNonEasyVerbType(summary.verbTypes) {
+			fmt.Printf("%-20s %s\n", strings.Join(summary.verbTypes, " "), phrase)
+		}
 	}
 }
 
-// Summary of a constituent
-type Summary struct {
-	firstTokenBegin int
-	sexp            []string
+var EASY_VERB_TYPES = map[string]bool{
+	"AI": true,
+	"MG": true,
+	"MI": true,
+	"MN": true,
+	"MP": true,
+	"SI": true,
+}
+
+func hasNonEasyVerbType(verbTypes []string) bool {
+	for _, verbType := range verbTypes {
+		isEasy := EASY_VERB_TYPES[verbType]
+		if !isEasy {
+			return true
+		}
+	}
+	return false
 }
 
 func summarizePhrase(phrase string, parse parsing.Parse) Summary {
@@ -62,16 +87,34 @@ func summarizePhrase(phrase string, parse parsing.Parse) Summary {
 		return summaries[i].firstTokenBegin < summaries[j].firstTokenBegin
 	})
 
+	superSummary := Summary{
+		firstTokenBegin: summaries[0].firstTokenBegin,
+		sexp:            concatSexps(summaries, true),
+		verbTypes:       concatVerbTypes(summaries),
+	}
+	return superSummary
+}
+
+func concatSexps(summaries []Summary, isSentence bool) []string {
 	concattedSexps := []string{}
+	if !isSentence && len(summaries) > 1 {
+		concattedSexps = append(concattedSexps, "(")
+	}
 	for _, summary := range summaries {
 		concattedSexps = append(concattedSexps, summary.sexp...)
 	}
-
-	superSummary := Summary{
-		firstTokenBegin: summaries[0].firstTokenBegin,
-		sexp:            concattedSexps,
+	if !isSentence && len(summaries) > 1 {
+		concattedSexps = append(concattedSexps, ")")
 	}
-	return superSummary
+	return concattedSexps
+}
+
+func concatVerbTypes(summaries []Summary) []string {
+	allVerbTypes := []string{}
+	for _, summary := range summaries {
+		allVerbTypes = append(allVerbTypes, summary.verbTypes...)
+	}
+	return allVerbTypes
 }
 
 func summarizeConstituent(constituent parsing.Constituent,
@@ -80,12 +123,19 @@ func summarizeConstituent(constituent parsing.Constituent,
 	if len(constituent.Children) == 0 {
 		token := tokenById[constituent.Token]
 		shortTag := token.Tag[0:1]
+
+		verbTypes := []string{}
+		if strings.HasPrefix(token.Tag, "V") {
+			verbTypes = []string{token.Tag[1:3]}
+		}
+
 		if shortTag == "F" { // discard punctuation
 			return []Summary{}
 		}
 		return []Summary{{
 			firstTokenBegin: mustAtoi(token.Begin),
 			sexp:            []string{shortTag},
+			verbTypes:       verbTypes,
 		}}
 	}
 
@@ -104,20 +154,10 @@ func summarizeConstituent(constituent parsing.Constituent,
 		return summaries[i].firstTokenBegin < summaries[j].firstTokenBegin
 	})
 
-	concattedSexps := []string{}
-	if !isSentence && len(summaries) > 1 {
-		concattedSexps = append(concattedSexps, "(")
-	}
-	for _, summary := range summaries {
-		concattedSexps = append(concattedSexps, summary.sexp...)
-	}
-	if !isSentence && len(summaries) > 1 {
-		concattedSexps = append(concattedSexps, ")")
-	}
-
 	superSummary := []Summary{{
 		firstTokenBegin: summaries[0].firstTokenBegin,
-		sexp:            concattedSexps,
+		sexp:            concatSexps(summaries, isSentence),
+		verbTypes:       concatVerbTypes(summaries),
 	}}
 
 	return superSummary
