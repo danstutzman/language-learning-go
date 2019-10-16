@@ -1,0 +1,6 @@
+#!/bin/bash -ex
+cd $GOPATH/src/bitbucket.org/danstutzman/language-learning-go
+go vet bitbucket.org/danstutzman/language-learning-go/...
+go install -v bitbucket.org/danstutzman/language-learning-go/...
+$GOPATH/bin/sort-corpus \
+  db/corpora/spanish-beginner-sentences/spanish-beginner-sentences.txt
