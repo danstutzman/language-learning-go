@@ -3,11 +3,15 @@ package parsing
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strings"
 )
+
+const BATCH_SIZE = 1
 
 type Output struct {
 	Phrase    string
@@ -198,6 +202,11 @@ func ParsePhrasesWithFreeling(phrases []string,
 			log.Panicf("Phrase contains newline: '%s'", phrase)
 		}
 
+		if len(phrase) > 120 {
+			outputs = append(outputs, Output{})
+			continue
+		}
+
 		log.Printf("Writing...\n")
 		_, err := conn.Write([]byte(phrase + "\x00"))
 		if err != nil {
@@ -244,8 +253,17 @@ func ParsePhrasesWithFreeling(phrases []string,
 	}
 
 	if len(outputs) != len(phrases) {
-		log.Panicf("len(outputs)=%d but len(phrases)=%d",
-			len(outputs), len(phrases))
+		if false {
+			for i, phrase := range phrases {
+				log.Printf("Phrase[%d]: %s", i, phrase)
+			}
+			for i, output := range outputs {
+				log.Printf("Output[%d]: %s", i, output.Phrase)
+			}
+		}
+		log.Printf("len(outputs)=%d but len(phrases)=%d for phrases=%v",
+			len(outputs), len(phrases), phrases)
+		return []Output{}
 	}
 
 	return outputs
@@ -272,4 +290,34 @@ func LoadSavedParse(phrase string, phraseDir string) Output {
 		ParseJson: string(parseJson),
 		Parse:     parse,
 	}
+}
+
+func ParsePhrasesWithFreelingCached(phrases []string,
+	freelingHostAndPort string, parseDir string) {
+
+	newPhrases := []string{}
+	for i, phrase := range phrases {
+		if strings.HasSuffix(phrase, "...") {
+			phrase = phrase + " ." // prevent freeling from responding in two parts
+		}
+
+		if !fileExists(parseDir + "/" + phrase + ".json") {
+			newPhrases = append(newPhrases, phrase)
+		}
+
+		if len(newPhrases) >= BATCH_SIZE || i == len(phrases)-1 {
+			outputs := ParsePhrasesWithFreeling(newPhrases, freelingHostAndPort)
+			newPhrases = []string{}
+
+			for _, output := range outputs {
+				SaveParse(output.Phrase, output.ParseJson, parseDir)
+				fmt.Fprintf(os.Stderr, "%s\n", parseDir+"/"+output.Phrase+".json")
+			}
+		}
+	}
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }

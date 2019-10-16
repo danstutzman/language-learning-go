@@ -2,7 +2,6 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
@@ -36,10 +35,6 @@ func main() {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}
 
-	outputs := parsing.ParsePhrasesWithFreeling(phrases, freelingHostAndPort)
-
-	for _, output := range outputs {
-		parsing.SaveParse(output.Phrase, output.ParseJson, PARSE_DIR)
-		fmt.Fprintf(os.Stderr, "%s\n", PARSE_DIR+"/"+output.Phrase+".json")
-	}
+	parsing.ParsePhrasesWithFreelingCached(
+		phrases, freelingHostAndPort, PARSE_DIR)
 }
