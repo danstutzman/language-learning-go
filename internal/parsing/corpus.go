@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+func clean(s string) string {
+	s = strings.ReplaceAll(s, "/", "")
+	s = strings.ReplaceAll(s, ">>i: ", "")
+	s = strings.ReplaceAll(s, ">>s: ", "")
+	return s
+}
+
 func ListPhrasesInCorpusYaml(path string) []string {
 	file, err := os.Open(path)
 	if err != nil {
@@ -100,6 +107,7 @@ func ListPhrasesInCorpusTxt(path string) []string {
 		}
 
 		phrase := strings.TrimSpace(line)
+		phrase = clean(phrase)
 		if phrase != "" {
 			phrases = append(phrases, phrase)
 		}
