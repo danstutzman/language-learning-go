@@ -97,7 +97,7 @@ func importPhrase(phrase string, parse parsing.Parse,
 
 		if len(errors[sentenceNum]) == 0 {
 			for _, constituent := range sentence.Constituents {
-				importConstituent(constituent, cardByTokenId, tokenById, theModel)
+				importConstituent(constituent, cardByTokenId, tokenById, true, theModel)
 			}
 		}
 	}
@@ -106,7 +106,7 @@ func importPhrase(phrase string, parse parsing.Parse,
 
 func importConstituent(constituent parsing.Constituent,
 	cardByTokenId map[string]model.Card, tokenById map[string]parsing.Token,
-	theModel *model.Model) model.Card {
+	isSentence bool, theModel *model.Model) model.Card {
 
 	tokens := getTokensForConstituent(constituent, tokenById)
 
@@ -124,16 +124,17 @@ func importConstituent(constituent parsing.Constituent,
 	}
 
 	for _, child := range constituent.Children {
-		importConstituent(child, cardByTokenId, tokenById, theModel)
+		importConstituent(child, cardByTokenId, tokenById, false, theModel)
 	}
 
 	if constituent.Leaf == "1" {
 		return cardByTokenId[constituent.Token]
 	} else {
 		card := theModel.InsertCardIfNotExists(model.Card{
-			Type:      constituent.Label,
-			L2:        l2,
-			Morphemes: morphemes,
+			Type:       constituent.Label,
+			L2:         l2,
+			IsSentence: isSentence,
+			Morphemes:  morphemes,
 		})
 		return card
 	}

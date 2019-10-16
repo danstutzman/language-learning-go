@@ -8,9 +8,10 @@ import (
 )
 
 type Card struct {
-	Id   int    `json:"id"`
-	L2   string `json:"l2"`
-	Type string `json:"type"`
+	Id         int    `json:"id"`
+	IsSentence bool   `json:"isSentence"`
+	L2         string `json:"l2"`
+	Type       string `json:"type"`
 
 	Morphemes []Morpheme `json:"morphemes"`
 }
@@ -21,10 +22,11 @@ type CardList struct {
 
 func (model *Model) cardRowToCard(row db.CardRow) Card {
 	return Card{
-		Id:        row.Id,
-		L2:        row.L2,
-		Type:      row.Type,
-		Morphemes: []Morpheme{},
+		Id:         row.Id,
+		IsSentence: row.IsSentence,
+		L2:         row.L2,
+		Type:       row.Type,
+		Morphemes:  []Morpheme{},
 	}
 }
 
@@ -47,8 +49,9 @@ func (model *Model) cardRowToCardJoinMorphemes(row db.CardRow) Card {
 
 func cardToCardRow(card Card) db.CardRow {
 	return db.CardRow{
-		L2:   card.L2,
-		Type: card.Type,
+		IsSentence: card.IsSentence,
+		L2:         card.L2,
+		Type:       card.Type,
 
 		MorphemeIdsCsv: joinMorphemeIdsCsv(card),
 	}
@@ -103,9 +106,10 @@ func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 		}
 
 		card := Card{
-			Id:   cardRow.Id,
-			L2:   cardRow.L2,
-			Type: cardRow.Type,
+			Id:         cardRow.Id,
+			IsSentence: cardRow.IsSentence,
+			L2:         cardRow.L2,
+			Type:       cardRow.Type,
 
 			Morphemes: morphemes,
 		}

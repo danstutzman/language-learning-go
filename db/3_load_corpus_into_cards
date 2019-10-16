@@ -11,6 +11,7 @@ sqlite3 db/db.sqlite3 <<EOF
 DROP TABLE IF EXISTS cards;
 CREATE TABLE cards (
   id                INTEGER PRIMARY KEY NOT NULL,
+  is_sentence       BOOLEAN NOT NULL,
   type              TEXT NOT NULL,
   l2                TEXT NOT NULL,
   morpheme_ids_csv  TEXT NOT NULL
