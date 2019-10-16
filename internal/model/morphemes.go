@@ -156,11 +156,14 @@ func (model *Model) findVerbSuffix(l2, verbCategory, tag string) *Morpheme {
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
 
-func (model *Model) findVerbStemChange(lemma, tense string) *Morpheme {
-	where := fmt.Sprintf(
-		"WHERE type='VERB_STEM_CHANGE' AND lemma=%s AND tense=%s",
-		db.Escape(lemma), db.Escape(tense))
-	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
+func (model *Model) listVerbStemChanges(lemma string) []Morpheme {
+	where := "WHERE type='VERB_STEM_CHANGE' AND lemma=" + db.Escape(lemma)
+
+	morphemes := []Morpheme{}
+	for _, row := range db.FromMorphemes(model.db, where) {
+		morphemes = append(morphemes, morphemeRowToMorpheme(row))
+	}
+	return morphemes
 }
 
 func (model *Model) findVerbUnique(l2, lemma, tag string) *Morpheme {
@@ -191,46 +194,45 @@ func (model *Model) verbToMorphemes(token parsing.Token) ([]Morpheme, error) {
 		return []Morpheme{}, fmt.Errorf("Unknown category for lemma '%s'", lemma)
 	}
 
-	stemChangeMorpheme := model.findVerbStemChange(lemma, token.Tense)
-	if stemChangeMorpheme != nil {
-		suffix := "-" + form[len(stemChangeMorpheme.L2)-1:len(form)]
+	expectedStem := lemma[0 : len(lemma)-len(category)]
 
-		category = "stempret"
-		suffixMorpheme := model.findVerbSuffix(suffix, category, tag)
-		if suffixMorpheme == nil {
-			return []Morpheme{}, fmt.Errorf(
-				"Can't find verb suffix '%s' with category=%s tag=%s",
-				suffix, category, tag)
-		}
-
-		return []Morpheme{*stemChangeMorpheme, *suffixMorpheme}, nil
-	} else { // If there is no stem change
-		stem := lemma[0 : len(lemma)-len(category)]
-
-		if !strings.HasPrefix(form, stem) {
-			return []Morpheme{}, fmt.Errorf(
-				"No stem change for form=%s, lemma=%s, tag=%s", form, lemma, tag)
-		}
-
+	if strings.HasPrefix(form, expectedStem) {
 		stemMorpheme := model.UpsertMorpheme(Morpheme{
 			Type: "VERB_STEM",
-			L2:   stem + "-",
+			L2:   expectedStem + "-",
 		})
 
 		// Warning: for verbs like 'tengo' the suffix could be weird like 'go'.
 		// This should be caught by the unique verb look up earlier, but otherwise
 		// it will just fail on the suffix look up.
-		suffix := "-" + form[len(stem):len(form)]
+		suffix := "-" + form[len(expectedStem):len(form)]
 
 		suffixMorpheme := model.findVerbSuffix(suffix, category, tag)
 		if suffixMorpheme == nil {
 			return []Morpheme{}, fmt.Errorf(
-				"Can't find verb suffix '%s' with category=%s tag=%s",
-				suffix, category, tag)
+				"Can't find verb suffix '%s' with category=%s tag=%s "+
+					"for form=%s, lemma=%s",
+				suffix, category, tag, form, lemma)
 		}
 
 		return []Morpheme{stemMorpheme, *suffixMorpheme}, nil
 	}
+
+	stemChangeMorphemes := model.listVerbStemChanges(lemma)
+	for _, stemChangeMorpheme := range stemChangeMorphemes {
+		suffix := "-" + form[len(stemChangeMorpheme.L2)-1:len(form)]
+
+		if false {
+			category = "stempret"
+		}
+		suffixMorpheme := model.findVerbSuffix(suffix, category, tag)
+		if suffixMorpheme != nil {
+			return []Morpheme{stemChangeMorpheme, *suffixMorpheme}, nil
+		}
+	}
+
+	return []Morpheme{}, fmt.Errorf(
+		"Can't find morphemes for lemma=%s, form=%s, tag=%s", lemma, form, tag)
 }
 
 func (model *Model) LowercaseToken(token parsing.Token) parsing.Token {
@@ -260,12 +262,16 @@ func (model *Model) TokenToCard(token parsing.Token) (*Card, error) {
 			type_ = "ADVERB"
 		} else if token.IsConjunction() {
 			type_ = "CONJUNCTION"
+		} else if token.IsDate() {
+			type_ = "DATE"
 		} else if token.IsDeterminer() {
 			type_ = "DETERMINER"
 		} else if token.IsInterjection() {
 			type_ = "INTERJECTION"
 		} else if token.IsNoun() {
 			type_ = "NOUN"
+		} else if token.IsNumber() {
+			type_ = "NUMBER"
 		} else if token.IsPreposition() {
 			type_ = "PREPOSITION"
 		} else if token.IsPronoun() {
@@ -273,7 +279,8 @@ func (model *Model) TokenToCard(token parsing.Token) (*Card, error) {
 		} else if token.IsPunctuation() {
 			type_ = "PUNCTUATION"
 		} else {
-			return nil, fmt.Errorf("Unknown token tag %s", token.Tag)
+			return nil, fmt.Errorf("Unknown token tag %s for form '%s'",
+				token.Tag, token.Form)
 		}
 
 		morpheme := model.UpsertMorpheme(Morpheme{

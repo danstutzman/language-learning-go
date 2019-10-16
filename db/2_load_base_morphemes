@@ -3,7 +3,6 @@
 cd `dirname $0`/..
 
 sqlite3 db/db.sqlite3 <<EOF
-
 DROP TABLE IF EXISTS morphemes;
 CREATE TABLE morphemes (
   id                INTEGER PRIMARY KEY NOT NULL,
@@ -11,72 +10,36 @@ CREATE TABLE morphemes (
   l2                TEXT NOT NULL,
   lemma             TEXT, -- type=VERB_SUFFIX has no lemma
   freeling_tag      TEXT,
-  verb_category     TEXT,
-  tense             TEXT -- only for VERB_STEM_CHANGE
+  verb_category     TEXT
 );
 
--- Unique conjugations of ser, estar, tener
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'está', 'estar', 'VMIP3S0', NULL);
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'estoy', 'estar', 'VMIP1S0', NULL);
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'estoy', 'estar', 'VAIP1S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'hay', 'haber', 'VMIP3S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'voy', 'ir', 'VMIP1S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'va', 'ir', 'VMIP3S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'soy', 'ser', 'VSIP1S0', NULL);
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'soy', 'ser', 'VSIP1S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'somos', 'ser', 'VSIP1P0', NULL);
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'eres', 'ser', 'VSIP2S0', NULL);
 INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'es', 'ser', 'VSIP3S0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
+  VALUES ('VERB_UNIQUE', 'son', 'ser', 'VSIP3P0', NULL);
+INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
   VALUES ('VERB_UNIQUE', 'tengo', 'tener', 'VMIP1S0', NULL);
 
--- Stem changes
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category, tense)
-  VALUES ('VERB_STEM_CHANGE', 'estuv-', 'estar', NULL, NULL, 'past');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category, tense)
-  VALUES ('VERB_STEM_CHANGE', 'tuv-', 'tener', NULL, NULL, 'past');
-
--- Infinitives
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ar', NULL, 'VMN0000', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-er', NULL, 'VMN0000', 'er');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-er', NULL, 'VSN0000', 'er');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ir', NULL, 'VMN0000', 'ir');
-
--- present 3rd person
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-a', NULL, 'VMIP3S0', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-án', NULL, 'VMIP3P0', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIP3S0', 'er');
-
--- present 1st person plural
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-amos', NULL, 'VMIP1P0', 'ar');
-
--- past 1st person singular
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-é', NULL, 'VMIS1S0', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'er');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-e', NULL, 'VMIS1S0', 'stempret');
-
--- past 3rd person singular
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ó', NULL, 'VMIS3S0', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ió', NULL, 'VMIS3S0', 'er');
-
--- participle
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ado', NULL, 'VMP00SM', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ada', NULL, 'VMP00SF', 'ar');
-INSERT INTO morphemes (type, l2, lemma, freeling_tag, verb_category)
-  VALUES ('VERB_SUFFIX', '-ida', NULL, 'VMP00SF', 'er');
-
 EOF
+
+ruby scripts/extract_stem_changes.rb | sqlite3 db/db.sqlite3

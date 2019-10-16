@@ -55,6 +55,10 @@ func (token *Token) IsConjunction() bool {
 	return strings.HasPrefix(token.Tag, "C")
 }
 
+func (token *Token) IsDate() bool {
+	return strings.HasPrefix(token.Tag, "W")
+}
+
 func (token *Token) IsDeterminer() bool {
 	return strings.HasPrefix(token.Tag, "D")
 }
@@ -77,6 +81,10 @@ func (token *Token) IsProperNoun() bool {
 
 func (token *Token) IsNoun() bool {
 	return strings.HasPrefix(token.Tag, "N")
+}
+
+func (token *Token) IsNumber() bool {
+	return strings.HasPrefix(token.Tag, "Z")
 }
 
 func (token *Token) IsPunctuation() bool {
