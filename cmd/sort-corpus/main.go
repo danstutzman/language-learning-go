@@ -16,6 +16,7 @@ const PARSE_DIR = "db/1_parses"
 type Summary struct {
 	firstTokenBegin int
 	sexp            []string
+	tags            []string
 	verbTypes       []string
 }
 
@@ -38,25 +39,30 @@ func main() {
 	}
 
 	for _, phrase := range phrases {
+		if len(phrase) >= 200 {
+			continue
+		}
+
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
 		summary := summarizePhrase(output.Phrase, output.Parse)
 
-		//fmt.Printf("%-20s %s\n", strings.Join(summary.sexp, ""), phrase)
+		fmt.Printf("%-20s %s\n", strings.Join(summary.sexp, ""), phrase)
 
-		if hasNonEasyVerbType(summary.verbTypes) {
+		if !hasNonEasyVerbType(summary.verbTypes) {
 			fmt.Printf("%-20s %s\n", strings.Join(summary.verbTypes, " "), phrase)
 		}
 	}
 }
 
 var EASY_VERB_TYPES = map[string]bool{
-	"AI": true,
-	"MG": true,
-	"MI": true,
-	"MN": true,
-	"MP": true,
-	"SI": true,
+	"AI":  true,
+	"MG":  true,
+	"MI":  true,
+	"MIP": true, // present
+	"MN":  true,
+	"MP":  true,
+	"SI":  true,
 }
 
 func hasNonEasyVerbType(verbTypes []string) bool {
@@ -90,6 +96,7 @@ func summarizePhrase(phrase string, parse parsing.Parse) Summary {
 	superSummary := Summary{
 		firstTokenBegin: summaries[0].firstTokenBegin,
 		sexp:            concatSexps(summaries, true),
+		tags:            concatTags(summaries),
 		verbTypes:       concatVerbTypes(summaries),
 	}
 	return superSummary
@@ -109,11 +116,21 @@ func concatSexps(summaries []Summary, isSentence bool) []string {
 	return concattedSexps
 }
 
+func concatTags(summaries []Summary) []string {
+	tags := []string{}
+	for _, summary := range summaries {
+		tags = append(tags, summary.tags...)
+	}
+	return tags
+}
+
 func concatVerbTypes(summaries []Summary) []string {
 	allVerbTypes := []string{}
+
 	for _, summary := range summaries {
 		allVerbTypes = append(allVerbTypes, summary.verbTypes...)
 	}
+
 	return allVerbTypes
 }
 
@@ -126,7 +143,13 @@ func summarizeConstituent(constituent parsing.Constituent,
 
 		verbTypes := []string{}
 		if strings.HasPrefix(token.Tag, "V") {
-			verbTypes = []string{token.Tag[1:3]}
+			if strings.HasPrefix(token.Tag, "VMI") {
+				verbTypes = []string{token.Tag[1:4]}
+			} else {
+				verbTypes = []string{token.Tag[1:3]}
+			}
+			//		} else if strings.HasPrefix(token.Tag, "P") {
+			//			verbTypes = []string{token.Form}
 		}
 
 		if shortTag == "F" { // discard punctuation
@@ -135,6 +158,7 @@ func summarizeConstituent(constituent parsing.Constituent,
 		return []Summary{{
 			firstTokenBegin: mustAtoi(token.Begin),
 			sexp:            []string{shortTag},
+			tags:            []string{token.Tag},
 			verbTypes:       verbTypes,
 		}}
 	}
@@ -154,10 +178,25 @@ func summarizeConstituent(constituent parsing.Constituent,
 		return summaries[i].firstTokenBegin < summaries[j].firstTokenBegin
 	})
 
+	allChildrenAreVerbs := true
+	for _, summary := range summaries {
+		for _, tag := range summary.tags {
+			if !strings.HasPrefix(tag, "V") {
+				allChildrenAreVerbs = false
+			}
+		}
+	}
+
+	verbTypes := concatVerbTypes(summaries)
+	if allChildrenAreVerbs && len(verbTypes) > 1 {
+		verbTypes = []string{strings.Join(verbTypes, "-")}
+	}
+
 	superSummary := []Summary{{
 		firstTokenBegin: summaries[0].firstTokenBegin,
 		sexp:            concatSexps(summaries, isSentence),
-		verbTypes:       concatVerbTypes(summaries),
+		tags:            concatTags(summaries),
+		verbTypes:       verbTypes,
 	}}
 
 	return superSummary

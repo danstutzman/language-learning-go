@@ -2,5 +2,5 @@
 cd $GOPATH/src/bitbucket.org/danstutzman/language-learning-go
 go vet bitbucket.org/danstutzman/language-learning-go/...
 go install -v bitbucket.org/danstutzman/language-learning-go/...
-$GOPATH/bin/sort-corpus \
-  db/corpora/spanish-beginner-sentences/spanish-beginner-sentences.txt
+$GOPATH/bin/sort-corpus db/corpora/advanced-verbs.txt
+#$GOPATH/bin/sort-corpus db/corpora/spanish-in-texas.txt
