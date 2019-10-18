@@ -6,12 +6,12 @@ import (
 )
 
 const commands = `
-ADD/VERB_INFINITIVE/busc-/seek
+ADD/VERB_STEM/busc-/seek
 ADD/VERB_UNIQUE/está/is
 MAKE_PRES_PROG/-ando/-ing
 ADD/NOUN/Apple/Apple
 MAKE_AGENT
-ADD/VERB_INFINITIVE/compr-/buy
+ADD/VERB_STEM/compr-/buy
 MAKE_INFINITIVE/-ar/to
 ADD/NOUN/startup/startup
 ADD/DET/una/a

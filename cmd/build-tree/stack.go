@@ -51,10 +51,12 @@ func (stack *Stack) execCommand(commandWithArgs string) {
 	case "MAKE_DOBJ":
 		expectNumArgs(0, args)
 		stack.makeDirObj()
-	case "MAKE_NOUN_PHRASE_ADDING_PREP_PHRASE",
-		"MAKE_VERB_PHRASE_ADDING_PREP_PHRASE":
+	case "MAKE_NOUN_PHRASE_ADDING_PREP_PHRASE":
 		expectNumArgs(0, args)
-		stack.makePhraseAddingPrepPhrase()
+		stack.makeNounPhraseAddingPrepPhrase()
+	case "MAKE_VERB_PHRASE_ADDING_PREP_PHRASE":
+		expectNumArgs(0, args)
+		stack.makeVerbPhraseAddingPrepPhrase()
 	default:
 		panic("Unknown command " + command)
 	}
@@ -66,77 +68,92 @@ func (stack *Stack) push(type_, l2, l1 string) {
 }
 
 func (stack *Stack) makeAgent() {
-	agent := stack.pop()
-	lastConstituent := stack.peek()
-	lastConstituent.leftChildren =
-		append([]Constituent{agent}, lastConstituent.leftChildren...)
+	agent := stack.pop("NOUN")
+	verbPhrase := stack.peek("VERB")
+	verbPhrase.setLeftChild(agent)
 }
 
 func (stack *Stack) makeCompoundVerb() {
-	verbPhraseToAdd := stack.pop()
-	verbPhraseToGrow := stack.peek()
+	verbPhraseToAdd := stack.pop("VERB")
+	verbPhraseToGrow := stack.peek("VERB")
 	verbPhraseToGrow.appendRightChild(verbPhraseToAdd)
 }
 
 func (stack *Stack) makeDetNoun() {
-	det := stack.pop()
-	noun := stack.peek()
+	det := stack.pop("DET")
+	noun := stack.peek("NOUN")
 	noun.prependL2Prefix(det.l2)
 	noun.prependL1Prefix(det.l1)
 }
 
 func (stack *Stack) makeInfinitive(l2, l1 string) {
-	noun := stack.peek()
-	noun.appendL2Suffix("-ar")
-	noun.prependL1Prefix("to")
+	stem := stack.peek("VERB_STEM")
+	stem.type_ = "VERB"
+	stem.appendL2Suffix("-ar")
+	stem.prependL1Prefix("to")
 }
 
 func (stack *Stack) makeNounAdj() {
-	adj := stack.pop()
-	noun := stack.peek()
+	adj := stack.pop("ADJ")
+	noun := stack.peek("NOUN")
 	noun.appendRightChild(adj)
 }
 
 func (stack *Stack) makeDirObj() {
-	nounPhrase := stack.pop()
-	verbPhrase := stack.peek()
+	nounPhrase := stack.pop("NOUN")
+	verbPhrase := stack.peek("VERB")
 	verbPhrase.appendRightChild(nounPhrase)
 }
 
-func (stack *Stack) makePhraseAddingPrepPhrase() {
-	prepPhrase := stack.pop()
-	growingPhrase := stack.peek()
-	growingPhrase.appendRightChild(prepPhrase)
+func (stack *Stack) makeNounPhraseAddingPrepPhrase() {
+	prepPhrase := stack.pop("PREP")
+	nounPhrase := stack.peek("NOUN")
+	nounPhrase.appendRightChild(prepPhrase)
+}
+
+func (stack *Stack) makeVerbPhraseAddingPrepPhrase() {
+	prepPhrase := stack.pop("PREP")
+	verbPhrase := stack.peek("VERB")
+	verbPhrase.appendRightChild(prepPhrase)
 }
 
 func (stack *Stack) makePlural(l2, l1 string) {
-	noun := stack.peek()
+	noun := stack.peek("NOUN")
 	noun.appendL2Suffix(l2)
 	noun.appendL1Suffix(l1)
 }
 
 func (stack *Stack) makePrepNoun() {
-	prep := stack.pop()
-	noun := stack.peek()
+	prep := stack.pop("PREP")
+	noun := stack.peek("NOUN")
+	noun.type_ = "PREP"
 	noun.prependL2Prefix(prep.l2)
 	noun.prependL1Prefix(prep.l1)
 }
 
-func (stack *Stack) makePresProg(l2, l1 string) {
-	estar := stack.pop()
-	infinitive := stack.peek()
-	infinitive.prependL2Prefix(estar.l2)
-	infinitive.prependL1Prefix(estar.l1)
-	infinitive.appendL2Suffix(l2)
-	infinitive.appendL1Suffix(l1)
+func (stack *Stack) makePresProg(l2Suffix, l1Suffix string) {
+	estar := stack.pop("VERB_UNIQUE")
+	stem := stack.peek("VERB_STEM")
+	stem.type_ = "VERB"
+	stem.prependL2Prefix(estar.l2)
+	stem.prependL1Prefix(estar.l1)
+	stem.appendL2Suffix(l2Suffix)
+	stem.appendL1Suffix(l1Suffix)
 }
 
-func (stack *Stack) peek() *Constituent {
+func (stack *Stack) peek(expectedType string) *Constituent {
+	constituent := stack.constituents[len(stack.constituents)-1]
+
+	if constituent.type_ != expectedType {
+		panic("Expected type=" + expectedType +
+			" but got type=" + constituent.type_)
+	}
+
 	return &stack.constituents[len(stack.constituents)-1]
 }
 
-func (stack *Stack) pop() Constituent {
-	lastConstituent := stack.peek()
+func (stack *Stack) pop(expectedType string) Constituent {
+	lastConstituent := stack.peek(expectedType)
 	stack.constituents = stack.constituents[0 : len(stack.constituents)-1]
 	return *lastConstituent
 }
