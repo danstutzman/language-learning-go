@@ -10,18 +10,20 @@ type Stack struct {
 }
 
 func expectNumArgs(expectedNum int, args []string) {
-	if len(args) != expectedNum+1 {
+	if len(args) != expectedNum {
 		log.Fatalf("Expected %d args but got %v", expectedNum, args)
 	}
 }
 
-func (stack *Stack) execCommand(command string) {
-	args := strings.Split(command, "/")
-	switch args[0] {
-	case "ADD_ADJ", "ADD_DET", "ADD_NOUN", "ADD_PREP", "ADD_VERB_INFINITIVE",
-		"ADD_VERB_UNIQUE":
-		expectNumArgs(2, args)
-		stack.push(args[1], args[2])
+func (stack *Stack) execCommand(commandWithArgs string) {
+	args := strings.Split(commandWithArgs, "/")
+	command := args[0]
+	args = args[1:len(args)]
+
+	switch command {
+	case "ADD":
+		expectNumArgs(3, args)
+		stack.push(args[0], args[1], args[2])
 	case "MAKE_AGENT":
 		expectNumArgs(0, args)
 		stack.makeAgent()
@@ -33,19 +35,19 @@ func (stack *Stack) execCommand(command string) {
 		stack.makeDetNoun()
 	case "MAKE_INFINITIVE":
 		expectNumArgs(2, args)
-		stack.makeInfinitive(args[1], args[2])
+		stack.makeInfinitive(args[0], args[1])
 	case "MAKE_NOUN_ADJ":
 		expectNumArgs(0, args)
 		stack.makeNounAdj()
 	case "MAKE_PLURAL":
 		expectNumArgs(2, args)
-		stack.makePlural(args[1], args[2])
+		stack.makePlural(args[0], args[1])
 	case "MAKE_PREP_NOUN":
 		expectNumArgs(0, args)
 		stack.makePrepNoun()
 	case "MAKE_PRES_PROG":
 		expectNumArgs(2, args)
-		stack.makePresProg(args[1], args[2])
+		stack.makePresProg(args[0], args[1])
 	case "MAKE_DOBJ":
 		expectNumArgs(0, args)
 		stack.makeDirObj()
@@ -58,8 +60,9 @@ func (stack *Stack) execCommand(command string) {
 	}
 }
 
-func (stack *Stack) push(l2, l1 string) {
-	stack.constituents = append(stack.constituents, Constituent{l2: l2, l1: l1})
+func (stack *Stack) push(type_, l2, l1 string) {
+	stack.constituents = append(stack.constituents,
+		Constituent{type_: type_, l2: l2, l1: l1})
 }
 
 func (stack *Stack) makeAgent() {

@@ -1,6 +1,7 @@
 package main
 
 type Constituent struct {
+	type_         string
 	l2Prefixes    []string
 	l1Prefixes    []string
 	l2            string
