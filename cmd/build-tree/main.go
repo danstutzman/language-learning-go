@@ -12,12 +12,13 @@ type Op struct {
 
 func main() {
 	stack := Stack{}
-	stack.exec(Op{type_: "ADD_VERB_INFINITIVE", l2: "buscar", l1: "to seek"})
+	stack.exec(Op{type_: "ADD_VERB_INFINITIVE", l2: "busc-", l1: "seek"})
 	stack.exec(Op{type_: "ADD_VERB_UNIQUE", l2: "está", l1: "is"})
-	stack.exec(Op{type_: "MAKE_PRES_PROG", l2: "-ar +ando", l1: "-to +ing"})
+	stack.exec(Op{type_: "MAKE_PRES_PROG", l2: "-ando", l1: "-ing"})
 	stack.exec(Op{type_: "ADD_NOUN", l2: "Apple", l1: "Apple"})
 	stack.exec(Op{type_: "MAKE_AGENT", l2: "", l1: ""})
-	stack.exec(Op{type_: "ADD_VERB_INFINITIVE", l2: "comprar", l1: "to buy"})
+	stack.exec(Op{type_: "ADD_VERB_INFINITIVE", l2: "compr-", l1: "buy"})
+	stack.exec(Op{type_: "MAKE_INFINITIVE", l2: "-ar", l1: "to"})
 	stack.exec(Op{type_: "ADD_NOUN", l2: "startup", l1: "startup"})
 	stack.exec(Op{type_: "ADD_DET", l2: "una", l1: "a"})
 	stack.exec(Op{type_: "MAKE_DET_NOUN", l2: "", l1: ""})

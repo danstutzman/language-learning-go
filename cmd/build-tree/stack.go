@@ -11,33 +11,27 @@ func (stack *Stack) exec(op Op) {
 		op.type_ == "ADD_DET" ||
 		op.type_ == "ADD_ADJ" ||
 		op.type_ == "ADD_PREP" {
-		stack.push(Constituent{l1: op.l1, l2: op.l2, leftChildren: []Constituent{}})
+		stack.push(Constituent{l1: op.l1, l2: op.l2})
 		return
 	} else if op.type_ == "MAKE_PRES_PROG" {
 		estar := stack.pop()
-		infinitive := stack.pop()
-		if op.l2 == "-ar +ando" && op.l1 == "-to +ing" &&
-			estar.l2 == "está" && estar.l1 == "is" &&
-			infinitive.l2 == "buscar" && infinitive.l1 == "to seek" {
-			stack.push(Constituent{
-				l2:           "está-buscando",
-				l1:           "is-seeking",
-				leftChildren: []Constituent{},
-			})
-			return
-		} else {
-			panic("Don't know how to apply MAKE_PRES_PROG")
-		}
+		infinitive := stack.peek()
+		infinitive.prependL2Prefix(estar.l2)
+		infinitive.prependL1Prefix(estar.l1)
+		infinitive.appendL2Suffix(op.l2)
+		infinitive.appendL1Suffix(op.l1)
+		return
 	} else if op.type_ == "MAKE_AGENT" {
 		agent := stack.pop()
 		lastConstituent := stack.peek()
-		lastConstituent.leftChildren = append([]Constituent{agent}, lastConstituent.leftChildren...)
+		lastConstituent.leftChildren =
+			append([]Constituent{agent}, lastConstituent.leftChildren...)
 		return
 	} else if op.type_ == "MAKE_DET_NOUN" {
 		det := stack.pop()
 		noun := stack.peek()
-		noun.l2 = det.l2 + "-" + noun.l2
-		noun.l1 = det.l1 + "-" + noun.l1
+		noun.prependL2Prefix(det.l2)
+		noun.prependL1Prefix(det.l1)
 		return
 	} else if op.type_ == "MAKE_NOUN_ADJ" {
 		adj := stack.pop()
@@ -47,8 +41,8 @@ func (stack *Stack) exec(op Op) {
 	} else if op.type_ == "MAKE_PREP_NOUN" {
 		prep := stack.pop()
 		noun := stack.peek()
-		noun.l2 = prep.l2 + "-" + noun.l2
-		noun.l1 = prep.l1 + "-" + noun.l1
+		noun.prependL2Prefix(prep.l2)
+		noun.prependL1Prefix(prep.l1)
 		return
 	} else if op.type_ == "MAKE_NOUN_PHRASE_ADDING_PREP_PHRASE" ||
 		op.type_ == "MAKE_VERB_PHRASE_ADDING_PREP_PHRASE" {
@@ -63,8 +57,13 @@ func (stack *Stack) exec(op Op) {
 		return
 	} else if op.type_ == "MAKE_PLURAL" {
 		noun := stack.peek()
-		noun.l2 = noun.l2 + "es"
-		noun.l1 = noun.l1 + "s"
+		noun.appendL2Suffix("-es")
+		noun.appendL1Suffix("-s")
+		return
+	} else if op.type_ == "MAKE_INFINITIVE" {
+		noun := stack.peek()
+		noun.appendL2Suffix("-ar")
+		noun.prependL1Prefix("to")
 		return
 	} else if op.type_ == "MAKE_COMPOUND_VERB" {
 		verbPhraseToAdd := stack.pop()
