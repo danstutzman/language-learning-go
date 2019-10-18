@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -35,7 +36,7 @@ MAKE_NOUN_PHRASE_ADDING_PREP_PHRASE
 ADD/PREP/por/for
 MAKE_PREP_NOUN
 MAKE_VERB_PHRASE_ADDING_PREP_PHRASE
-MAKE_COMPOUND_VERB
+MAKE_VOBJ
 `
 
 func main() {
@@ -43,6 +44,7 @@ func main() {
 	for _, commandWhitespace := range strings.Split(commands, "\n") {
 		command := strings.TrimSpace(commandWhitespace)
 		if command != "" {
+			log.Printf("%s", command)
 			stack.execCommand(command)
 		}
 	}

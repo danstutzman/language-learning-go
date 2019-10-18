@@ -1,12 +1,13 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/cmd/build-tree/constituent"
 	"log"
 	"strings"
 )
 
 type Stack struct {
-	constituents []Constituent
+	constituents []constituent.Constituent
 }
 
 func expectNumArgs(expectedNum int, args []string) {
@@ -27,9 +28,6 @@ func (stack *Stack) execCommand(commandWithArgs string) {
 	case "MAKE_AGENT":
 		expectNumArgs(0, args)
 		stack.makeAgent()
-	case "MAKE_COMPOUND_VERB":
-		expectNumArgs(0, args)
-		stack.makeCompoundVerb()
 	case "MAKE_DET_NOUN_PHRASE":
 		expectNumArgs(0, args)
 		stack.makeDetNounPhrase()
@@ -54,6 +52,9 @@ func (stack *Stack) execCommand(commandWithArgs string) {
 	case "MAKE_NOUN_PHRASE_ADDING_PREP_PHRASE":
 		expectNumArgs(0, args)
 		stack.makeNounPhraseAddingPrepPhrase()
+	case "MAKE_VOBJ":
+		expectNumArgs(0, args)
+		stack.makeVerbObj()
 	case "MAKE_VERB_PHRASE_ADDING_PREP_PHRASE":
 		expectNumArgs(0, args)
 		stack.makeVerbPhraseAddingPrepPhrase()
@@ -64,7 +65,7 @@ func (stack *Stack) execCommand(commandWithArgs string) {
 
 func (stack *Stack) push(type_, l2, l1 string) {
 	stack.constituents = append(stack.constituents,
-		Constituent{type_: type_, l2: l2, l1: l1})
+		constituent.New(type_, l2, l1))
 }
 
 var EXPECT_ADJ = map[string]bool{"ADJ": true}
@@ -81,92 +82,81 @@ var EXPECT_VERB_UNIQUE = map[string]bool{"VERB_UNIQUE": true}
 func (stack *Stack) makeAgent() {
 	agent := stack.pop(EXPECT_NOUN)
 	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
-	verbPhrase.setLeftChild(agent)
+	verbPhrase.SetLeftChild("VERB_PHRASE", agent)
 }
 
-func (stack *Stack) makeCompoundVerb() {
+func (stack *Stack) makeVerbObj() {
 	verbPhraseToAdd := stack.pop(EXPECT_VERB_OR_PHRASE)
-	verbToGrow := stack.peek(EXPECT_VERB)
-	verbToGrow.type_ = "VERB_PHRASE"
-	verbToGrow.appendRightChild(verbPhraseToAdd)
+	verbToGrow := stack.peek(EXPECT_VERB_OR_PHRASE)
+	verbToGrow.MakePhrase("VERB_PHRASE", verbPhraseToAdd)
 }
 
 func (stack *Stack) makeDetNounPhrase() {
 	det := stack.pop(EXPECT_DET)
 	noun := stack.peek(EXPECT_NOUN_OR_PHRASE)
-	noun.type_ = "NOUN_PHRASE"
-	noun.prependL2Prefix(det.l2)
-	noun.prependL1Prefix(det.l1)
+	noun.ChangeInto("NOUN_PHRASE", det.GetL2(), det.GetL1(), "", "")
 }
 
 func (stack *Stack) makeInfinitive(l2, l1 string) {
 	stem := stack.peek(EXPECT_VERB_STEM)
-	stem.type_ = "VERB"
-	stem.appendL2Suffix("-ar")
-	stem.prependL1Prefix("to")
+	stem.ChangeInto("VERB", "", "to", "-ar", "")
 }
 
 func (stack *Stack) makeNounAdj() {
 	adj := stack.pop(EXPECT_ADJ)
 	noun := stack.peek(EXPECT_NOUN)
-	noun.type_ = "NOUN_PHRASE"
-	noun.appendRightChild(adj)
+	noun.MakePhrase("NOUN_PHRASE", adj)
 }
 
 func (stack *Stack) makeDirObj() {
 	nounPhrase := stack.pop(EXPECT_NOUN_OR_PHRASE)
 	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
-	verbPhrase.appendRightChild(nounPhrase)
+	verbPhrase.MakePhrase("VERB_PHRASE", nounPhrase)
 }
 
 func (stack *Stack) makeNounPhraseAddingPrepPhrase() {
 	prepPhrase := stack.pop(EXPECT_PREP_PHRASE)
 	nounPhrase := stack.peek(EXPECT_NOUN_OR_PHRASE)
-	nounPhrase.appendRightChild(prepPhrase)
+	nounPhrase.MakePhrase("NOUN_PHRASE", prepPhrase)
 }
 
 func (stack *Stack) makeVerbPhraseAddingPrepPhrase() {
 	prepPhrase := stack.pop(EXPECT_PREP_PHRASE)
 	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
-	verbPhrase.appendRightChild(prepPhrase)
+	verbPhrase.MakePhrase("VERB_PHRASE", prepPhrase)
 }
 
 func (stack *Stack) makePlural(l2, l1 string) {
 	noun := stack.peek(EXPECT_NOUN)
-	noun.appendL2Suffix(l2)
-	noun.appendL1Suffix(l1)
+	noun.ChangeInto("NOUN", "", "", l2, l1)
 }
 
 func (stack *Stack) makePrepNoun() {
 	prep := stack.pop(EXPECT_PREP)
 	noun := stack.peek(EXPECT_NOUN_OR_PHRASE)
-	noun.type_ = "PREP_PHRASE"
-	noun.prependL2Prefix(prep.l2)
-	noun.prependL1Prefix(prep.l1)
+	noun.ChangeInto("PREP_PHRASE", prep.GetL2(), prep.GetL1(), "", "")
 }
 
 func (stack *Stack) makePresProg(l2Suffix, l1Suffix string) {
 	estar := stack.pop(EXPECT_VERB_UNIQUE)
 	stem := stack.peek(EXPECT_VERB_STEM)
-	stem.type_ = "VERB"
-	stem.prependL2Prefix(estar.l2)
-	stem.prependL1Prefix(estar.l1)
-	stem.appendL2Suffix(l2Suffix)
-	stem.appendL1Suffix(l1Suffix)
+	stem.ChangeInto("VERB", estar.GetL2(), estar.GetL1(), l2Suffix, l1Suffix)
 }
 
-func (stack *Stack) peek(expectedTypes map[string]bool) *Constituent {
+func (stack *Stack) peek(
+	expectedTypes map[string]bool) *constituent.Constituent {
 	constituent := stack.constituents[len(stack.constituents)-1]
 
-	if expectedTypes[constituent.type_] == false {
+	if expectedTypes[constituent.GetType()] == false {
 		log.Panicf("Expected types in %v but got type=%s",
-			expectedTypes, constituent.type_)
+			expectedTypes, constituent.GetType())
 	}
 
 	return &stack.constituents[len(stack.constituents)-1]
 }
 
-func (stack *Stack) pop(expectedTypes map[string]bool) Constituent {
+func (stack *Stack) pop(
+	expectedTypes map[string]bool) constituent.Constituent {
 	lastConstituent := stack.peek(expectedTypes)
 	stack.constituents = stack.constituents[0 : len(stack.constituents)-1]
 	return *lastConstituent
@@ -178,7 +168,7 @@ func (stack *Stack) getL1Words() []string {
 		if len(l1Words) > 0 {
 			l1Words = append(l1Words, "/")
 		}
-		l1Words = append(l1Words, constituent.getL1Words()...)
+		l1Words = append(l1Words, constituent.GetL1Words()...)
 	}
 	return l1Words
 }
@@ -189,12 +179,7 @@ func (stack *Stack) getL2Words() []string {
 		if len(l2Words) > 0 {
 			l2Words = append(l2Words, "/")
 		}
-		l2Words = append(l2Words, constituent.getL2Words()...)
+		l2Words = append(l2Words, constituent.GetL2Words()...)
 	}
 	return l2Words
-}
-
-func (stack *Stack) pushConstituent(l2, l1 string) {
-	stack.constituents =
-		append(stack.constituents, Constituent{l2: l2, l1: l1})
 }

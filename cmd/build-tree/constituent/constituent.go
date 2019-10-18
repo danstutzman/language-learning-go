@@ -1,4 +1,4 @@
-package main
+package constituent
 
 type Constituent struct {
 	type_         string
@@ -12,10 +12,28 @@ type Constituent struct {
 	rightChildren []Constituent
 }
 
-func (constituent Constituent) getL1Words() []string {
+func New(type_, l2, l1 string) Constituent {
+	return Constituent{
+		type_: type_,
+		l2:    l2,
+		l1:    l1,
+	}
+}
+
+func (constituent Constituent) GetType() string {
+	return constituent.type_
+}
+func (constituent Constituent) GetL1() string {
+	return constituent.l1
+}
+func (constituent Constituent) GetL2() string {
+	return constituent.l2
+}
+
+func (constituent Constituent) GetL1Words() []string {
 	words := []string{}
 	for _, child := range constituent.leftChildren {
-		words = append(words, child.getL1Words()...)
+		words = append(words, child.GetL1Words()...)
 	}
 	for _, l1Prefix := range constituent.l1Prefixes {
 		words = append(words, l1Prefix)
@@ -25,15 +43,15 @@ func (constituent Constituent) getL1Words() []string {
 		words = append(words, l1Suffix)
 	}
 	for _, child := range constituent.rightChildren {
-		words = append(words, child.getL1Words()...)
+		words = append(words, child.GetL1Words()...)
 	}
 	return words
 }
 
-func (constituent Constituent) getL2Words() []string {
+func (constituent Constituent) GetL2Words() []string {
 	words := []string{}
 	for _, child := range constituent.leftChildren {
-		words = append(words, child.getL2Words()...)
+		words = append(words, child.GetL2Words()...)
 	}
 	for _, l2Prefix := range constituent.l2Prefixes {
 		words = append(words, l2Prefix)
@@ -43,12 +61,16 @@ func (constituent Constituent) getL2Words() []string {
 		words = append(words, l2Suffix)
 	}
 	for _, child := range constituent.rightChildren {
-		words = append(words, child.getL2Words()...)
+		words = append(words, child.GetL2Words()...)
 	}
 	return words
 }
 
-func (constituent *Constituent) setLeftChild(newChild Constituent) {
+func (constituent *Constituent) SetLeftChild(newType string,
+	newChild Constituent) {
+
+	constituent.type_ = newType
+
 	if len(constituent.leftChildren) != 0 {
 		panic("Left child already set")
 	}
@@ -73,4 +95,29 @@ func (constituent *Constituent) appendL1Suffix(l1Suffix string) {
 
 func (constituent *Constituent) appendRightChild(newChild Constituent) {
 	constituent.rightChildren = append(constituent.rightChildren, newChild)
+}
+
+func (constituent *Constituent) ChangeInto(
+	newType, l2Prefix, l1Prefix, l2Suffix, l1Suffix string) {
+
+	constituent.type_ = newType
+	if l2Prefix != "" {
+		constituent.prependL2Prefix(l2Prefix)
+	}
+	if l1Prefix != "" {
+		constituent.prependL1Prefix(l1Prefix)
+	}
+	if l2Suffix != "" {
+		constituent.appendL2Suffix(l2Suffix)
+	}
+	if l1Suffix != "" {
+		constituent.appendL1Suffix(l1Suffix)
+	}
+}
+
+func (constituent *Constituent) MakePhrase(newType string,
+	newChild Constituent) {
+
+	constituent.type_ = newType
+	constituent.appendRightChild(newChild)
 }
