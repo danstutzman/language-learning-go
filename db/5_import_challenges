@@ -1,0 +1,43 @@
+#!/bin/bash -ex
+
+cd `dirname $0`/..
+
+sqlite3 db/db.sqlite3 <<EOF
+
+DROP TABLE IF EXISTS imported_challenges;
+CREATE TABLE imported_challenges (
+  type            TEXT NOT NULL,
+
+  expectation     TEXT NOT NULL,
+  card_l2         TEXT NOT NULL,
+
+  answered_at     DATETIME,
+  answered_l1     TEXT,
+  answered_l2     TEXT,
+  showed_mnemonic BOOLEAN,
+
+  grade           TEXT
+);
+
+.mode csv imported_challenges
+
+.import db/5_challenges.csv imported_challenges
+
+DELETE FROM challenges;
+
+INSERT INTO challenges (type, expectation, card_id, answered_l1, answered_l2,
+  answered_at, showed_mnemonic, grade)
+SELECT
+  imported_challenges.type, 
+  imported_challenges.expectation,
+  cards.id,
+  imported_challenges.answered_l1,
+  imported_challenges.answered_l2,
+  imported_challenges.answered_at,
+  CASE WHEN imported_challenges.showed_mnemonic = '' THEN NULL
+    ELSE imported_challenges.showed_mnemonic END,
+  imported_challenges.grade
+FROM imported_challenges
+JOIN cards ON cards.l2 = imported_challenges.card_l2;
+
+EOF

@@ -1,0 +1,24 @@
+#!/bin/bash -ex
+
+cd `dirname $0`/..
+
+sqlite3 db/db.sqlite3 <<EOF
+
+.headers on
+.mode csv
+.output db/5_challenges.csv
+
+SELECT challenges.type,
+  challenges.expectation,
+  cards.l2 as card_l2,
+  challenges.answered_at,
+  challenges.answered_l1,
+  challenges.answered_l2,
+  challenges.showed_mnemonic,
+  challenges.grade
+FROM challenges
+JOIN cards ON cards.id = challenges.card_id
+WHERE answered_at IS NOT NULL
+ORDER BY challenges.id;
+
+EOF
