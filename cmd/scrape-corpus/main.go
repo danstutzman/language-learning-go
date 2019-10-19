@@ -21,10 +21,9 @@ func main() {
 
 	var req *http.Request
 	var err error
-	if page == "x2" {
+	if page == "search-list" || page == "search-collocates" {
 		params := url.Values{}
-		if true {
-			// if search-collocates
+		if page == "search-collocates" {
 			params.Add("chooser", "collocates")
 			params.Add("wl", "4")
 			params.Add("wr", "4")
@@ -39,8 +38,7 @@ func main() {
 			params.Add("numhits", "100")
 			params.Add("kh", "200")
 			params.Add("groupBy", "words")
-		} else {
-			// if search-list
+		} else if page == "search-list" {
 			params.Add("chooser", "seq")
 			params.Add("wl", "4")
 			params.Add("wr", "4")
