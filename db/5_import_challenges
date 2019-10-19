@@ -40,4 +40,6 @@ SELECT
 FROM imported_challenges
 JOIN cards ON cards.l2 = imported_challenges.card_l2;
 
+DROP TABLE imported_challenges;
+
 EOF
