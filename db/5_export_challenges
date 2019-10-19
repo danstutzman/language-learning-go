@@ -10,16 +10,19 @@ sqlite3 db/db.sqlite3 <<EOF
 
 SELECT challenges.type,
   challenges.expectation,
-  cards.l2 as card_l2,
+  right_card.l2 as card_l2,
   challenges.shown_at,
   challenges.answered_l1,
   challenges.answered_l2,
   challenges.showed_mnemonic,
   challenges.first_key_millis,
   challenges.last_key_millis,
-  challenges.grade
+  challenges.grade,
+  wrong_card.l2 as misconnected_card_l2
 FROM challenges
-JOIN cards ON cards.id = challenges.card_id
+JOIN cards AS right_card ON right_card.id = challenges.card_id
+LEFT JOIN cards AS wrong_card
+  ON wrong_card.id = challenges.misconnected_card_id
 WHERE shown_at IS NOT NULL
 ORDER BY challenges.id;
 EOF

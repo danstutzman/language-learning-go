@@ -28,7 +28,8 @@ type Challenge struct {
 	FirstKeyMillis null.Int    `json:"firstKeyMillis"`
 	LastKeyMillis  null.Int    `json:"lastKeyMillis"`
 
-	Grade null.String `json:"grade"`
+	Grade              null.String `json:"grade"`
+	MisconnectedCardId null.Int    `json:"misconnectedCardId"`
 }
 
 func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
@@ -46,7 +47,8 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 		FirstKeyMillis: challenge.FirstKeyMillis,
 		LastKeyMillis:  challenge.LastKeyMillis,
 
-		Grade: challenge.Grade,
+		Grade:              challenge.Grade,
+		MisconnectedCardId: challenge.MisconnectedCardId,
 	}
 }
 
@@ -65,7 +67,8 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 		FirstKeyMillis: row.FirstKeyMillis,
 		LastKeyMillis:  row.LastKeyMillis,
 
-		Grade: row.Grade,
+		Grade:              row.Grade,
+		MisconnectedCardId: row.MisconnectedCardId,
 	}
 }
 

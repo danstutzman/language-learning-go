@@ -18,7 +18,8 @@ CREATE TABLE imported_challenges (
   first_key_millis INTEGER,
   last_key_millis  INTEGER,
 
-  grade           TEXT
+  grade                TEXT,
+  misconnected_card_l2 TEXT
 );
 
 .mode csv imported_challenges
@@ -29,13 +30,13 @@ DELETE FROM challenges;
 
 INSERT INTO challenges (type, expectation, card_id,
   shown_at, answered_l1, answered_l2, showed_mnemonic,
-  first_key_millis, last_key_millis, grade)
+  first_key_millis, last_key_millis, grade, misconnected_card_id)
 SELECT
   CASE WHEN imported_challenges.type = 'NULL' THEN NULL
     ELSE imported_challenges.type END, 
   CASE WHEN imported_challenges.expectation = 'NULL' THEN NULL
     ELSE imported_challenges.expectation END,
-  cards.id,
+  right_card.id,
   CASE WHEN imported_challenges.shown_at = 'NULL' THEN NULL
     ELSE imported_challenges.shown_at END,
   CASE WHEN imported_challenges.answered_l1 = 'NULL' THEN NULL
@@ -49,9 +50,12 @@ SELECT
   CASE WHEN imported_challenges.last_key_millis = 'NULL' THEN NULL
     ELSE imported_challenges.last_key_millis END,
   CASE WHEN imported_challenges.grade = 'NULL' THEN NULL
-    ELSE imported_challenges.grade END
+    ELSE imported_challenges.grade END,
+  wrong_card.id
 FROM imported_challenges
-JOIN cards ON cards.l2 = imported_challenges.card_l2;
+JOIN cards AS right_card ON right_card.l2 = imported_challenges.card_l2
+LEFT JOIN cards AS wrong_card
+  ON wrong_card.l2 = imported_challenges.misconnected_card_l2;
 
 DROP TABLE imported_challenges;
 

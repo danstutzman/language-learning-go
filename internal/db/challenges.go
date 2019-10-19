@@ -23,7 +23,8 @@ type ChallengeRow struct {
 	FirstKeyMillis null.Int
 	LastKeyMillis  null.Int
 
-	Grade null.String
+	Grade              null.String
+	MisconnectedCardId null.Int
 }
 
 type ChallengeUpdate struct {
@@ -36,7 +37,8 @@ type ChallengeUpdate struct {
 	FirstKeyMillis null.Int
 	LastKeyMillis  null.Int
 
-	Grade null.String
+	Grade              null.String
+	MisconnectedCardId null.Int
 }
 
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
@@ -44,7 +46,7 @@ func AssertChallengesHasCorrectSchema(db *sql.DB) {
   		expectation,
 	    shown_at, answered_l1, showed_mnemonic,
 			first_key_millis, last_key_millis,
-		  grade
+		  grade, misconnected_card_id
 	  FROM challenges
 		LIMIT 1`
 	if LOG {
@@ -64,7 +66,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
   	expectation,
 	  shown_at, answered_l1, answered_l2, showed_mnemonic,
 		first_key_millis, last_key_millis,
-	  grade
+	  grade, misconnected_card_id
 	  FROM challenges ` + where
 	if LOG {
 		log.Println(query)
@@ -81,7 +83,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 			&row.Expectation,
 			&row.ShownAt, &row.AnsweredL1, &row.AnsweredL2, &row.ShowedMnemonic,
 			&row.FirstKeyMillis, &row.LastKeyMillis,
-			&row.Grade)
+			&row.Grade, &row.MisconnectedCardId)
 		if err != nil {
 			panic(err)
 		}
@@ -102,12 +104,12 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 		expectation,
 	  shown_at, answered_l1, answered_l2, showed_mnemonic,
 		first_key_millis, last_key_millis,
-	  grade)
+	  grade, misconnected_card_id)
 		VALUES (%s, %d, %s,
 		  %s,
 		  %s, %s, %s, %s,
 			%s, %s,
-			%s)`,
+			%s, %s)`,
 		Escape(challenge.Type),
 		challenge.CardId,
 		EscapeNullString(challenge.Grade),
@@ -121,7 +123,8 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 		EscapeNullInt(challenge.FirstKeyMillis),
 		EscapeNullInt(challenge.LastKeyMillis),
 
-		EscapeNullString(challenge.Grade))
+		EscapeNullString(challenge.Grade),
+		EscapeNullInt(challenge.MisconnectedCardId))
 
 	if LOG {
 		log.Println(query)
@@ -165,6 +168,10 @@ func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
 	if update.ShowedMnemonic.Valid {
 		pairs = append(pairs, "showed_mnemonic="+
 			EscapeNullBool(update.ShowedMnemonic))
+	}
+	if update.MisconnectedCardId.Valid {
+		pairs = append(pairs, "misconnected_card_id="+
+			EscapeNullInt(update.MisconnectedCardId))
 	}
 
 	if len(pairs) == 0 {

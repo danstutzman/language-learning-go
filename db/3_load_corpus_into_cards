@@ -44,7 +44,8 @@ CREATE TABLE challenges (
   first_key_millis INTEGER,
   last_key_millis  INTEGER,
 
-  grade           TEXT
+  grade                TEXT,
+  misconnected_card_id INTEGER
 );
 EOF
 
