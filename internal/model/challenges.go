@@ -6,7 +6,6 @@ import (
 	"gopkg.in/guregu/null.v3"
 	"sort"
 	"strconv"
-	"time"
 )
 
 type ChallengeList struct {
@@ -120,27 +119,27 @@ func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
 }
 
 func (model *Model) GetTopChallenge(type_ string) *Challenge {
-	challenges := db.FromChallenges(model.db, "WHERE type="+db.Escape(type_))
+	challenges := db.FromChallenges(model.db,
+		"WHERE type="+db.Escape(type_)+
+			" AND shown_at IS NOT NULL "+
+			"ORDER BY id")
 
-	lastShownAtByCardId := map[int]time.Time{}
-	needsGradedByCardId := map[int]bool{}
+	lastChallengeByCardId := map[int]db.ChallengeRow{}
 	for _, challenge := range challenges {
-		cardId := challenge.CardId
-		shownAt := challenge.ShownAt.Time
-
-		if shownAt.After(lastShownAtByCardId[cardId]) {
-			lastShownAtByCardId[cardId] = shownAt
-		}
-		if challenge.ShownAt.Valid && !challenge.Grade.Valid {
-			needsGradedByCardId[cardId] = true
-		}
+		lastChallengeByCardId[challenge.CardId] = challenge
 	}
 
 	cardsUnfiltered := db.FromCards(model.db, "")
 
 	cards := []db.CardRow{}
 	for _, card := range cardsUnfiltered {
-		if !needsGradedByCardId[card.Id] {
+		lastChallenge, hasLastChallenge := lastChallengeByCardId[card.Id]
+		if !hasLastChallenge {
+			// Show card if it's never been shown
+			cards = append(cards, card)
+		} else if lastChallenge.ShownAt.Valid && !lastChallenge.Grade.Valid {
+			// Waiting for manual grade, so suspend card for now
+		} else {
 			cards = append(cards, card)
 		}
 	}
@@ -150,8 +149,8 @@ func (model *Model) GetTopChallenge(type_ string) *Challenge {
 	}
 
 	sort.Slice(cards, func(i, j int) bool {
-		return lastShownAtByCardId[cards[i].Id].Before(
-			lastShownAtByCardId[cards[j].Id])
+		return lastChallengeByCardId[cards[i].Id].ShownAt.Time.Before(
+			lastChallengeByCardId[cards[j].Id].ShownAt.Time)
 	})
 	card := cards[0]
 
