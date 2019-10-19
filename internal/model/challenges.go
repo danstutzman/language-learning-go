@@ -120,10 +120,10 @@ func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
 }
 
 func (model *Model) GetTopChallenge(type_ string) *Challenge {
-	challenges := db.FromChallenges(model.db,
-		"WHERE type="+db.Escape(type_))
+	challenges := db.FromChallenges(model.db, "WHERE type="+db.Escape(type_))
 
 	lastShownAtByCardId := map[int]time.Time{}
+	needsGradedByCardId := map[int]bool{}
 	for _, challenge := range challenges {
 		cardId := challenge.CardId
 		shownAt := challenge.ShownAt.Time
@@ -131,9 +131,24 @@ func (model *Model) GetTopChallenge(type_ string) *Challenge {
 		if shownAt.After(lastShownAtByCardId[cardId]) {
 			lastShownAtByCardId[cardId] = shownAt
 		}
+		if challenge.ShownAt.Valid && !challenge.Grade.Valid {
+			needsGradedByCardId[cardId] = true
+		}
 	}
 
-	cards := db.FromCards(model.db, "")
+	cardsUnfiltered := db.FromCards(model.db, "")
+
+	cards := []db.CardRow{}
+	for _, card := range cardsUnfiltered {
+		if !needsGradedByCardId[card.Id] {
+			cards = append(cards, card)
+		}
+	}
+
+	if len(cards) == 0 {
+		return nil
+	}
+
 	sort.Slice(cards, func(i, j int) bool {
 		return lastShownAtByCardId[cards[i].Id].Before(
 			lastShownAtByCardId[cards[j].Id])
