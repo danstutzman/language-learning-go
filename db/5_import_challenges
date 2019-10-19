@@ -31,19 +31,25 @@ INSERT INTO challenges (type, expectation, card_id,
   shown_at, answered_l1, answered_l2, showed_mnemonic,
   first_key_millis, last_key_millis, grade)
 SELECT
-  imported_challenges.type, 
-  imported_challenges.expectation,
+  CASE WHEN imported_challenges.type = 'NULL' THEN NULL
+    ELSE imported_challenges.type END, 
+  CASE WHEN imported_challenges.expectation = 'NULL' THEN NULL
+    ELSE imported_challenges.expectation END,
   cards.id,
-  imported_challenges.shown_at,
-  imported_challenges.answered_l1,
-  imported_challenges.answered_l2,
-  CASE WHEN imported_challenges.showed_mnemonic = '' THEN NULL
+  CASE WHEN imported_challenges.shown_at = 'NULL' THEN NULL
+    ELSE imported_challenges.shown_at END,
+  CASE WHEN imported_challenges.answered_l1 = 'NULL' THEN NULL
+    ELSE imported_challenges.answered_l1 END,
+  CASE WHEN imported_challenges.answered_l2 = 'NULL' THEN NULL
+    ELSE imported_challenges.answered_l2 END,
+  CASE WHEN imported_challenges.showed_mnemonic = 'NULL' THEN NULL
     ELSE imported_challenges.showed_mnemonic END,
-  CASE WHEN imported_challenges.first_key_millis = '' THEN NULL
+  CASE WHEN imported_challenges.first_key_millis = 'NULL' THEN NULL
     ELSE imported_challenges.first_key_millis END,
-  CASE WHEN imported_challenges.last_key_millis = '' THEN NULL
+  CASE WHEN imported_challenges.last_key_millis = 'NULL' THEN NULL
     ELSE imported_challenges.last_key_millis END,
-  imported_challenges.grade
+  CASE WHEN imported_challenges.grade = 'NULL' THEN NULL
+    ELSE imported_challenges.grade END
 FROM imported_challenges
 JOIN cards ON cards.l2 = imported_challenges.card_l2;
 

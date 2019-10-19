@@ -3,10 +3,10 @@
 cd `dirname $0`/..
 
 sqlite3 db/db.sqlite3 <<EOF
-
 .headers on
 .mode csv
 .output db/5_challenges.csv
+.nullvalue NULL
 
 SELECT challenges.type,
   challenges.expectation,
@@ -22,5 +22,8 @@ FROM challenges
 JOIN cards ON cards.id = challenges.card_id
 WHERE shown_at IS NOT NULL
 ORDER BY challenges.id;
-
 EOF
+
+cat db/5_challenges.csv | \
+  ruby -e 'puts STDIN.read.gsub("\r", "")' > db/5_challenges.csv.new
+mv db/5_challenges.csv.new db/5_challenges.csv
