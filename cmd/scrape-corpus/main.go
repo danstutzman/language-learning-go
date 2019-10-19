@@ -86,13 +86,18 @@ func main() {
 	}
 	defer resp.Body.Close()
 
+	err = os.MkdirAll("db/4_corpus_scrapes/"+page, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
 	path := "db/4_corpus_scrapes/" + page + "/" + query + ".html"
 	file, err := os.Create(path)
-	fmt.Fprintln(os.Stderr, path)
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
+	fmt.Fprintln(os.Stderr, path)
 
 	writer := bufio.NewWriter(file)
 	io.Copy(writer, resp.Body)
