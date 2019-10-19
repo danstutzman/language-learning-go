@@ -11,14 +11,17 @@ import sys
 nlp = spacy.load('es_core_news_sm')
 
 writer = csv.writer(sys.stdout)
-writer.writerow(['line_num', 'index', 'text', 'norm', 'tag', 'lemma',
-  'pos', 'dep', 'parent_index'])
 
 line_num = 0
 for line in sys.stdin:
   line_num += 1
   phrase = line.rstrip()
   doc = nlp(phrase)
+
+  if line_num == 1:
+    # wait to write out header so it doesn't interrupt interactive use
+    writer.writerow(['line_num', 'index', 'text', 'norm', 'tag', 'lemma',
+    'pos', 'dep', 'parent_index'])
 
   for token in doc:
     writer.writerow([line_num, token.i, token.text, token.norm_, token.tag_,
