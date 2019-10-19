@@ -22,6 +22,7 @@ type Challenge struct {
 	Expectation string `json:"expectation"`
 
 	AnsweredL1     null.String `json:"answeredL1"`
+	AnsweredL2     null.String `json:"answeredL2"`
 	AnsweredAt     null.Time   `json:"answeredAt"`
 	ShowedMnemonic null.Bool   `json:"showedMnemonic"`
 
@@ -37,6 +38,7 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 		Expectation: challenge.Expectation,
 
 		AnsweredL1:     challenge.AnsweredL1,
+		AnsweredL2:     challenge.AnsweredL2,
 		AnsweredAt:     challenge.AnsweredAt,
 		ShowedMnemonic: challenge.ShowedMnemonic,
 
@@ -53,6 +55,7 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 		Expectation: row.Expectation,
 
 		AnsweredL1:     row.AnsweredL1,
+		AnsweredL2:     row.AnsweredL2,
 		AnsweredAt:     row.AnsweredAt,
 		ShowedMnemonic: row.ShowedMnemonic,
 
@@ -71,8 +74,7 @@ func (model *Model) challengeRowToChallengeJoinCard(
 }
 
 func (model *Model) ListChallenges() ChallengeList {
-	challengeRows := db.FromChallenges(model.db,
-		"WHERE type='Given2Type1' ORDER BY card_id, id")
+	challengeRows := db.FromChallenges(model.db, "ORDER BY card_id, id")
 
 	challenges := []Challenge{}
 	for _, challengeRow := range challengeRows {
