@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/antchfx/htmlquery"
 	"github.com/paulrosania/go-charset/charset"
 	_ "github.com/paulrosania/go-charset/data" // embed character set data in binary
@@ -9,6 +10,10 @@ import (
 	"os"
 	"strings"
 )
+
+type Row struct {
+	form string
+}
 
 func main() {
 	if len(os.Args) != 1+1 {
@@ -36,20 +41,20 @@ func main() {
 		panic(err)
 	}
 
-	texts := []string{}
+	rows := []Row{}
 	for _, node := range nodes {
 		for _, attr := range node.Attr {
 			if attr.Key == "href" {
 				if strings.HasPrefix(attr.Val, "x3.asp?") {
 					text := strings.TrimSpace(node.FirstChild.Data)
 					if text != "" {
-						texts = append(texts, text)
+						rows = append(rows, Row{form: text})
 					}
 				}
 			}
 		}
 	}
-	for _, text := range texts {
-		println(text)
+	for _, row := range rows {
+		fmt.Printf("%+v\n", row)
 	}
 }
