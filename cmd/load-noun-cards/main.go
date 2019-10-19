@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/guregu/null.v3"
 	"io"
 	"log"
 	"os"
@@ -48,6 +49,8 @@ func main() {
 	}
 	l1Index := indexOf("l1", columnNames)
 	l2Index := indexOf("l2", columnNames)
+	mnemonic12Index := indexOf("mnemonic12", columnNames)
+	mnemonic21Index := indexOf("mnemonic21", columnNames)
 
 	for {
 		values, err := reader.Read()
@@ -59,8 +62,15 @@ func main() {
 
 		l1 := values[l1Index]
 		l2 := values[l2Index]
+		mnemonic12 := values[mnemonic12Index]
+		mnemonic21 := values[mnemonic21Index]
 
-		theModel.InsertCard(model.Card{L1: l1, L2: l2})
+		theModel.InsertCard(model.Card{
+			L1:         l1,
+			L2:         l2,
+			Mnemonic12: null.StringFrom(mnemonic12),
+			Mnemonic21: null.StringFrom(mnemonic21),
+		})
 	}
 }
 

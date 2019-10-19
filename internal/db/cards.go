@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"gopkg.in/guregu/null.v3"
 	"log"
 )
 
@@ -11,12 +12,15 @@ type CardRow struct {
 	IsSentence     bool
 	L2             string
 	L1             string
+	Mnemonic12     null.String
+	Mnemonic21     null.String
 	MorphemeIdsCsv string
 	Type           string
 }
 
 func AssertCardsHasCorrectSchema(db *sql.DB) {
-	query := `SELECT id, is_sentence, l2, l1, morpheme_ids_csv, type
+	query := `SELECT id, is_sentence, l2, l1, mnemonic12, mnemonic21,
+	  morpheme_ids_csv, type
 		FROM cards LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -31,7 +35,8 @@ func AssertCardsHasCorrectSchema(db *sql.DB) {
 func FromCards(db *sql.DB, whereLimit string) []CardRow {
 	rows := []CardRow{}
 
-	query := `SELECT id, is_sentence, l2, l1, morpheme_ids_csv, type 
+	query := `SELECT id, is_sentence, l2, l1, mnemonic12, mnemonic21,
+	  morpheme_ids_csv, type 
 	  FROM cards ` +
 		whereLimit
 	if LOG {
@@ -49,6 +54,8 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 			&row.IsSentence,
 			&row.L2,
 			&row.L1,
+			&row.Mnemonic12,
+			&row.Mnemonic21,
 			&row.MorphemeIdsCsv,
 			&row.Type)
 		if err != nil {
@@ -67,11 +74,13 @@ func FromCards(db *sql.DB, whereLimit string) []CardRow {
 
 func InsertCard(db *sql.DB, card CardRow) CardRow {
 	query := fmt.Sprintf(`INSERT INTO cards
-	  (is_sentence, l2, l1, morpheme_ids_csv, type)
-		VALUES (%s, %s, %s, %s, %s)`,
+	  (is_sentence, l2, l1, mnemonic12, mnemonic21, morpheme_ids_csv, type)
+		VALUES (%s, %s, %s, %s, %s, %s, %s)`,
 		EscapeBool(card.IsSentence),
 		Escape(card.L2),
 		Escape(card.L1),
+		EscapeNullString(card.Mnemonic12),
+		EscapeNullString(card.Mnemonic21),
 		Escape(card.MorphemeIdsCsv),
 		Escape(card.Type))
 	if LOG {
@@ -95,10 +104,13 @@ func InsertCard(db *sql.DB, card CardRow) CardRow {
 func UpdateCard(db *sql.DB, card *CardRow) {
 	query := fmt.Sprintf(
 		`UPDATE cards SET is_sentence=%s, l2=%s, l1=%s,
-		morpheme_ids_csv=%s, type=%s WHERE id=%d`,
+		mnemonic12=%s, mnemonic21=%s, morpheme_ids_csv=%s, type=%s
+		WHERE id=%d`,
 		EscapeBool(card.IsSentence),
 		Escape(card.L2),
 		Escape(card.L1),
+		EscapeNullString(card.Mnemonic12),
+		EscapeNullString(card.Mnemonic21),
 		Escape(card.MorphemeIdsCsv),
 		Escape(card.Type),
 		card.Id)
