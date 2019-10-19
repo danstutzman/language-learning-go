@@ -6,6 +6,7 @@ import (
 	"gopkg.in/guregu/null.v3"
 	"sort"
 	"strconv"
+	"time"
 )
 
 type ChallengeList struct {
@@ -134,11 +135,16 @@ func (model *Model) GetTopChallenge(type_ string) *Challenge {
 	cards := []db.CardRow{}
 	for _, card := range cardsUnfiltered {
 		lastChallenge, hasLastChallenge := lastChallengeByCardId[card.Id]
+		oneDayAgo := time.Now().UTC().AddDate(0, 0, -1)
+
 		if !hasLastChallenge {
 			// Show card if it's never been shown
 			cards = append(cards, card)
 		} else if lastChallenge.ShownAt.Valid && !lastChallenge.Grade.Valid {
 			// Waiting for manual grade, so suspend card for now
+		} else if lastChallenge.Grade.String == "RIGHT_WITHOUT_MNEMONIC" &&
+			lastChallenge.ShownAt.Time.After(oneDayAgo) {
+			// Suspend card if correct within 24 hours
 		} else {
 			cards = append(cards, card)
 		}
