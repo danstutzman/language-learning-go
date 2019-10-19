@@ -21,6 +21,7 @@ type Challenge struct {
 
 	Expectation string `json:"expectation"`
 
+	ShownAt        null.Time   `json:"shownAt"`
 	AnsweredL1     null.String `json:"answeredL1"`
 	AnsweredL2     null.String `json:"answeredL2"`
 	AnsweredAt     null.Time   `json:"answeredAt"`
@@ -37,6 +38,7 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 
 		Expectation: challenge.Expectation,
 
+		ShownAt:        challenge.ShownAt,
 		AnsweredL1:     challenge.AnsweredL1,
 		AnsweredL2:     challenge.AnsweredL2,
 		AnsweredAt:     challenge.AnsweredAt,
@@ -54,6 +56,7 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 
 		Expectation: row.Expectation,
 
+		ShownAt:        row.ShownAt,
 		AnsweredL1:     row.AnsweredL1,
 		AnsweredL2:     row.AnsweredL2,
 		AnsweredAt:     row.AnsweredAt,

@@ -11,6 +11,7 @@ CREATE TABLE imported_challenges (
   expectation     TEXT NOT NULL,
   card_l2         TEXT NOT NULL,
 
+  shown_at        DATETIME,
   answered_at     DATETIME,
   answered_l1     TEXT,
   answered_l2     TEXT,
@@ -25,12 +26,13 @@ CREATE TABLE imported_challenges (
 
 DELETE FROM challenges;
 
-INSERT INTO challenges (type, expectation, card_id, answered_l1, answered_l2,
-  answered_at, showed_mnemonic, grade)
+INSERT INTO challenges (type, expectation, card_id,
+  shown_at, answered_l1, answered_l2, answered_at, showed_mnemonic, grade)
 SELECT
   imported_challenges.type, 
   imported_challenges.expectation,
   cards.id,
+  imported_challenges.shown_at,
   imported_challenges.answered_l1,
   imported_challenges.answered_l2,
   imported_challenges.answered_at,

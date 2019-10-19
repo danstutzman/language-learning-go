@@ -16,6 +16,7 @@ type ChallengeRow struct {
 
 	Expectation string
 
+	ShownAt        null.Time
 	AnsweredL1     null.String
 	AnsweredL2     null.String
 	AnsweredAt     null.Time
@@ -27,6 +28,7 @@ type ChallengeRow struct {
 type ChallengeUpdate struct {
 	Id int
 
+	ShownAt        null.Time
 	AnsweredL1     null.String
 	AnsweredL2     null.String
 	AnsweredAt     null.Time
@@ -38,7 +40,7 @@ type ChallengeUpdate struct {
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, type, card_id,
   		expectation,
-	    answered_l1, answered_at, showed_mnemonic
+	    shown_at, answered_l1, answered_at, showed_mnemonic
 		  grade
 	  FROM challenges
 		LIMIT 1`
@@ -57,7 +59,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 
 	query := `SELECT id, type, card_id,
   	expectation,
-	  answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  shown_at, answered_l1, answered_l2, answered_at, showed_mnemonic,
 	  grade
 	  FROM challenges ` + where
 	if LOG {
@@ -73,6 +75,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 		var row ChallengeRow
 		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
 			&row.Expectation,
+			&row.ShownAt,
 			&row.AnsweredL1, &row.AnsweredL2, &row.AnsweredAt, &row.ShowedMnemonic,
 			&row.Grade)
 		if err != nil {
@@ -93,11 +96,11 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	query := fmt.Sprintf(`INSERT INTO challenges
 	(type, card_id, grade,
 		expectation,
-	  answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  shown_at, answered_l1, answered_l2, answered_at, showed_mnemonic,
 	  grade)
 		VALUES (%s, %d, %s,
 		  %s,
-		  %s, %s, %s, %s,
+		  %s, %s, %s, %s, %s,
 			%s)`,
 		Escape(challenge.Type),
 		challenge.CardId,
@@ -105,6 +108,7 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 
 		Escape(challenge.Expectation),
 
+		EscapeNullTime(challenge.ShownAt),
 		EscapeNullString(challenge.AnsweredL1),
 		EscapeNullString(challenge.AnsweredL2),
 		EscapeNullTime(challenge.AnsweredAt),
@@ -132,6 +136,9 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 
 func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
 	pairs := []string{}
+	if update.ShownAt.Valid {
+		pairs = append(pairs, "shown_at="+EscapeNullTime(update.ShownAt))
+	}
 	if update.AnsweredL1.Valid {
 		pairs = append(pairs, "answered_l1="+EscapeNullString(update.AnsweredL1))
 	}

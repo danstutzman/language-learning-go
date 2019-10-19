@@ -1,3 +1,2 @@
-type,expectation,card_l2,answered_at,answered_l1,answered_l2,showed_mnemonic,grade
-Given1Type2,"",piel,2019-10-19T16:07:49Z,,piel,0,RIGHT
-Given1Type2,"",garganta,2019-10-19T16:07:53Z,,"",1,
+type,expectation,card_l2,shown_at,answered_at,answered_l1,answered_l2,showed_mnemonic,grade
+Given1Type2,"",piel,2019-10-19T16:25:35Z,2019-10-19T16:25:36Z,,piel,0,RIGHT

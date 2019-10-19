@@ -11,6 +11,7 @@ sqlite3 db/db.sqlite3 <<EOF
 SELECT challenges.type,
   challenges.expectation,
   cards.l2 as card_l2,
+  challenges.shown_at,
   challenges.answered_at,
   challenges.answered_l1,
   challenges.answered_l2,

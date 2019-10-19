@@ -35,9 +35,9 @@ CREATE TABLE challenges (
   id              INTEGER PRIMARY KEY NOT NULL,
   type            TEXT NOT NULL,
   card_id         INTEGER NOT NULL,
-
   expectation     TEXT NOT NULL,
 
+  shown_at        DATETIME,
   answered_l1     TEXT,
   answered_l2     TEXT,
   answered_at     DATETIME,
