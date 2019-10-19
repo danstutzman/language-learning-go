@@ -2,6 +2,7 @@ package db
 
 import (
 	"gopkg.in/guregu/null.v3"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -52,4 +53,12 @@ func EscapeNullBool(b null.Bool) string {
 	}
 
 	return EscapeBool(b.Bool)
+}
+
+func EscapeNullInt(i null.Int) string {
+	if !i.Valid {
+		return "NULL"
+	}
+
+	return strconv.FormatInt(i.Int64, 10)
 }

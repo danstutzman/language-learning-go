@@ -11,11 +11,12 @@ CREATE TABLE imported_challenges (
   expectation     TEXT NOT NULL,
   card_l2         TEXT NOT NULL,
 
-  shown_at        DATETIME,
-  answered_at     DATETIME,
-  answered_l1     TEXT,
-  answered_l2     TEXT,
-  showed_mnemonic BOOLEAN,
+  shown_at         DATETIME,
+  answered_l1      TEXT,
+  answered_l2      TEXT,
+  showed_mnemonic  BOOLEAN,
+  first_key_millis INTEGER,
+  last_key_millis  INTEGER,
 
   grade           TEXT
 );
@@ -27,7 +28,8 @@ CREATE TABLE imported_challenges (
 DELETE FROM challenges;
 
 INSERT INTO challenges (type, expectation, card_id,
-  shown_at, answered_l1, answered_l2, answered_at, showed_mnemonic, grade)
+  shown_at, answered_l1, answered_l2, showed_mnemonic,
+  first_key_millis, last_key_millis, grade)
 SELECT
   imported_challenges.type, 
   imported_challenges.expectation,
@@ -35,9 +37,12 @@ SELECT
   imported_challenges.shown_at,
   imported_challenges.answered_l1,
   imported_challenges.answered_l2,
-  imported_challenges.answered_at,
   CASE WHEN imported_challenges.showed_mnemonic = '' THEN NULL
     ELSE imported_challenges.showed_mnemonic END,
+  CASE WHEN imported_challenges.first_key_millis = '' THEN NULL
+    ELSE imported_challenges.first_key_millis END,
+  CASE WHEN imported_challenges.last_key_millis = '' THEN NULL
+    ELSE imported_challenges.last_key_millis END,
   imported_challenges.grade
 FROM imported_challenges
 JOIN cards ON cards.l2 = imported_challenges.card_l2;

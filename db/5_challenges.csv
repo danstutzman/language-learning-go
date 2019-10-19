@@ -1,2 +1,5 @@
-type,expectation,card_l2,shown_at,answered_at,answered_l1,answered_l2,showed_mnemonic,grade
-Given1Type2,"",piel,2019-10-19T16:25:35Z,2019-10-19T16:25:36Z,,piel,0,RIGHT
+type,expectation,card_l2,shown_at,answered_l1,answered_l2,showed_mnemonic,first_key_millis,last_key_millis,grade
+Given1Type2,"",piel,2019-10-19T16:53:14Z,,piel,0,884,1131,RIGHT
+Given1Type2,"",garganta,2019-10-19T16:53:16Z,,"",0,,,BLANK
+Given2Type1,"",piel,2019-10-19T16:53:18Z,skin,,0,819,1100,RIGHT
+Given2Type1,"",garganta,2019-10-19T16:53:19Z,"",,0,,,BLANK

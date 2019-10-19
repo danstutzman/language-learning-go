@@ -19,8 +19,9 @@ type ChallengeRow struct {
 	ShownAt        null.Time
 	AnsweredL1     null.String
 	AnsweredL2     null.String
-	AnsweredAt     null.Time
 	ShowedMnemonic null.Bool
+	FirstKeyMillis null.Int
+	LastKeyMillis  null.Int
 
 	Grade null.String
 }
@@ -31,8 +32,9 @@ type ChallengeUpdate struct {
 	ShownAt        null.Time
 	AnsweredL1     null.String
 	AnsweredL2     null.String
-	AnsweredAt     null.Time
 	ShowedMnemonic null.Bool
+	FirstKeyMillis null.Int
+	LastKeyMillis  null.Int
 
 	Grade null.String
 }
@@ -40,7 +42,8 @@ type ChallengeUpdate struct {
 func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, type, card_id,
   		expectation,
-	    shown_at, answered_l1, answered_at, showed_mnemonic
+	    shown_at, answered_l1, showed_mnemonic,
+			first_key_millis, last_key_millis,
 		  grade
 	  FROM challenges
 		LIMIT 1`
@@ -59,7 +62,8 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 
 	query := `SELECT id, type, card_id,
   	expectation,
-	  shown_at, answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  shown_at, answered_l1, answered_l2, showed_mnemonic,
+		first_key_millis, last_key_millis,
 	  grade
 	  FROM challenges ` + where
 	if LOG {
@@ -75,8 +79,8 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 		var row ChallengeRow
 		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
 			&row.Expectation,
-			&row.ShownAt,
-			&row.AnsweredL1, &row.AnsweredL2, &row.AnsweredAt, &row.ShowedMnemonic,
+			&row.ShownAt, &row.AnsweredL1, &row.AnsweredL2, &row.ShowedMnemonic,
+			&row.FirstKeyMillis, &row.LastKeyMillis,
 			&row.Grade)
 		if err != nil {
 			panic(err)
@@ -96,11 +100,13 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	query := fmt.Sprintf(`INSERT INTO challenges
 	(type, card_id, grade,
 		expectation,
-	  shown_at, answered_l1, answered_l2, answered_at, showed_mnemonic,
+	  shown_at, answered_l1, answered_l2, showed_mnemonic,
+		first_key_millis, last_key_millis,
 	  grade)
 		VALUES (%s, %d, %s,
 		  %s,
-		  %s, %s, %s, %s, %s,
+		  %s, %s, %s, %s,
+			%s, %s,
 			%s)`,
 		Escape(challenge.Type),
 		challenge.CardId,
@@ -111,8 +117,9 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 		EscapeNullTime(challenge.ShownAt),
 		EscapeNullString(challenge.AnsweredL1),
 		EscapeNullString(challenge.AnsweredL2),
-		EscapeNullTime(challenge.AnsweredAt),
 		EscapeNullBool(challenge.ShowedMnemonic),
+		EscapeNullInt(challenge.FirstKeyMillis),
+		EscapeNullInt(challenge.LastKeyMillis),
 
 		EscapeNullString(challenge.Grade))
 
@@ -145,8 +152,12 @@ func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
 	if update.AnsweredL2.Valid {
 		pairs = append(pairs, "answered_l2="+EscapeNullString(update.AnsweredL2))
 	}
-	if update.AnsweredAt.Valid {
-		pairs = append(pairs, "answered_at="+EscapeNullTime(update.AnsweredAt))
+	if update.FirstKeyMillis.Valid {
+		pairs = append(pairs,
+			"first_key_millis="+EscapeNullInt(update.FirstKeyMillis))
+	}
+	if update.LastKeyMillis.Valid {
+		pairs = append(pairs, "last_key_millis="+EscapeNullInt(update.LastKeyMillis))
 	}
 	if update.Grade.Valid {
 		pairs = append(pairs, "grade="+EscapeNullString(update.Grade))

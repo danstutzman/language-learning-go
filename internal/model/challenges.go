@@ -24,8 +24,9 @@ type Challenge struct {
 	ShownAt        null.Time   `json:"shownAt"`
 	AnsweredL1     null.String `json:"answeredL1"`
 	AnsweredL2     null.String `json:"answeredL2"`
-	AnsweredAt     null.Time   `json:"answeredAt"`
 	ShowedMnemonic null.Bool   `json:"showedMnemonic"`
+	FirstKeyMillis null.Int    `json:"firstKeyMillis"`
+	LastKeyMillis  null.Int    `json:"lastKeyMillis"`
 
 	Grade null.String `json:"grade"`
 }
@@ -41,8 +42,9 @@ func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
 		ShownAt:        challenge.ShownAt,
 		AnsweredL1:     challenge.AnsweredL1,
 		AnsweredL2:     challenge.AnsweredL2,
-		AnsweredAt:     challenge.AnsweredAt,
 		ShowedMnemonic: challenge.ShowedMnemonic,
+		FirstKeyMillis: challenge.FirstKeyMillis,
+		LastKeyMillis:  challenge.LastKeyMillis,
 
 		Grade: challenge.Grade,
 	}
@@ -59,8 +61,9 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 		ShownAt:        row.ShownAt,
 		AnsweredL1:     row.AnsweredL1,
 		AnsweredL2:     row.AnsweredL2,
-		AnsweredAt:     row.AnsweredAt,
 		ShowedMnemonic: row.ShowedMnemonic,
+		FirstKeyMillis: row.FirstKeyMillis,
+		LastKeyMillis:  row.LastKeyMillis,
 
 		Grade: row.Grade,
 	}
@@ -120,20 +123,20 @@ func (model *Model) GetTopChallenge(type_ string) *Challenge {
 	challenges := db.FromChallenges(model.db,
 		"WHERE type="+db.Escape(type_))
 
-	lastAnsweredAtByCardId := map[int]time.Time{}
+	lastShownAtByCardId := map[int]time.Time{}
 	for _, challenge := range challenges {
 		cardId := challenge.CardId
-		answeredAt := challenge.AnsweredAt.Time
+		shownAt := challenge.ShownAt.Time
 
-		if answeredAt.After(lastAnsweredAtByCardId[cardId]) {
-			lastAnsweredAtByCardId[cardId] = answeredAt
+		if shownAt.After(lastShownAtByCardId[cardId]) {
+			lastShownAtByCardId[cardId] = shownAt
 		}
 	}
 
 	cards := db.FromCards(model.db, "")
 	sort.Slice(cards, func(i, j int) bool {
-		return lastAnsweredAtByCardId[cards[i].Id].Before(
-			lastAnsweredAtByCardId[cards[j].Id])
+		return lastShownAtByCardId[cards[i].Id].Before(
+			lastShownAtByCardId[cards[j].Id])
 	})
 	card := cards[0]
 

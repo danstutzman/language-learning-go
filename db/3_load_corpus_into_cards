@@ -37,11 +37,12 @@ CREATE TABLE challenges (
   card_id         INTEGER NOT NULL,
   expectation     TEXT NOT NULL,
 
-  shown_at        DATETIME,
-  answered_l1     TEXT,
-  answered_l2     TEXT,
-  answered_at     DATETIME,
-  showed_mnemonic BOOLEAN,
+  shown_at         DATETIME,
+  answered_l1      TEXT,
+  answered_l2      TEXT,
+  showed_mnemonic  BOOLEAN,
+  first_key_millis INTEGER,
+  last_key_millis  INTEGER,
 
   grade           TEXT
 );

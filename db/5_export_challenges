@@ -12,14 +12,15 @@ SELECT challenges.type,
   challenges.expectation,
   cards.l2 as card_l2,
   challenges.shown_at,
-  challenges.answered_at,
   challenges.answered_l1,
   challenges.answered_l2,
   challenges.showed_mnemonic,
+  challenges.first_key_millis,
+  challenges.last_key_millis,
   challenges.grade
 FROM challenges
 JOIN cards ON cards.id = challenges.card_id
-WHERE answered_at IS NOT NULL
+WHERE shown_at IS NOT NULL
 ORDER BY challenges.id;
 
 EOF
