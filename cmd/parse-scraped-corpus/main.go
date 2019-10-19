@@ -36,25 +36,31 @@ func main() {
 		panic(err)
 	}
 
-	nodes, err := htmlquery.QueryAll(doc, "/html/body/form/table/tbody/tr/td/a")
+	trs, err := htmlquery.QueryAll(doc, "/html/body/form/table/tbody/tr")
 	if err != nil {
 		panic(err)
 	}
 
-	rows := []Row{}
-	for _, node := range nodes {
-		for _, attr := range node.Attr {
-			if attr.Key == "href" {
-				if strings.HasPrefix(attr.Val, "x3.asp?") {
-					text := strings.TrimSpace(node.FirstChild.Data)
-					if text != "" {
-						rows = append(rows, Row{form: text})
+	for _, tr := range trs {
+		tds := htmlquery.Find(tr, "td")
+		if len(tds) == 5 {
+			a := htmlquery.FindOne(tds[2], "a")
+			if a != nil {
+				href := ""
+				for _, attr := range a.Attr {
+					if attr.Key == "href" {
+						if strings.HasPrefix(attr.Val, "x3.asp?") {
+							href = attr.Val
+						}
 					}
 				}
+
+				freq := htmlquery.InnerText(tds[3])
+				fmt.Printf("%v,%s,%s\n",
+					strings.TrimSpace(htmlquery.InnerText(a)),
+					href,
+					strings.TrimSpace(freq))
 			}
 		}
-	}
-	for _, row := range rows {
-		fmt.Printf("%+v\n", row)
 	}
 }
