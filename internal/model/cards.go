@@ -18,6 +18,7 @@ type Card struct {
 	Type       string      `json:"type"`
 
 	Morphemes []Morpheme `json:"morphemes"`
+	State     string     `json:"state"`
 }
 
 type CardList struct {
