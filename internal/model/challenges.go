@@ -148,6 +148,10 @@ func (model *Model) GetTopChallenge(type_ string) *Challenge {
 		} else if lastChallenge.Grade.String == "RIGHT_WITHOUT_MNEMONIC" &&
 			lastChallenge.ShownAt.Time.After(oneDayAgo) {
 			// Suspend card if correct within 24 hours
+		} else if lastChallenge.Grade.String == "BLANK" &&
+			((type_ == "Given1Type2" && card.Mnemonic21.String == "") ||
+				(type_ == "Given2Type1" && card.Mnemonic12.String == "")) {
+			// Suspend card if drew a blank but have no mnemonic
 		} else {
 			cards = append(cards, card)
 		}
