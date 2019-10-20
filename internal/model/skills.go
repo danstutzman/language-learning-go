@@ -5,13 +5,23 @@ import (
 	"time"
 )
 
+var GRADE_TO_IS_FAILURE = map[string]bool{
+	"RIGHT_WITH_MNEMONIC":           true,
+	"MISCONNECTED_WITH_MNEMONIC":    true,
+	"MISCONNECTED_WITHOUT_MNEMONIC": true,
+	"BLANK":                         true,
+	"WRONG_WITH_MNEMONIC":           true,
+	"WRONG_WITHOUT_MNEMONIC":        true,
+}
+
 type SkillList struct {
 	Skills []Skill `json:"skills"`
 }
 
 type Skill struct {
-	Card  Card   `json:"card"`
-	State string `json:"state"`
+	Card        Card   `json:"card"`
+	State       string `json:"state"`
+	NumFailures int    `json:"numFailures"`
 }
 
 func (model *Model) ListSkills() SkillList {
@@ -22,6 +32,13 @@ func (model *Model) ListSkills() SkillList {
 	lastChallengeByCardId := map[int]db.ChallengeRow{}
 	for _, challenge := range challenges {
 		lastChallengeByCardId[challenge.CardId] = challenge
+	}
+
+	numFailuresByCardId := map[int]int{}
+	for _, challenge := range challenges {
+		if challenge.Grade.Valid && GRADE_TO_IS_FAILURE[challenge.Grade.String] {
+			numFailuresByCardId[challenge.CardId] += 1
+		}
 	}
 
 	cardRows := db.FromCards(model.db, "")
@@ -48,7 +65,12 @@ func (model *Model) ListSkills() SkillList {
 			state = "OKAY?"
 		}
 
-		skills = append(skills, Skill{Card: card, State: state})
+		skill := Skill{
+			Card:        card,
+			State:       state,
+			NumFailures: numFailuresByCardId[card.Id],
+		}
+		skills = append(skills, skill)
 	}
 
 	return SkillList{Skills: skills}
