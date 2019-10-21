@@ -12,13 +12,19 @@ var BEGINS_WITH_ER = regexp.MustCompile("^er")
 
 var ENDS_WITH_AC = regexp.MustCompile("ac$")
 
+var ENDS_WITH_A_E_OR_O = regexp.MustCompile("([aeo])$")
+
 var ENDS_WITH_C = regexp.MustCompile("c$")
+
+var ENDS_WITH_EC_IC_OR_OC = regexp.MustCompile("([eio])c$")
 
 var ENDS_WITH_G = regexp.MustCompile("g$")
 
 var ENDS_WITH_GU = regexp.MustCompile("gu$")
 
 var ENDS_WITH_GÜ = regexp.MustCompile("gü$")
+
+var ENDS_WITH_N = regexp.MustCompile("n$")
 
 var ENDS_WITH_OLV = regexp.MustCompile("olv$")
 
@@ -37,6 +43,8 @@ var ENDS_WITH_TEN = regexp.MustCompile("ten$")
 var ENDS_WITH_I = regexp.MustCompile("i$")
 
 var ENDS_WITH_U = regexp.MustCompile("u$")
+
+var ENDS_WITH_UEC = regexp.MustCompile("uec$")
 
 var ENDS_WITH_UN = regexp.MustCompile("un$")
 
