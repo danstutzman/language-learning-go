@@ -95,6 +95,22 @@ func analyzeArVerb(lemma, tag string) []Conjugation {
 					stem = ENDS_WITH_Z.ReplaceAllString(stem, "c")
 				}
 
+				if lemma == "estar" {
+					if suffix == "a" {
+						suffix = "á"
+					} else if suffix == "an" {
+						suffix = "án"
+					} else if suffix == "as" {
+						suffix = "ás"
+					} else if suffix == "e" {
+						suffix = "é"
+					} else if suffix == "en" {
+						suffix = "én"
+					} else if suffix == "es" {
+						suffix = "és"
+					}
+				}
+
 				conjugation := Conjugation{stem: stem, suffix: suffix}
 				conjugations = append(conjugations, conjugation)
 			}
