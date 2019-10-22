@@ -1,8 +1,5 @@
 package freeling
 
-//ENDS_WITH_ESE.ReplaceAllString(form, "era$1") == stem+suffix ||
-//ENDS_WITH_ÉSEMOS.ReplaceAllString(form, "éramos") == stem+suffix
-
 import (
 	"bufio"
 	"fmt"
@@ -56,7 +53,6 @@ func PrintVerbExceptions(freelingDiccPath string) {
 				conjugations := analyzeErVerb(lemma, tag)
 				expected = false
 				for _, conjugation := range conjugations {
-					//					fmt.Printf("%v\n", conjugation)
 					if conjugation.stem+conjugation.suffix == form {
 						expected = true
 					}
@@ -151,38 +147,45 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 		return []Conjugation{{stem: stem, suffix: suffix}}
 	}
 
-	stem := ER_VMP_STEMS[lemma]
-	if stem != "" && strings.HasPrefix(tag, "VMP") {
+	stems := ER_VMP_STEMS[lemma]
+	if len(stems) > 0 && strings.HasPrefix(tag, "VMP") {
 		suffixes := ER_TAG_TO_SUFFIXES[tag]
 		conjugations := []Conjugation{}
 		for _, suffix := range suffixes {
 			suffix = suffix[2:len(suffix)] // Remove initial -id
-			conjugation := Conjugation{stem: stem, suffix: suffix}
-			conjugations = append(conjugations, conjugation)
+			for _, stem := range stems {
+				conjugation := Conjugation{stem: stem, suffix: suffix}
+				conjugations = append(conjugations, conjugation)
+			}
 		}
 		return conjugations
 	}
 
-	stem = ER_VMSP1S_STEMS[lemma]
-	if stem != "" && (tag == "VMSP1S0" || tag == "VMSP3S0" ||
+	stems = ER_VMSP1S_STEMS[lemma]
+	if len(stems) > 0 && (tag == "VMSP1S0" || tag == "VMSP3S0" ||
 		tag == "VMSP2S0" || tag == "VMSP3P0" || tag == "VMM03S0" ||
 		tag == "VMM03P0" || tag == "VMIP1S0") {
 		conjugations := []Conjugation{}
 		suffixes := ER_TAG_TO_SUFFIXES[tag]
 		for _, suffix := range suffixes {
-			conjugation := Conjugation{stem: stem, suffix: suffix}
-			conjugations = append(conjugations, conjugation)
+			for _, stem := range stems {
+				conjugation := Conjugation{stem: stem, suffix: suffix}
+				conjugations = append(conjugations, conjugation)
+			}
 		}
 		return conjugations
 	}
 
-	stem = ER_VMSP1P_STEMS[lemma]
-	if stem != "" && (tag == "VMSP1P0" || tag == "VMSP2P0" || tag == "VMM01P0") {
+	stems = ER_VMSP1P_STEMS[lemma]
+	if len(stems) > 0 &&
+		(tag == "VMSP1P0" || tag == "VMSP2P0" || tag == "VMM01P0") {
 		suffixes := ER_TAG_TO_SUFFIXES[tag]
 		conjugations := []Conjugation{}
 		for _, suffix := range suffixes {
-			conjugation := Conjugation{stem: stem, suffix: suffix}
-			conjugations = append(conjugations, conjugation)
+			for _, stem := range stems {
+				conjugation := Conjugation{stem: stem, suffix: suffix}
+				conjugations = append(conjugations, conjugation)
+			}
 		}
 		return conjugations
 	}
@@ -191,7 +194,7 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 		return []Conjugation{{stem: ER_VMM2S_FORMS[lemma], suffix: ""}}
 	}
 
-	stem = ER_STEM_CHANGES[lemma]
+	stem := ER_STEM_CHANGES[lemma]
 	if stem == "" || !ER_TAG_TO_STEM_CHANGE[tag] {
 		stem = lemma[0 : len(lemma)-2]
 	}
