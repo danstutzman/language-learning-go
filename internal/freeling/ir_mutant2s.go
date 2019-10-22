@@ -1,0 +1,42 @@
+package freeling
+
+var IR_MUTANT2S = map[string]string{
+	"advenir":     "advendr",
+	"antedecir":   "antedir",
+	"antevenir":   "antevendr",
+	"avenir":      "avendr",
+	"contravenir": "contravendr",
+	"convenir":    "convendr",
+	"desavenir":   "desavendr",
+	"desconvenir": "desconvendr",
+	"devenir":     "devendr",
+	"decir":       "dir",
+	"disconvenir": "disconvendr",
+	"intervenir":  "intervendr",
+	"prevenir":    "prevendr",
+	"provenir":    "provendr",
+	"reconvenir":  "reconvendr",
+	"resalir":     "resaldr",
+	"revenir":     "revendr",
+	"salir":       "saldr",
+	"sobresalir":  "sobresaldr",
+	"sobrevenir":  "sobrevendr",
+	"subvenir":    "subvendr",
+	"supervenir":  "supervendr",
+	"venir":       "vendr",
+}
+
+var IR_MUTANT2_TAG_TO_SUFFIX = map[string]string{
+	"VMIC1S0": "ía",
+	"VMIC1P0": "íamos",
+	"VMIC2S0": "ías",
+	"VMIC2P0": "íais",
+	"VMIC3S0": "ía",
+	"VMIC3P0": "ían",
+	"VMIF1S0": "é",
+	"VMIF1P0": "emos",
+	"VMIF2S0": "ás",
+	"VMIF2P0": "éis",
+	"VMIF3S0": "á",
+	"VMIF3P0": "án",
+}

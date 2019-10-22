@@ -14,6 +14,8 @@ var ENDS_WITH_AC = regexp.MustCompile("ac$")
 
 var ENDS_WITH_A_E_OR_O = regexp.MustCompile("([aeo])$")
 
+var ENDS_WITH_A_E_O_OR_U = regexp.MustCompile("([aeo]|[^gq]u)$")
+
 var ENDS_WITH_C = regexp.MustCompile("c$")
 
 var ENDS_WITH_EC_IC_OR_OC = regexp.MustCompile("([eio])c$")
