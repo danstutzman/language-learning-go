@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+type Conjugation struct {
+	stem   string
+	suffix string
+}
+
 func PrintVerbExceptions(freelingDiccPath string) {
 	file, err := os.Open(freelingDiccPath)
 	if err != nil {
@@ -36,13 +41,19 @@ func PrintVerbExceptions(freelingDiccPath string) {
 
 			expected := true
 			if strings.HasSuffix(lemma, "ar") && strings.HasPrefix(tag, "V") {
-				expected = isExpectedArVerb(lemma, form, tag)
+				conjugations := analyzeArVerb(lemma, tag)
+				expected = false
+				for _, conjugation := range conjugations {
+					if conjugation.stem+conjugation.suffix == form {
+						expected = true
+					}
+				}
 			}
 			if strings.HasSuffix(lemma, "er") && strings.HasPrefix(tag, "V") {
-				expected = isExpectedErVerb(lemma, form, tag)
+				//expected = isExpectedErVerb(lemma, form, tag)
 			}
 			if strings.HasSuffix(lemma, "ir") && strings.HasPrefix(tag, "V") {
-				expected = isExpectedIrVerb(lemma, form, tag)
+				//expected = isExpectedIrVerb(lemma, form, tag)
 			}
 
 			if !expected {
@@ -56,33 +67,40 @@ func PrintVerbExceptions(freelingDiccPath string) {
 	}
 }
 
-func isExpectedArVerb(lemma, form, tag string) bool {
-	suffix := AR_MUTANT_TAG27_TO_SUFFIX[tag[2:7]]
-	if suffix != "" && AR_MUTANTS[lemma] != "" {
+func analyzeArVerb(lemma, tag string) []Conjugation {
+	conjugations := []Conjugation{}
+	suffixes := AR_MUTANT_TAG27_TO_SUFFIXES[tag[2:7]]
+	if len(suffixes) > 0 && AR_MUTANTS[lemma] != "" {
 		stem := AR_MUTANTS[lemma]
 
-		return (form == stem+suffix) ||
-			ENDS_WITH_ESE.ReplaceAllString(form, "era$1") == stem+suffix ||
-			ENDS_WITH_ÉSEMOS.ReplaceAllString(form, "éramos") == stem+suffix
+		for _, suffix := range suffixes {
+			conjugation := Conjugation{stem: stem, suffix: suffix}
+			conjugations = append(conjugations, conjugation)
+		}
 	} else {
-		stem := AR_STEM_CHANGES[lemma]
-		if stem == "" || !AR_TAG27_TO_STEM_CHANGE[tag[2:7]] {
-			stem = lemma[0 : len(lemma)-2]
+		stems := AR_STEM_CHANGES[lemma]
+		if len(stems) == 0 || !AR_TAG27_TO_STEM_CHANGE[tag[2:7]] {
+			stems = []string{lemma[0 : len(lemma)-2]}
 		}
 
-		suffix = AR_TAG27_TO_SUFFIX[tag[2:7]]
-		if suffix == "e" || suffix == "en" || suffix == "é" ||
-			suffix == "emos" || suffix == "es" || suffix == "éis" {
-			stem = ENDS_WITH_C.ReplaceAllString(stem, "qu")
-			stem = ENDS_WITH_GU.ReplaceAllString(stem, "gü")
-			stem = ENDS_WITH_G.ReplaceAllString(stem, "gu")
-			stem = ENDS_WITH_Z.ReplaceAllString(stem, "c")
-		}
+		suffixes = AR_TAG27_TO_SUFFIXES[tag[2:7]]
 
-		return (form == stem+suffix) ||
-			ENDS_WITH_ASE.ReplaceAllString(form, "ara$1") == stem+suffix ||
-			ENDS_WITH_ÁSEMOS.ReplaceAllString(form, "áramos") == stem+suffix
+		for _, stem := range stems {
+			for _, suffix := range suffixes {
+				if suffix == "e" || suffix == "en" || suffix == "é" ||
+					suffix == "emos" || suffix == "es" || suffix == "éis" {
+					stem = ENDS_WITH_C.ReplaceAllString(stem, "qu")
+					stem = ENDS_WITH_GU.ReplaceAllString(stem, "gü")
+					stem = ENDS_WITH_G.ReplaceAllString(stem, "gu")
+					stem = ENDS_WITH_Z.ReplaceAllString(stem, "c")
+				}
+
+				conjugation := Conjugation{stem: stem, suffix: suffix}
+				conjugations = append(conjugations, conjugation)
+			}
+		}
 	}
+	return conjugations
 }
 
 func isExpectedErVerb(lemma, form, tag string) bool {
