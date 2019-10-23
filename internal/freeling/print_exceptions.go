@@ -160,7 +160,7 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 
 	stems := ER_VMP_STEMS[lemma]
 	if len(stems) > 0 && strings.HasPrefix(tag, "VMP") {
-		suffixes := ER_TAG_TO_SUFFIXES[tag]
+		suffixes := ER_TAG27_TO_SUFFIXES[tag[2:7]]
 		conjugations := []Conjugation{}
 		for _, suffix := range suffixes {
 			suffix = suffix[2:len(suffix)] // Remove initial -id
@@ -177,7 +177,7 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 		tag == "VMSP2S0" || tag == "VMSP3P0" || tag == "VMM03S0" ||
 		tag == "VMM03P0" || tag == "VMIP1S0") {
 		conjugations := []Conjugation{}
-		suffixes := ER_TAG_TO_SUFFIXES[tag]
+		suffixes := ER_TAG27_TO_SUFFIXES[tag[2:7]]
 		for _, suffix := range suffixes {
 			for _, stem := range stems {
 				conjugation := Conjugation{stem: stem, suffix: suffix}
@@ -190,7 +190,7 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 	stems = ER_VMSP1P_STEMS[lemma]
 	if len(stems) > 0 &&
 		(tag == "VMSP1P0" || tag == "VMSP2P0" || tag == "VMM01P0") {
-		suffixes := ER_TAG_TO_SUFFIXES[tag]
+		suffixes := ER_TAG27_TO_SUFFIXES[tag[2:7]]
 		conjugations := []Conjugation{}
 		for _, suffix := range suffixes {
 			for _, stem := range stems {
@@ -210,7 +210,7 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 		stem = lemma[0 : len(lemma)-2]
 	}
 
-	suffixes = ER_TAG_TO_SUFFIXES[tag]
+	suffixes = ER_TAG27_TO_SUFFIXES[tag[2:7]]
 	conjugations := []Conjugation{}
 	for _, suffix := range suffixes {
 		if suffix == "o" {
