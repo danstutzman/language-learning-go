@@ -71,24 +71,6 @@ func main() {
 	} // next phrase
 }
 
-func buildCommandsForDet(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
-	command := map[string]string{
-		"el":   "ADD/DET/el/the",
-		"la":   "ADD/DET/la/the",
-		"un":   "ADD/DET/un/a",
-		"una":  "ADD/DET/una/a",
-		"los":  "ADD/DET/los/the",
-		"las":  "ADD/DET/las/the",
-		"unos": "ADD/DET/unos/some",
-		"unas": "ADD/DET/unas/some",
-	}[strings.ToLower(dependency.Word)]
-	if command == "" {
-		log.Panicf("Unknown determiner: " + dependency.Word)
-	}
-	return []string{command}
-}
-
 func buildCommandsForNounPhrase(dependency parsing.Dependency,
 	tokenById map[string]parsing.Token) []string {
 	commands := []string{}
