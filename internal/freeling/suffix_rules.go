@@ -419,6 +419,7 @@ var allGroupTag27Suffixes = []GroupTag27Suffix{
 	{"IR_VMSP1S", "SP3P0", "an"},
 	{"IR_VMSP1S", "M03S0", "a"},
 	{"IR_VMSP1S", "M03P0", "an"},
+	{"IR_VMSP1S", "IP1S0", "o"},
 	{"IR_VMSP1P", "SP1P0", "amos"},
 	{"IR_VMSP1P", "SP2P0", "áis"},
 	{"IR_VMSP1P", "M01P0", "amos"},
