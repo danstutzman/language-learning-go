@@ -10,6 +10,7 @@ import (
 type Conjugation struct {
 	stem   string
 	suffix string
+	group  string
 }
 
 func PrintVerbExceptions(freelingDiccPath string) {
@@ -72,7 +73,11 @@ func analyzeVerb(lemma, tag string) []Conjugation {
 	uniqueVerbs := findUniqueVerbs(lemma, tag[2:7])
 	if len(uniqueVerbs) > 0 {
 		for _, uniqueVerb := range uniqueVerbs {
-			conjugation := Conjugation{stem: uniqueVerb.form, suffix: ""}
+			conjugation := Conjugation{
+				stem:   uniqueVerb.form,
+				suffix: "",
+				group:  "UNIQUE",
+			}
 			conjugations = append(conjugations, conjugation)
 		}
 	}
@@ -128,6 +133,7 @@ func analyzeVerb(lemma, tag string) []Conjugation {
 			conjugation := Conjugation{
 				stem:   stem,
 				suffix: groupTag27Suffix.suffix,
+				group:  groupTag27Suffix.group,
 			}
 			conjugations = append(conjugations, conjugation)
 		}
