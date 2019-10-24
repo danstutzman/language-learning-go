@@ -2,7 +2,7 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"log"
+	"fmt"
 )
 
 type ParallelNoun struct {
@@ -332,14 +332,14 @@ func buildParallelNounByL2() map[string]ParallelNoun {
 	return parallelNounByL2
 }
 
-func buildCommandsForNounPhrase(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
+func translateNounPhrase(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) ([]string, error) {
 	commands := []string{}
 
 	token := tokenById[dependency.Token]
 	parallelNoun := parallelNounByL2[token.Lemma]
 	if parallelNoun.l2 == "" {
-		log.Panicf("Can't find parallelNoun for l2=%s", token.Lemma)
+		return nil, fmt.Errorf("Can't find parallelNoun for l2=%s", token.Lemma)
 	}
 
 	commands = append(commands,
@@ -347,13 +347,21 @@ func buildCommandsForNounPhrase(dependency parsing.Dependency,
 
 	for _, child := range dependency.Children {
 		if child.Function == "spec" {
-			commands = append(commands, buildCommandsForDet(child, tokenById)...)
+			newCommands, err := translateDet(child, tokenById)
+			if err != nil {
+				return nil, err
+			}
+			commands = append(commands, newCommands...)
 			commands = append(commands, "MAKE_DET_NOUN_PHRASE")
 		} else if child.Function == "s.a" {
-			commands = append(commands, buildCommandsForAdj(child, tokenById)...)
+			newCommands, err := translateAdj(child, tokenById)
+			if err != nil {
+				return nil, err
+			}
+			commands = append(commands, newCommands...)
 			commands = append(commands, "MAKE_NOUN_PHRASE_ADJ")
 		}
 	}
 
-	return commands
+	return commands, nil
 }

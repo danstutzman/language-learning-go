@@ -49,24 +49,31 @@ func main() {
 			}
 
 			for _, dependency := range sentence.Dependencies {
-				commands := []string{}
+				var commands []string
+				var err error
 				verbToken := tokenById[dependency.Token]
 				if verbToken.Tag == "VMIP3S0" { // indic present 3rd person singular
-					commands = append(commands,
-						translateVerbPhrase(dependency, tokenById)...)
+					commands, err = translateVerbPhrase(dependency, tokenById)
+				} else {
+					err = fmt.Errorf("Skipping non-VMIP3S0 sentence head")
+				}
 
-					stack := commandsPkg.NewStack()
-					for _, command := range commands {
-						stack.ExecCommand(command)
-					}
-					l1 := strings.Join(stack.GetL1Words(), " ")
-					l2 := strings.Join(stack.GetL2Words(), " ")
-					fmt.Printf("%-40s %-39s\n", l2, l1)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s\n", err)
+					continue
+				}
 
-					if phraseNum >= 30 {
-						os.Exit(1)
-					}
-				} // end if
+				stack := commandsPkg.NewStack()
+				for _, command := range commands {
+					stack.ExecCommand(command)
+				}
+				l1 := strings.Join(stack.GetL1Words(), " ")
+				l2 := strings.Join(stack.GetL2Words(), " ")
+				fmt.Printf("%-40s %-39s\n", l2, l1)
+
+				if phraseNum >= 100 {
+					os.Exit(1)
+				}
 			} // next top-level dependency
 		} // next sentence
 	} // next phrase

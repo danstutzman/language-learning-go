@@ -2,7 +2,7 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"log"
+	"fmt"
 	"regexp"
 )
 
@@ -72,13 +72,13 @@ func buildParallelAdjByL2() map[string]ParallelAdj {
 	return parallelAdjByL2
 }
 
-func buildCommandsForAdj(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
+func translateAdj(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) ([]string, error) {
 	masculine := ENDS_WITH_A.ReplaceAllString(dependency.Word, "o")
 	parallelAdj := parallelAdjByL2[masculine]
 	if parallelAdj.l2 == "" {
-		log.Panicf("Unknown adjective %s", dependency.Word)
+		return nil, fmt.Errorf("Unknown adjective %s", dependency.Word)
 	}
 
-	return []string{"ADD/ADJ/" + dependency.Word + "/" + parallelAdj.l1}
+	return []string{"ADD/ADJ/" + dependency.Word + "/" + parallelAdj.l1}, nil
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"log"
+	"fmt"
 	"strings"
 )
 
@@ -61,24 +61,24 @@ func buildParallelVerbByL2() map[string]ParallelVerb {
 	return parallelVerbByL2
 }
 
-func buildCommandsForVerbPastParticiple(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
+func translateVerbPastParticiple(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) ([]string, error) {
 	commands := []string{}
 
 	token := tokenById[dependency.Token]
 	parallelVerb := parallelVerbByL2[token.Lemma]
 	if parallelVerb.l2 == "" {
-		log.Panicf("Can't find parallelVerb for l2=%s", token.Lemma)
+		return nil, fmt.Errorf("Can't find parallelVerb for l2=%s", token.Lemma)
 	}
 
 	commands = append(commands,
 		"ADD/ADJ/"+dependency.Word+"/"+parallelVerb.l1Past)
 
-	return commands
+	return commands, nil
 }
 
 func translateVerbPhrase(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
+	tokenById map[string]parsing.Token) ([]string, error) {
 
 	token := tokenById[dependency.Token]
 	parallelVerb := parallelVerbByL2[token.Lemma]
@@ -88,27 +88,39 @@ func translateVerbPhrase(dependency parsing.Dependency,
 		if child.Function == "f" { // punctuation
 			// skip it
 		} else if child.Function == "suj" {
-			commands = append(commands,
-				buildCommandsForNounPhrase(child, tokenById)...)
+			newCommands, err := translateNounPhrase(child, tokenById)
+			if err != nil {
+				return nil, err
+			}
+			commands = append(commands, newCommands...)
 			commands = append(commands, "MAKE_AGENT")
 		} else if child.Function == "cd" {
-			commands = append(commands,
-				buildCommandsForNounPhrase(child, tokenById)...)
+			newCommands, err := translateNounPhrase(child, tokenById)
+			if err != nil {
+				return nil, err
+			}
+			commands = append(commands, newCommands...)
 			commands = append(commands, "MAKE_DOBJ")
 		} else if child.Function == "atr" {
 			childTag := tokenById[child.Token].Tag
 			if strings.HasPrefix(childTag, "A") {
-				commands = append(commands,
-					buildCommandsForAdj(child, tokenById)...)
+				newCommands, err := translateAdj(child, tokenById)
+				if err != nil {
+					return nil, err
+				}
+				commands = append(commands, newCommands...)
 			} else if strings.HasPrefix(childTag, "VMP") {
-				commands = append(commands,
-					buildCommandsForVerbPastParticiple(child, tokenById)...)
+				newCommands, err := translateVerbPastParticiple(child, tokenById)
+				if err != nil {
+					return nil, err
+				}
+				commands = append(commands, newCommands...)
 			} else {
-				log.Panicf("Can't handle atr for child %v with tag %s",
+				return nil, fmt.Errorf("Can't handle atr for child %v with tag %s",
 					child, childTag)
 			}
 			commands = append(commands, "ATTACH_ATR_TO_VP")
 		}
 	}
-	return commands
+	return commands, nil
 }

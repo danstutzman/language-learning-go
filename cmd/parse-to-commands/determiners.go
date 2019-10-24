@@ -2,7 +2,7 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"log"
+	"fmt"
 	"strings"
 )
 
@@ -45,11 +45,11 @@ func buildParallelDetByL2() map[string]ParallelDet {
 	return parallelDetByL2
 }
 
-func buildCommandsForDet(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
+func translateDet(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) ([]string, error) {
 	parallelDet := parallelDetByL2[strings.ToLower(dependency.Word)]
 	if parallelDet.l2 == "" {
-		log.Panicf("Unknown determiner %s", dependency.Word)
+		return nil, fmt.Errorf("Unknown determiner %s", dependency.Word)
 	}
-	return []string{"ADD/DET/" + dependency.Word + "/" + parallelDet.l1}
+	return []string{"ADD/DET/" + dependency.Word + "/" + parallelDet.l1}, nil
 }
