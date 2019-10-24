@@ -82,6 +82,10 @@ func translateVerbPhrase(dependency parsing.Dependency,
 
 	token := tokenById[dependency.Token]
 	parallelVerb := parallelVerbByL2[token.Lemma]
+	if parallelVerb.l2 == "" {
+		return nil, fmt.Errorf("Can't find parallelVerb for l2=%s", token.Lemma)
+	}
+
 	commands := []string{"ADD/VERB/" + token.Form + "/" + parallelVerb.l1Pres}
 
 	for _, child := range dependency.Children {
