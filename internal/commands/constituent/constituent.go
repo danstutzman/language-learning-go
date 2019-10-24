@@ -71,9 +71,6 @@ func (constituent *Constituent) SetLeftChild(newType string,
 
 	constituent.type_ = newType
 
-	if len(constituent.leftChildren) != 0 {
-		panic("Left child already set")
-	}
 	constituent.leftChildren = []Constituent{newChild}
 }
 
