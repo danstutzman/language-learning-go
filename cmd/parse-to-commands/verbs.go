@@ -50,6 +50,17 @@ var parallelVerbs = []ParallelVerb{
 
 	{"cansar", "tire", "tired", "tires"},
 	{"sentar", "sit", "sat", "sits"},
+	{"abrir", "open", "opened", "opens"},
+	{"cerrar", "close", "closed", "closes"},
+	{"encantar", "enchant", "enchanted", "enchants"},
+	{"invitar", "invite", "invited", "invites"},
+	{"mojar", "wet", "wet", "wets"},
+	{"morar", "dwell", "dwelled", "dwells"},
+	{"parar", "stop", "stopped", "stops"},
+	{"pesar", "weigh", "weighed", "weighs"},
+	{"pescar", "fish", "fished", "fishes"},
+	{"romper", "break", "broke", "breaks"},
+	{"vestir", "dress", "dressed", "dresses"},
 }
 
 var parallelVerbByL2 = buildParallelVerbByL2()
