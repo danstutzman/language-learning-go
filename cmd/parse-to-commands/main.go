@@ -34,15 +34,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	for phraseNum, phrase := range phrases {
-		log.Printf("Phrase: %s", phrase)
-		switch phrase {
-		case "La mujer está parada.":
-			continue
-		}
+	numSentences := 0
+	numErroredSentences := 0
+	for _, phrase := range phrases {
+		fmt.Fprintf(os.Stderr, "Phrase: %s\n", phrase)
 
 		parse := parsing.LoadSavedParse(phrase, PARSE_DIR).Parse
 		for _, sentence := range parse.Sentences {
+			numSentences += 1
+
 			tokenById := map[string]parsing.Token{}
 			for _, token := range sentence.Tokens {
 				tokenById[token.Id] = token
@@ -60,6 +60,7 @@ func main() {
 				}
 
 				if err != nil {
+					numErroredSentences += 1
 					fmt.Fprintf(os.Stderr, "%s\n", err)
 					continue
 				}
@@ -71,11 +72,10 @@ func main() {
 				l1 := strings.Join(stack.GetL1Words(), " ")
 				l2 := strings.Join(stack.GetL2Words(), " ")
 				fmt.Printf("%-40s %-39s\n", l2, l1)
-
-				if phraseNum >= 100 {
-					os.Exit(1)
-				}
 			} // next top-level dependency
 		} // next sentence
 	} // next phrase
+
+	fmt.Fprintf(os.Stderr, "Errored sentences: %d/%d\n",
+		numErroredSentences, numSentences)
 }
