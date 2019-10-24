@@ -40,6 +40,7 @@ var parallelVerbs = []ParallelVerb{
 	{"probar", "try", "tred", "tries"},
 	{"quedar", "stay", "stayed", "stays"},
 	{"querer", "want", "wanted", "wants"},
+	{"ser", "be", "was", "is"},
 	{"tener", "have", "had", "has"},
 	{"trabajar", "work", "worked", "works"},
 	{"vender", "sell", "sold", "sells"},
