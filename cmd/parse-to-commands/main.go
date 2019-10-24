@@ -71,23 +71,6 @@ func main() {
 	} // next phrase
 }
 
-func buildCommandsForAdj(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
-	command := map[string]string{
-		"sentado": "ADD/ADJ/sentado/seated",
-		"cansada": "ADD/ADJ/cansada/tired",
-		"alta":    "ADD/ADJ/alta/tall",
-		"alto":    "ADD/ADJ/alto/tall",
-		"gris":    "ADD/ADJ/gris/gray",
-		"baja":    "ADD/ADJ/baja/short",
-		"negro":   "ADD/ADJ/negro/black",
-	}[strings.ToLower(dependency.Word)]
-	if command == "" {
-		log.Panicf("Unknown adjective: " + dependency.Word)
-	}
-	return []string{command}
-}
-
 func buildCommandsForDet(dependency parsing.Dependency,
 	tokenById map[string]parsing.Token) []string {
 	command := map[string]string{
