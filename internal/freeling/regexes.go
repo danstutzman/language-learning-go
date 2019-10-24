@@ -12,6 +12,8 @@ var BEGINS_WITH_ER = regexp.MustCompile("^er")
 
 var ENDS_WITH_AC = regexp.MustCompile("ac$")
 
+var ENDS_WITH_AR_ER_IR_OR_ÍR = regexp.MustCompile("(ar|er|ir|ír)$")
+
 var ENDS_WITH_A_E_OR_O = regexp.MustCompile("([aeo])$")
 
 var ENDS_WITH_A_E_O_OR_U = regexp.MustCompile("([aeo]|[^gq]u)$")

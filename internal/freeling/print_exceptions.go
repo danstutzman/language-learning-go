@@ -48,6 +48,11 @@ func PrintVerbExceptions(freelingDiccPath string) {
 						expected = true
 					}
 				}
+				if false && !expected {
+					for _, conjugation := range conjugations {
+						fmt.Printf("%-20s %-20s %-10s %s %s\n", lemma, form, tag, conjugation.stem, conjugation.suffix)
+					}
+				}
 			}
 
 			if !expected {
@@ -69,7 +74,7 @@ func analyzeVerb(lemma, tag string) []Conjugation {
 		groups[groupInfinitiveStem.group] = true
 	}
 
-	defaultStem := lemma[0 : len(lemma)-2]
+	defaultStem := ENDS_WITH_AR_ER_IR_OR_ÍR.ReplaceAllString(lemma, "")
 	if strings.HasSuffix(lemma, "ar") {
 		groups["AR"] = true
 	} else if strings.HasSuffix(lemma, "er") {
@@ -84,7 +89,7 @@ func analyzeVerb(lemma, tag string) []Conjugation {
 			groups["ER_ENDS_WITH_N"] = true
 		}
 		groups["ER"] = true
-	} else if strings.HasSuffix(lemma, "ir") {
+	} else if strings.HasSuffix(lemma, "ir") || strings.HasSuffix(lemma, "ír") {
 		if ENDS_WITH_A_E_O_OR_U.MatchString(defaultStem) {
 			groups["IR_ENDS_WITH_A_E_O_OR_U"] = true
 		}
