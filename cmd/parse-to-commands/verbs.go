@@ -3,6 +3,7 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"log"
+	"strings"
 )
 
 type ParallelVerb struct {
@@ -73,5 +74,41 @@ func buildCommandsForVerbPastParticiple(dependency parsing.Dependency,
 	commands = append(commands,
 		"ADD/ADJ/"+dependency.Word+"/"+parallelVerb.l1Past)
 
+	return commands
+}
+
+func translateVerbPhrase(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) []string {
+
+	token := tokenById[dependency.Token]
+	parallelVerb := parallelVerbByL2[token.Lemma]
+	commands := []string{"ADD/VERB/" + token.Form + "/" + parallelVerb.l1Pres}
+
+	for _, child := range dependency.Children {
+		if child.Function == "f" { // punctuation
+			// skip it
+		} else if child.Function == "suj" {
+			commands = append(commands,
+				buildCommandsForNounPhrase(child, tokenById)...)
+			commands = append(commands, "MAKE_AGENT")
+		} else if child.Function == "cd" {
+			commands = append(commands,
+				buildCommandsForNounPhrase(child, tokenById)...)
+			commands = append(commands, "MAKE_DOBJ")
+		} else if child.Function == "atr" {
+			childTag := tokenById[child.Token].Tag
+			if strings.HasPrefix(childTag, "A") {
+				commands = append(commands,
+					buildCommandsForAdj(child, tokenById)...)
+			} else if strings.HasPrefix(childTag, "VMP") {
+				commands = append(commands,
+					buildCommandsForVerbPastParticiple(child, tokenById)...)
+			} else {
+				log.Panicf("Can't handle atr for child %v with tag %s",
+					child, childTag)
+			}
+			commands = append(commands, "ATTACH_ATR_TO_VP")
+		}
+	}
 	return commands
 }
