@@ -3,7 +3,6 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"fmt"
-	"strings"
 )
 
 type ParallelDet struct {
@@ -47,7 +46,8 @@ func buildParallelDetByL2() map[string]ParallelDet {
 
 func translateDet(dependency parsing.Dependency,
 	tokenById map[string]parsing.Token) ([]string, error) {
-	parallelDet := parallelDetByL2[strings.ToLower(dependency.Word)]
+	token := tokenById[dependency.Token]
+	parallelDet := parallelDetByL2[token.Lemma]
 	if parallelDet.l2 == "" {
 		return nil, fmt.Errorf("Unknown determiner %s", dependency.Word)
 	}
