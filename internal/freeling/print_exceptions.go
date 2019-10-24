@@ -40,31 +40,8 @@ func PrintVerbExceptions(freelingDiccPath string) {
 			tag := values[i+1]
 
 			expected := true
-			if strings.HasSuffix(lemma, "ar") && strings.HasPrefix(tag, "V") {
-				conjugations := analyzeArVerb(lemma, tag)
-				expected = false
-				for _, conjugation := range conjugations {
-					if conjugation.stem+conjugation.suffix == form {
-						expected = true
-					}
-				}
-			}
-			if false && strings.HasSuffix(lemma, "er") && strings.HasPrefix(tag, "V") {
-				conjugations := analyzeErVerb(lemma, tag)
-				expected = false
-				for _, conjugation := range conjugations {
-					if conjugation.stem+conjugation.suffix == form {
-						expected = true
-					}
-				}
-				if false && !expected {
-					for _, conjugation := range conjugations {
-						fmt.Printf("%-20s %-20s %-10s %v\n", lemma, form, tag, conjugation)
-					}
-				}
-			}
-			if false && strings.HasSuffix(lemma, "ir") && strings.HasPrefix(tag, "V") {
-				conjugations := analyzeIrVerb(lemma, tag)
+			if strings.HasPrefix(tag, "V") {
+				conjugations := analyzeVerb(lemma, tag)
 				expected = false
 				for _, conjugation := range conjugations {
 					if conjugation.stem+conjugation.suffix == form {
@@ -84,7 +61,7 @@ func PrintVerbExceptions(freelingDiccPath string) {
 	}
 }
 
-func analyzeArVerb(lemma, tag string) []Conjugation {
+func analyzeVerb(lemma, tag string) []Conjugation {
 	groupInfinitiveStems := groupInfinitiveStemsByInfinitive[lemma]
 
 	groups := map[string]bool{}
@@ -93,99 +70,31 @@ func analyzeArVerb(lemma, tag string) []Conjugation {
 	}
 
 	defaultStem := lemma[0 : len(lemma)-2]
-	groups["AR"] = true
-
-	groupTag27Suffixes := findGroupTag27Suffixes(groups, tag[2:7])
-
-	conjugations := []Conjugation{}
-	for _, groupTag27Suffix := range groupTag27Suffixes {
-		stemsForGroup := []string{}
-		for _, groupInfinitiveStem := range groupInfinitiveStems {
-			if groupInfinitiveStem.group == groupTag27Suffix.group {
-				stemsForGroup = append(stemsForGroup, groupInfinitiveStem.stem)
-			}
+	if strings.HasSuffix(lemma, "ar") {
+		groups["AR"] = true
+	} else if strings.HasSuffix(lemma, "er") {
+		if ENDS_WITH_A_E_OR_O.MatchString(defaultStem) {
+			groups["ER_ENDS_WITH_A_E_OR_O"] = true
 		}
-		if len(stemsForGroup) == 0 {
-			stemsForGroup = []string{defaultStem}
+		if strings.HasSuffix(defaultStem, "ll") ||
+			strings.HasSuffix(defaultStem, "ñ") {
+			groups["ER_ENDS_WITH_LL_OR_Ñ"] = true
 		}
-
-		for _, stem := range stemsForGroup {
-			conjugation := Conjugation{
-				stem:   stem,
-				suffix: groupTag27Suffix.suffix,
-			}
-			conjugations = append(conjugations, conjugation)
+		if strings.HasSuffix(defaultStem, "n") {
+			groups["ER_ENDS_WITH_N"] = true
 		}
-	}
-
-	return conjugations
-}
-
-func analyzeErVerb(lemma, tag string) []Conjugation {
-	groupInfinitiveStems := groupInfinitiveStemsByInfinitive[lemma]
-
-	groups := map[string]bool{}
-	for _, groupInfinitiveStem := range groupInfinitiveStems {
-		groups[groupInfinitiveStem.group] = true
-	}
-
-	defaultStem := lemma[0 : len(lemma)-2]
-	if ENDS_WITH_A_E_OR_O.MatchString(defaultStem) {
-		groups["ER_ENDS_WITH_A_E_OR_O"] = true
-	}
-	if strings.HasSuffix(defaultStem, "ll") ||
-		strings.HasSuffix(defaultStem, "ñ") {
-		groups["ER_ENDS_WITH_LL_OR_Ñ"] = true
-	}
-	if strings.HasSuffix(defaultStem, "n") {
-		groups["ER_ENDS_WITH_N"] = true
-	}
-	groups["ER"] = true
-
-	groupTag27Suffixes := findGroupTag27Suffixes(groups, tag[2:7])
-
-	conjugations := []Conjugation{}
-	for _, groupTag27Suffix := range groupTag27Suffixes {
-		stemsForGroup := []string{}
-		for _, groupInfinitiveStem := range groupInfinitiveStems {
-			if groupInfinitiveStem.group == groupTag27Suffix.group {
-				stemsForGroup = append(stemsForGroup, groupInfinitiveStem.stem)
-			}
+		groups["ER"] = true
+	} else if strings.HasSuffix(lemma, "ir") {
+		if ENDS_WITH_A_E_O_OR_U.MatchString(defaultStem) {
+			groups["IR_ENDS_WITH_A_E_O_OR_U"] = true
 		}
-		if len(stemsForGroup) == 0 {
-			stemsForGroup = []string{defaultStem}
+		if strings.HasSuffix(defaultStem, "ll") ||
+			strings.HasSuffix(defaultStem, "ñ") ||
+			strings.HasSuffix(defaultStem, "y") {
+			groups["IR_ENDS_WITH_LL_Ñ_OR_Y"] = true
 		}
-
-		for _, stem := range stemsForGroup {
-			conjugation := Conjugation{
-				stem:   stem,
-				suffix: groupTag27Suffix.suffix,
-			}
-			conjugations = append(conjugations, conjugation)
-		}
+		groups["IR"] = true
 	}
-
-	return conjugations
-}
-
-func analyzeIrVerb(lemma, tag string) []Conjugation {
-	groupInfinitiveStems := groupInfinitiveStemsByInfinitive[lemma]
-
-	groups := map[string]bool{}
-	for _, groupInfinitiveStem := range groupInfinitiveStems {
-		groups[groupInfinitiveStem.group] = true
-	}
-
-	defaultStem := lemma[0 : len(lemma)-2]
-	if ENDS_WITH_A_E_O_OR_U.MatchString(defaultStem) {
-		groups["IR_ENDS_WITH_A_E_O_OR_U"] = true
-	}
-	if strings.HasSuffix(defaultStem, "ll") ||
-		strings.HasSuffix(defaultStem, "ñ") ||
-		strings.HasSuffix(defaultStem, "y") {
-		groups["IR_ENDS_WITH_LL_Ñ_OR_Y"] = true
-	}
-	groups["IR"] = true
 
 	groupTag27Suffixes := findGroupTag27Suffixes(groups, tag[2:7])
 
