@@ -49,7 +49,7 @@ func PrintVerbExceptions(freelingDiccPath string) {
 					}
 				}
 			}
-			if strings.HasSuffix(lemma, "er") && strings.HasPrefix(tag, "V") {
+			if false && strings.HasSuffix(lemma, "er") && strings.HasPrefix(tag, "V") {
 				conjugations := analyzeErVerb(lemma, tag)
 				expected = false
 				for _, conjugation := range conjugations {
@@ -63,7 +63,7 @@ func PrintVerbExceptions(freelingDiccPath string) {
 					}
 				}
 			}
-			if false && strings.HasSuffix(lemma, "ir") && strings.HasPrefix(tag, "V") {
+			if strings.HasSuffix(lemma, "ir") && strings.HasPrefix(tag, "V") {
 				conjugations := analyzeIrVerb(lemma, tag)
 				expected = false
 				for _, conjugation := range conjugations {
@@ -184,183 +184,46 @@ func analyzeErVerb(lemma, tag string) []Conjugation {
 }
 
 func analyzeIrVerb(lemma, tag string) []Conjugation {
-	suffixes := IR_MUTANT_TAG_TO_SUFFIXES[tag]
-	if len(suffixes) > 0 && len(IR_MUTANTS[lemma]) > 0 {
-		stems := IR_MUTANTS[lemma]
-		conjugations := []Conjugation{}
-		for _, suffix := range suffixes {
-			for _, stem := range stems {
-				if strings.HasSuffix(stem, "j") &&
-					(strings.HasPrefix(suffix, "ie") || strings.HasPrefix(suffix, "ié")) {
-					suffix = suffix[1:len(suffix)] // j- -iera -> -jera
-				}
-				conjugation := Conjugation{stem: stem, suffix: suffix}
-				conjugations = append(conjugations, conjugation)
-			}
-		}
-		return conjugations
+	groupInfinitiveStems := groupInfinitiveStemsByInfinitive[lemma]
+
+	groups := map[string]bool{}
+	for _, groupInfinitiveStem := range groupInfinitiveStems {
+		groups[groupInfinitiveStem.group] = true
 	}
 
-	suffix := IR_MUTANT2_TAG_TO_SUFFIX[tag]
-	if suffix != "" && IR_MUTANT2S[lemma] != "" {
-		stem := IR_MUTANT2S[lemma]
-		return []Conjugation{{stem: stem, suffix: suffix}}
+	defaultStem := lemma[0 : len(lemma)-2]
+	if ENDS_WITH_A_E_O_OR_U.MatchString(defaultStem) {
+		groups["IR_ENDS_WITH_A_E_O_OR_U"] = true
 	}
-
-	stems := IR_VMP_STEMS[lemma]
-	if len(stems) > 0 && strings.HasPrefix(tag, "VMP") {
-		suffixes := IR_TAG_TO_SUFFIXES[tag]
-		conjugations := []Conjugation{}
-		for _, stem := range stems {
-			for _, suffix := range suffixes {
-				suffix = suffix[2:len(suffix)] // Remove initial -id
-				conjugation := Conjugation{stem: stem, suffix: suffix}
-				conjugations = append(conjugations, conjugation)
-			}
-		}
-		return conjugations
+	if strings.HasSuffix(defaultStem, "ll") ||
+		strings.HasSuffix(defaultStem, "ñ") ||
+		strings.HasSuffix(defaultStem, "y") {
+		groups["IR_ENDS_WITH_LL_Ñ_OR_Y"] = true
 	}
+	groups["IR"] = true
 
-	stems = IR_VMSP1S_STEMS[lemma]
-	if len(stems) > 0 &&
-		(tag == "VMSP1S0" || tag == "VMSP2S0" || tag == "VMSP3S0" ||
-			tag == "VMSP3P0" || tag == "VMM03S0" || tag == "VMM03P0") {
-		conjugations := []Conjugation{}
-		for _, stem := range stems {
-			suffixes := IR_TAG_TO_SUFFIXES[tag]
-			for _, suffix := range suffixes {
-				conjugation := Conjugation{stem: stem, suffix: suffix}
-				conjugations = append(conjugations, conjugation)
-			}
-		}
-		return conjugations
-	}
-
-	stems = IR_VMSP1P_STEMS[lemma]
-	if len(stems) > 0 &&
-		(tag == "VMSP1P0" || tag == "VMSP2P0" || tag == "VMM01P0") {
-		suffixes := IR_TAG_TO_SUFFIXES[tag]
-		conjugations := []Conjugation{}
-		for _, stem := range stems {
-			for _, suffix := range suffixes {
-				conjugation := Conjugation{stem: stem, suffix: suffix}
-				conjugations = append(conjugations, conjugation)
-			}
-		}
-		return conjugations
-	}
-
-	if len(IR_VMM2S_FORMS[lemma]) > 0 && tag == "VMM02S0" {
-		conjugations := []Conjugation{}
-		for _, form := range IR_VMM2S_FORMS[lemma] {
-			conjugation := Conjugation{stem: form, suffix: ""}
-			conjugations = append(conjugations, conjugation)
-		}
-		return conjugations
-	}
-
-	if len(IR_E_TO_I_STEMS[lemma]) > 0 && (tag == "VMIS3S0" || tag == "VMIS3P0" ||
-		tag == "VMG0000" || tag == "VMSF1S0" || tag == "VMSF1P0" ||
-		tag == "VMSF2S0" || tag == "VMSF2P0" || tag == "VMSF3S0" ||
-		tag == "VMSF3P0" || tag == "VMSI1S0" || tag == "VMSI1P0" ||
-		tag == "VMSI2S0" || tag == "VMSI2P0" || tag == "VMSI3S0" ||
-		tag == "VMSI3P0") {
-		stems = IR_E_TO_I_STEMS[lemma]
-	} else if len(IR_STEM_CHANGES[lemma]) > 0 &&
-		(tag == "VMIP2S0" || tag == "VMIP3S0" || tag == "VMIP3P0" ||
-			tag == "VMIP1S0") {
-		stems = IR_STEM_CHANGES[lemma]
-	} else {
-		stems = []string{lemma[0 : len(lemma)-2]}
-	}
-
-	suffixes = IR_TAG_TO_SUFFIXES[tag]
+	groupTag27Suffixes := findGroupTag27Suffixes(groups, tag[2:7])
 
 	conjugations := []Conjugation{}
-	for _, stem := range stems {
-		for _, suffix := range suffixes {
-			if ENDS_WITH_A_E_O_OR_U.MatchString(stem) {
-				if suffix == "ió" {
-					suffix = "yó"
-				} else if suffix == "ieron" {
-					suffix = "yeron"
-				} else if suffix == "iendo" {
-					suffix = "yendo"
-				} else if suffix == "iera" {
-					suffix = "yera"
-				} else if suffix == "ierais" {
-					suffix = "yerais"
-				} else if suffix == "ieran" {
-					suffix = "yeran"
-				} else if suffix == "ieras" {
-					suffix = "yeras"
-				} else if suffix == "iéramos" {
-					suffix = "yéramos"
-				} else if suffix == "iere" {
-					suffix = "yere"
-				} else if suffix == "iereis" {
-					suffix = "yereis"
-				} else if suffix == "ieren" {
-					suffix = "yeren"
-				} else if suffix == "ieres" {
-					suffix = "yeres"
-				} else if suffix == "iéremos" {
-					suffix = "yéremos"
-				} else if suffix == "iese" {
-					suffix = "yese"
-				} else if suffix == "ieseis" {
-					suffix = "yeseis"
-				} else if suffix == "iesen" {
-					suffix = "yesen"
-				} else if suffix == "ieses" {
-					suffix = "yeses"
-				} else if suffix == "iésemos" {
-					suffix = "yésemos"
-				}
-			} else if strings.HasSuffix(stem, "ll") || strings.HasSuffix(stem, "ñ") ||
-				strings.HasSuffix(stem, "y") {
-				if suffix == "ió" {
-					suffix = "ó"
-				} else if suffix == "ieron" {
-					suffix = "eron"
-				} else if suffix == "iendo" {
-					suffix = "endo"
-				} else if suffix == "iera" {
-					suffix = "era"
-				} else if suffix == "ierais" {
-					suffix = "erais"
-				} else if suffix == "ieran" {
-					suffix = "eran"
-				} else if suffix == "ieras" {
-					suffix = "eras"
-				} else if suffix == "iéramos" {
-					suffix = "éramos"
-				} else if suffix == "iere" {
-					suffix = "ere"
-				} else if suffix == "iereis" {
-					suffix = "ereis"
-				} else if suffix == "ieren" {
-					suffix = "eren"
-				} else if suffix == "ieres" {
-					suffix = "eres"
-				} else if suffix == "iéremos" {
-					suffix = "éremos"
-				} else if suffix == "iese" {
-					suffix = "ese"
-				} else if suffix == "ieseis" {
-					suffix = "eseis"
-				} else if suffix == "iesen" {
-					suffix = "esen"
-				} else if suffix == "ieses" {
-					suffix = "eses"
-				} else if suffix == "iésemos" {
-					suffix = "ésemos"
-				}
+	for _, groupTag27Suffix := range groupTag27Suffixes {
+		stemsForGroup := []string{}
+		for _, groupInfinitiveStem := range groupInfinitiveStems {
+			if groupInfinitiveStem.group == groupTag27Suffix.group {
+				stemsForGroup = append(stemsForGroup, groupInfinitiveStem.stem)
 			}
+		}
+		if len(stemsForGroup) == 0 {
+			stemsForGroup = []string{defaultStem}
+		}
 
-			conjugation := Conjugation{stem: stem, suffix: suffix}
+		for _, stem := range stemsForGroup {
+			conjugation := Conjugation{
+				stem:   stem,
+				suffix: groupTag27Suffix.suffix,
+			}
 			conjugations = append(conjugations, conjugation)
 		}
 	}
+
 	return conjugations
 }
