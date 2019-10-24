@@ -29,7 +29,7 @@ var parallelDets = []ParallelDet{
 	{"nuestro", "our"},
 	{"poco", "little"},
 	{"qué", "than"},
-	{"su", "his/her/its"},
+	{"su", "his\\her\\its"},
 	{"todo", "all"},
 	{"tu", "your"},
 	{"uno", "one"},
