@@ -93,10 +93,6 @@ func (constituent *Constituent) appendL1Suffix(l1Suffix string) {
 	constituent.l1Suffixes = append([]string{l1Suffix}, constituent.l1Suffixes...)
 }
 
-func (constituent *Constituent) appendRightChild(newChild Constituent) {
-	constituent.rightChildren = append(constituent.rightChildren, newChild)
-}
-
 func (constituent *Constituent) ChangeInto(
 	newType, l2Prefix, l1Prefix, l2Suffix, l1Suffix string) {
 
@@ -119,5 +115,13 @@ func (constituent *Constituent) MakePhraseAppendingChild(newType string,
 	newChild Constituent) {
 
 	constituent.type_ = newType
-	constituent.appendRightChild(newChild)
+	constituent.rightChildren = append(constituent.rightChildren, newChild)
+}
+
+func (constituent *Constituent) MakePhraseAppendingL2PrependingL1(
+	newType string, newChild Constituent) {
+
+	constituent.type_ = newType
+	constituent.l1Prefixes = append(constituent.l1Prefixes, newChild.l1)
+	constituent.l2Suffixes = append(constituent.l2Suffixes, newChild.l2)
 }

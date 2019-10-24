@@ -112,7 +112,7 @@ func (stack *Stack) makeInfinitive(l2, l1 string) {
 func (stack *Stack) makeNounPhraseAdj() {
 	adj := stack.pop(EXPECT_ADJ)
 	noun := stack.peek(EXPECT_NOUN_OR_PHRASE)
-	noun.MakePhraseAppendingChild("NOUN_PHRASE", adj)
+	noun.MakePhraseAppendingL2PrependingL1("NOUN_PHRASE", adj)
 }
 
 func (stack *Stack) makeDirObj() {
