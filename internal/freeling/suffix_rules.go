@@ -627,10 +627,21 @@ var allGroupTag27Suffixes = []GroupTag27Suffix{
 	{"IR_ENDS_WITH_Í3", "IP2S0", "es"},
 }
 
+var groupTag27SuffixesByTag27 = buildGroupTag27SuffixesByTag27()
+
+func buildGroupTag27SuffixesByTag27() map[string][]GroupTag27Suffix {
+	groupTag27SuffixesByTag27 := map[string][]GroupTag27Suffix{}
+	for _, row := range allGroupTag27Suffixes {
+		groupTag27SuffixesByTag27[row.tag27] = append(
+			groupTag27SuffixesByTag27[row.tag27], row)
+	}
+	return groupTag27SuffixesByTag27
+}
+
 func findGroupTag27Suffixes(groups map[string]bool,
 	tag27 string) []GroupTag27Suffix {
 	groupTag27Suffixes := []GroupTag27Suffix{}
-	for _, row := range allGroupTag27Suffixes {
+	for _, row := range groupTag27SuffixesByTag27[tag27] {
 		if groups[row.group] && row.tag27 == tag27 {
 			groupTag27Suffixes = append(groupTag27Suffixes, row)
 		}
