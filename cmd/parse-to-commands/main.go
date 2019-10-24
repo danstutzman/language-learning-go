@@ -20,7 +20,27 @@ func main() {
 
 	phrases := parsing.ListPhrasesInCorpusTxt(corpusPath)
 
+	if false {
+		for _, phrase := range phrases {
+			parse := parsing.LoadSavedParse(phrase, PARSE_DIR).Parse
+			for _, sentence := range parse.Sentences {
+				for _, token := range sentence.Tokens {
+					if strings.HasPrefix(token.Tag, "D") {
+						fmt.Printf("%s\n", token.Lemma)
+					}
+				}
+			}
+		}
+		os.Exit(1)
+	}
+
 	for phraseNum, phrase := range phrases {
+		log.Printf("Phrase: %s", phrase)
+		switch phrase {
+		case "La mujer está parada.":
+			continue
+		}
+
 		parse := parsing.LoadSavedParse(phrase, PARSE_DIR).Parse
 		for _, sentence := range parse.Sentences {
 			tokenById := map[string]parsing.Token{}
@@ -48,8 +68,17 @@ func main() {
 								buildCommandsForNounPhrase(child, tokenById)...)
 							commands = append(commands, "MAKE_DOBJ")
 						} else if child.Function == "atr" {
-							commands = append(commands,
-								buildCommandsForAdj(child, tokenById)...)
+							childTag := tokenById[child.Token].Tag
+							if strings.HasPrefix(childTag, "A") {
+								commands = append(commands,
+									buildCommandsForAdj(child, tokenById)...)
+							} else if strings.HasPrefix(childTag, "VMP") {
+								commands = append(commands,
+									buildCommandsForVerbPastParticiple(child, tokenById)...)
+							} else {
+								log.Panicf("Can't handle atr for child %v with tag %s",
+									child, childTag)
+							}
 							commands = append(commands, "ATTACH_ATR_TO_VP")
 						}
 					}
@@ -62,37 +91,11 @@ func main() {
 					l2 := strings.Join(stack.GetL2Words(), " ")
 					fmt.Printf("%-40s %-39s\n", l2, l1)
 
-					if phraseNum >= 20 {
+					if phraseNum >= 30 {
 						os.Exit(1)
 					}
 				} // end if
 			} // next top-level dependency
 		} // next sentence
 	} // next phrase
-}
-
-func buildCommandsForNounPhrase(dependency parsing.Dependency,
-	tokenById map[string]parsing.Token) []string {
-	commands := []string{}
-
-	token := tokenById[dependency.Token]
-	parallelNoun := parallelNounByL2[token.Lemma]
-	if parallelNoun.l2 == "" {
-		log.Panicf("Can't find parallelNoun for l2=%s", token.Lemma)
-	}
-
-	commands = append(commands,
-		"ADD/NOUN/"+parallelNoun.l2+"/"+parallelNoun.l1)
-
-	for _, child := range dependency.Children {
-		if child.Function == "spec" {
-			commands = append(commands, buildCommandsForDet(child, tokenById)...)
-			commands = append(commands, "MAKE_DET_NOUN_PHRASE")
-		} else if child.Function == "s.a" {
-			commands = append(commands, buildCommandsForAdj(child, tokenById)...)
-			commands = append(commands, "MAKE_NOUN_PHRASE_ADJ")
-		}
-	}
-
-	return commands
 }

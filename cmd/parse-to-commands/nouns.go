@@ -1,5 +1,10 @@
 package main
 
+import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"log"
+)
+
 type ParallelNoun struct {
 	l2 string
 	l1 string
@@ -325,4 +330,30 @@ func buildParallelNounByL2() map[string]ParallelNoun {
 		parallelNounByL2[parallelNoun.l2] = parallelNoun
 	}
 	return parallelNounByL2
+}
+
+func buildCommandsForNounPhrase(dependency parsing.Dependency,
+	tokenById map[string]parsing.Token) []string {
+	commands := []string{}
+
+	token := tokenById[dependency.Token]
+	parallelNoun := parallelNounByL2[token.Lemma]
+	if parallelNoun.l2 == "" {
+		log.Panicf("Can't find parallelNoun for l2=%s", token.Lemma)
+	}
+
+	commands = append(commands,
+		"ADD/NOUN/"+parallelNoun.l2+"/"+parallelNoun.l1)
+
+	for _, child := range dependency.Children {
+		if child.Function == "spec" {
+			commands = append(commands, buildCommandsForDet(child, tokenById)...)
+			commands = append(commands, "MAKE_DET_NOUN_PHRASE")
+		} else if child.Function == "s.a" {
+			commands = append(commands, buildCommandsForAdj(child, tokenById)...)
+			commands = append(commands, "MAKE_NOUN_PHRASE_ADJ")
+		}
+	}
+
+	return commands
 }

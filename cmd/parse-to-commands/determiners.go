@@ -20,6 +20,19 @@ var parallelDets = []ParallelDet{
 	{"las", "the"},
 	{"unos", "some"},
 	{"unas", "some"},
+	{"alguno", "any"},
+	{"cuánto", "how much"},
+	{"ese", "that"},
+	{"este", "this"},
+	{"mi", "my"},
+	{"mucho", "much"},
+	{"nuestro", "our"},
+	{"poco", "little"},
+	{"qué", "than"},
+	{"su", "his/her/its"},
+	{"todo", "all"},
+	{"tu", "your"},
+	{"uno", "one"},
 }
 
 var parallelDetByL2 = buildParallelDetByL2()
