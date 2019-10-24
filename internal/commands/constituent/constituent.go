@@ -115,7 +115,7 @@ func (constituent *Constituent) ChangeInto(
 	}
 }
 
-func (constituent *Constituent) MakePhrase(newType string,
+func (constituent *Constituent) MakePhraseAppendingChild(newType string,
 	newChild Constituent) {
 
 	constituent.type_ = newType

@@ -1,7 +1,7 @@
-package main
+package commands
 
 import (
-	"bitbucket.org/danstutzman/language-learning-go/cmd/build-tree/constituent"
+	"bitbucket.org/danstutzman/language-learning-go/internal/commands/constituent"
 	"log"
 	"strings"
 )
@@ -16,7 +16,11 @@ func expectNumArgs(expectedNum int, args []string) {
 	}
 }
 
-func (stack *Stack) execCommand(commandWithArgs string) {
+func NewStack() Stack {
+	return Stack{}
+}
+
+func (stack *Stack) ExecCommand(commandWithArgs string) {
 	args := strings.Split(commandWithArgs, "/")
 	command := args[0]
 	args = args[1:len(args)]
@@ -34,9 +38,9 @@ func (stack *Stack) execCommand(commandWithArgs string) {
 	case "MAKE_INFINITIVE":
 		expectNumArgs(2, args)
 		stack.makeInfinitive(args[0], args[1])
-	case "MAKE_NOUN_ADJ":
+	case "MAKE_NOUN_PHRASE_ADJ":
 		expectNumArgs(0, args)
-		stack.makeNounAdj()
+		stack.makeNounPhraseAdj()
 	case "MAKE_PLURAL":
 		expectNumArgs(2, args)
 		stack.makePlural(args[0], args[1])
@@ -58,6 +62,9 @@ func (stack *Stack) execCommand(commandWithArgs string) {
 	case "MAKE_VERB_PHRASE_ADDING_PREP_PHRASE":
 		expectNumArgs(0, args)
 		stack.makeVerbPhraseAddingPrepPhrase()
+	case "ATTACH_ATR_TO_VP":
+		expectNumArgs(0, args)
+		stack.makeVerbPhraseAddingAdj()
 	default:
 		panic("Unknown command " + command)
 	}
@@ -80,7 +87,7 @@ var EXPECT_VERB_STEM = map[string]bool{"VERB_STEM": true}
 var EXPECT_VERB_UNIQUE = map[string]bool{"VERB_UNIQUE": true}
 
 func (stack *Stack) makeAgent() {
-	agent := stack.pop(EXPECT_NOUN)
+	agent := stack.pop(EXPECT_NOUN_OR_PHRASE)
 	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
 	verbPhrase.SetLeftChild("VERB_PHRASE", agent)
 }
@@ -88,7 +95,7 @@ func (stack *Stack) makeAgent() {
 func (stack *Stack) makeVerbObj() {
 	verbPhraseToAdd := stack.pop(EXPECT_VERB_OR_PHRASE)
 	verbToGrow := stack.peek(EXPECT_VERB_OR_PHRASE)
-	verbToGrow.MakePhrase("VERB_PHRASE", verbPhraseToAdd)
+	verbToGrow.MakePhraseAppendingChild("VERB_PHRASE", verbPhraseToAdd)
 }
 
 func (stack *Stack) makeDetNounPhrase() {
@@ -102,28 +109,34 @@ func (stack *Stack) makeInfinitive(l2, l1 string) {
 	stem.ChangeInto("VERB", "", "to", "-ar", "")
 }
 
-func (stack *Stack) makeNounAdj() {
+func (stack *Stack) makeNounPhraseAdj() {
 	adj := stack.pop(EXPECT_ADJ)
-	noun := stack.peek(EXPECT_NOUN)
-	noun.MakePhrase("NOUN_PHRASE", adj)
+	noun := stack.peek(EXPECT_NOUN_OR_PHRASE)
+	noun.MakePhraseAppendingChild("NOUN_PHRASE", adj)
 }
 
 func (stack *Stack) makeDirObj() {
 	nounPhrase := stack.pop(EXPECT_NOUN_OR_PHRASE)
 	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
-	verbPhrase.MakePhrase("VERB_PHRASE", nounPhrase)
+	verbPhrase.MakePhraseAppendingChild("VERB_PHRASE", nounPhrase)
 }
 
 func (stack *Stack) makeNounPhraseAddingPrepPhrase() {
 	prepPhrase := stack.pop(EXPECT_PREP_PHRASE)
 	nounPhrase := stack.peek(EXPECT_NOUN_OR_PHRASE)
-	nounPhrase.MakePhrase("NOUN_PHRASE", prepPhrase)
+	nounPhrase.MakePhraseAppendingChild("NOUN_PHRASE", prepPhrase)
 }
 
 func (stack *Stack) makeVerbPhraseAddingPrepPhrase() {
 	prepPhrase := stack.pop(EXPECT_PREP_PHRASE)
 	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
-	verbPhrase.MakePhrase("VERB_PHRASE", prepPhrase)
+	verbPhrase.MakePhraseAppendingChild("VERB_PHRASE", prepPhrase)
+}
+
+func (stack *Stack) makeVerbPhraseAddingAdj() {
+	adj := stack.pop(EXPECT_ADJ)
+	verbPhrase := stack.peek(EXPECT_VERB_OR_PHRASE)
+	verbPhrase.MakePhraseAppendingChild("VERB_PHRASE", adj)
 }
 
 func (stack *Stack) makePlural(l2, l1 string) {
@@ -162,7 +175,7 @@ func (stack *Stack) pop(
 	return *lastConstituent
 }
 
-func (stack *Stack) getL1Words() []string {
+func (stack *Stack) GetL1Words() []string {
 	l1Words := []string{}
 	for _, constituent := range stack.constituents {
 		if len(l1Words) > 0 {
@@ -173,7 +186,7 @@ func (stack *Stack) getL1Words() []string {
 	return l1Words
 }
 
-func (stack *Stack) getL2Words() []string {
+func (stack *Stack) GetL2Words() []string {
 	l2Words := []string{}
 	for _, constituent := range stack.constituents {
 		if len(l2Words) > 0 {

@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ ADD/DET/una/a
 MAKE_DET_NOUN_PHRASE
 ADD/NOUN/Reino/Kingdom
 ADD/ADJ/Unido/United
-MAKE_NOUN_ADJ
+MAKE_NOUN_PHRASE_ADJ
 ADD/PREP/del/from-the
 MAKE_PREP_NOUN
 MAKE_NOUN_PHRASE_ADDING_PREP_PHRASE
@@ -39,16 +39,16 @@ MAKE_VERB_PHRASE_ADDING_PREP_PHRASE
 MAKE_VOBJ
 `
 
-func main() {
-	stack := Stack{}
+func Demo() {
+	stack := NewStack()
 	for _, commandWhitespace := range strings.Split(commands, "\n") {
 		command := strings.TrimSpace(commandWhitespace)
 		if command != "" {
 			log.Printf("%s", command)
-			stack.execCommand(command)
+			stack.ExecCommand(command)
 		}
 	}
 
-	fmt.Printf("%+v\n", stack.getL1Words())
-	fmt.Printf("%+v\n", stack.getL2Words())
+	fmt.Printf("%+v\n", stack.GetL1Words())
+	fmt.Printf("%+v\n", stack.GetL2Words())
 }

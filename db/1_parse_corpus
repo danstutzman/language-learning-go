@@ -10,9 +10,9 @@ go install -v bitbucket.org/danstutzman/language-learning-go/...
 mkdir -p db/1_parses
 DB_PATH=db/db.sqlite3 \
   GOOGLE_TRANSLATE_API_KEY=`cat ~/.google_translate_api_key` \
-  $GOPATH/bin/parse-corpus db/corpora/spanish-in-texas.txt "$@"
+  $GOPATH/bin/parse-corpus db/corpora/beginner-sentences.txt "$@"
+  #$GOPATH/bin/parse-corpus db/corpora/spanish-in-texas.txt "$@"
   #$GOPATH/bin/parse-corpus db/corpora/advanced-verbs.txt "$@"
-  #$GOPATH/bin/parse-corpus db/corpora/beginner-sentences.txt "$@"
   #$GOPATH/bin/parse-corpus db/corpora/conjugations.txt "$@"
   #$GOPATH/bin/parse-corpus db/corpora/nouns.csv "$@"
   #$GOPATH/bin/parse-corpus db/corpora/spanishpod.yaml "$@"
