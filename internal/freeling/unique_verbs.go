@@ -99,7 +99,6 @@ var uniqueVerbs = []UniqueVerb{
 	{"ver", "IP2P0", "veis"},
 	{"ver", "IS1S0", "vi"},
 	{"ver", "IS3S0", "vio"},
-	{"hacer", "IS3S0", "hizo"},
 	{"dar", "IP2P0", "dais"},
 	{"dar", "SP2P0", "deis"},
 	{"dar", "IS1S0", "di"},
@@ -109,6 +108,29 @@ var uniqueVerbs = []UniqueVerb{
 	{"dar", "SP1S0", "dé"},
 	{"dar", "SP3S0", "dé"},
 	{"saber", "IP1S0", "sé"},
+
+	// Leftovers from dicc.src
+	{"llover", "SP3S0", "llueva"},
+	{"llover", "SP3P0", "lluevan"},
+	{"llover", "IP3S0", "llueve"},
+	{"llover", "IP3P0", "llueven"},
+	{"neviscar", "SP3S0", "nevisque"},
+	{"nevar", "IP3S0", "nieva"},
+	{"nevar", "SP3S0", "nieve"},
+	{"placer", "SP3S0", "plegue"},
+	{"placer", "IS3S0", "plugo"},
+	{"placer", "SI3S0", "pluguiera"},
+	{"placer", "SF3S0", "pluguiere"},
+	{"placer", "IS3P0", "pluguieron"},
+	{"placer", "SI3S0", "pluguiese"},
+	{"pudrir", "N0000", "podrir"},
+	{"pudrir", "IF1S0", "podriré"},
+	{"pudrir", "IC1S0", "podriría"},
+	{"pudrir", "IC3S0", "podriría"},
+	{"pudrir", "IS1S0", "podrí"},
+	{"poder", "G0000", "pudiendo"},
+	{"repudrir", "N0000", "repodrir"},
+	{"erguir", "M02S0", "yergue"},
 }
 
 var uniqueVerbsByInfinitiveTag27 = buildUniqueVerbByInfinitiveTag27()

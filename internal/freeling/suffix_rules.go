@@ -275,6 +275,9 @@ var allGroupTag27Suffixes = []GroupTag27Suffix{
 	{"ER_VER_VERB", "II3P0", "eían"},
 	{"ER_VER_VERB", "M03S0", "ea"},
 	{"ER_VER_VERB", "M03P0", "ean"},
+	{"ER_VER_VERB2", "IP3S0", "é"},
+	{"ER_VER_VERB2", "IP3P0", "én"},
+	{"ER_VER_VERB2", "IP2S0", "és"},
 	{"ER_ENDS_WITH_N", "IC1S0", "dría"},
 	{"ER_ENDS_WITH_N", "IC1P0", "dríamos"},
 	{"ER_ENDS_WITH_N", "IC2S0", "drías"},
@@ -353,6 +356,7 @@ var allGroupTag27Suffixes = []GroupTag27Suffix{
 	{"ER", "SP2P0", "áis"},
 	{"ER", "SP3S0", "a"},
 	{"ER", "SP3P0", "an"},
+	{"ER_ACER_IS3S", "IS3S0", "izo"},
 	{"IR_MUTANT", "IS1S0", "e"},
 	{"IR_MUTANT", "IS1P0", "imos"},
 	{"IR_MUTANT", "IS2S0", "iste"},
@@ -470,6 +474,7 @@ var allGroupTag27Suffixes = []GroupTag27Suffix{
 	{"IR_STEM_CHANGE", "IP3S0", "e"},
 	{"IR_STEM_CHANGE", "IP3P0", "en"},
 	{"IR_STEM_CHANGE", "IP1S0", "o"},
+	{"IR_STEM_CHANGE", "G0000", "iendo"},
 	{"IR_ENDS_WITH_A_E_O_OR_U", "IS3S0", "yó"},
 	{"IR_ENDS_WITH_A_E_O_OR_U", "IS3P0", "yeron"},
 	{"IR_ENDS_WITH_A_E_O_OR_U", "G0000", "yendo"},
@@ -625,6 +630,7 @@ var allGroupTag27Suffixes = []GroupTag27Suffix{
 	{"IR_ENDS_WITH_Í3", "M02S0", "e"},
 	{"IR_ENDS_WITH_Í3", "IP3P0", "en"},
 	{"IR_ENDS_WITH_Í3", "IP2S0", "es"},
+	{"IR_VENIR_VERB", "G0000", "iendo"},
 }
 
 var groupTag27SuffixesByTag27 = buildGroupTag27SuffixesByTag27()

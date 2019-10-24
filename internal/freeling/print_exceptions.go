@@ -67,14 +67,14 @@ func PrintVerbExceptions(freelingDiccPath string) {
 }
 
 func analyzeVerb(lemma, tag string) []Conjugation {
+	conjugations := []Conjugation{}
+
 	uniqueVerbs := findUniqueVerbs(lemma, tag[2:7])
 	if len(uniqueVerbs) > 0 {
-		conjugations := []Conjugation{}
 		for _, uniqueVerb := range uniqueVerbs {
 			conjugation := Conjugation{stem: uniqueVerb.form, suffix: ""}
 			conjugations = append(conjugations, conjugation)
 		}
-		return conjugations
 	}
 
 	groupInfinitiveStems := groupInfinitiveStemsByInfinitive[lemma]
@@ -113,7 +113,6 @@ func analyzeVerb(lemma, tag string) []Conjugation {
 
 	groupTag27Suffixes := findGroupTag27Suffixes(groups, tag[2:7])
 
-	conjugations := []Conjugation{}
 	for _, groupTag27Suffix := range groupTag27Suffixes {
 		stemsForGroup := []string{}
 		for _, groupInfinitiveStem := range groupInfinitiveStems {
