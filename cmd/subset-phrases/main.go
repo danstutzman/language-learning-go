@@ -26,7 +26,13 @@ func main() {
 
 		parse := parsing.LoadSavedParse(phrase, PARSE_DIR).Parse
 		for _, sentence := range parse.Sentences {
-			combos := combosOfDeps(sentence.Dependencies)
+			tokenById := map[string]parsing.Token{}
+			for _, token := range sentence.Tokens {
+				tokenById[token.Id] = token
+			}
+
+			combos := combosOfDeps(sentence.Dependencies, tokenById)
+
 			for _, combo := range combos {
 				words := []string{}
 				for _, token := range sentence.Tokens {
@@ -55,7 +61,13 @@ func mapWithJust(token string, value bool) []map[string]bool {
 	return []map[string]bool{combo}
 }
 
-func combosOfDep(dep parsing.Dependency) []map[string]bool {
+func isSerOrEstar(lemma string) bool {
+	return lemma == "ser" || lemma == "estar"
+}
+
+func combosOfDep(dep parsing.Dependency,
+	tokenById map[string]parsing.Token) []map[string]bool {
+
 	if len(dep.Children) == 0 {
 		if dep.Function == "f" { // punctuation
 			return []map[string]bool{
@@ -79,13 +91,7 @@ func combosOfDep(dep parsing.Dependency) []map[string]bool {
 
 	combos = append(combos, map[string]bool{dep.Token: false})
 
-	for _, combo := range combosOfDeps(dep.Children) {
-		copy := map[string]bool{}
-		for key, value := range combo {
-			copy[key] = value
-		}
-		copy[dep.Token] = true
-
+	for _, combo := range combosOfDeps(dep.Children, tokenById) {
 		hasAtLeastOneTrue := false
 		for _, value := range combo {
 			if value {
@@ -93,10 +99,26 @@ func combosOfDep(dep parsing.Dependency) []map[string]bool {
 			}
 		}
 
+		hasAtr := false
+		for _, child := range dep.Children {
+			if child.Function == "atr" && combo[child.Token] {
+				hasAtr = true
+			}
+		}
+		isLinking := isSerOrEstar(tokenById[dep.Token].Lemma)
+
 		if (dep.Function == "sp" || dep.Function == "cc" || dep.Function ==
 			"atr") && !hasAtLeastOneTrue {
 			// skip
+		} else if isLinking && !hasAtr {
+			// skip
 		} else {
+			copy := map[string]bool{}
+			for key, value := range combo {
+				copy[key] = value
+			}
+			copy[dep.Token] = true
+
 			combos = append(combos, copy)
 		}
 	}
@@ -104,15 +126,17 @@ func combosOfDep(dep parsing.Dependency) []map[string]bool {
 	return combos
 }
 
-func combosOfDeps(deps []parsing.Dependency) []map[string]bool {
+func combosOfDeps(deps []parsing.Dependency,
+	tokenById map[string]parsing.Token) []map[string]bool {
+
 	if len(deps) == 1 {
-		return combosOfDep(deps[0])
+		return combosOfDep(deps[0], tokenById)
 	}
 
 	// cartesian join
 	combos := []map[string]bool{}
-	for _, combo1 := range combosOfDep(deps[0]) {
-		for _, combo2 := range combosOfDeps(deps[1:len(deps)]) {
+	for _, combo1 := range combosOfDep(deps[0], tokenById) {
+		for _, combo2 := range combosOfDeps(deps[1:len(deps)], tokenById) {
 			merged := map[string]bool{}
 			for key, value := range combo1 {
 				merged[key] = value
