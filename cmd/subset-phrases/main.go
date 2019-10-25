@@ -20,7 +20,7 @@ func main() {
 	phrases := parsing.ListPhrasesInCorpusTxt(corpusPath)
 
 	for phraseNum, phrase := range phrases {
-		if !strings.Contains(phrase, "Ese es su hermano") {
+		if !strings.Contains(phrase, "prueba la manzana") {
 			//continue
 		}
 
@@ -31,16 +31,21 @@ func main() {
 				tokenById[token.Id] = token
 			}
 
-			combos := combosOfDeps(sentence.Dependencies, tokenById)
+			for _, dep := range listAllDepsOfDeps(sentence.Dependencies) {
+				combos := combosOfDep(dep, tokenById)
 
-			for _, combo := range combos {
-				words := []string{}
-				for _, token := range sentence.Tokens {
-					if combo[token.Id] {
-						words = append(words, token.Form)
+				for _, combo := range combos {
+					words := []string{}
+					for _, token := range sentence.Tokens {
+						if combo[token.Id] {
+							words = append(words, token.Form)
+						}
+					}
+
+					if len(words) > 0 {
+						fmt.Printf("%v\n", words)
 					}
 				}
-				fmt.Printf("%v\n", words)
 			}
 		}
 
@@ -50,9 +55,20 @@ func main() {
 	}
 }
 
-type Dep struct {
-	Token    string
-	Children []Dep
+func listAllDepsOfDeps(deps []parsing.Dependency) []parsing.Dependency {
+	allDeps := []parsing.Dependency{}
+	for _, dep := range deps {
+		allDeps = append(allDeps, listAllDepsOfDep(dep)...)
+	}
+	return allDeps
+}
+
+func listAllDepsOfDep(dep parsing.Dependency) []parsing.Dependency {
+	deps := []parsing.Dependency{dep}
+	for _, child := range dep.Children {
+		deps = append(deps, listAllDepsOfDep(child)...)
+	}
+	return deps
 }
 
 func mapWithJust(token string, value bool) []map[string]bool {
