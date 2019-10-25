@@ -98,12 +98,22 @@ func translateVerbPhrase(dependency parsing.Dependency,
 		return nil, fmt.Errorf("Can't find parallelVerb for l2=%s", token.Lemma)
 	}
 
-	commands := []string{"ADD/VERB/" + token.Form + "/" + parallelVerb.l1Pres}
+	var l1 string
+	switch token.Tense {
+	case "present":
+		l1 = parallelVerb.l1Pres
+	default:
+		return nil, fmt.Errorf("Unknown tense %s", token.Tense)
+	}
 
+	commands := []string{"ADD/VERB/" + token.Form + "/" + l1}
+
+	foundAgent := false
 	for _, child := range dependency.Children {
 		if child.Function == "f" { // punctuation
 			// skip it
 		} else if child.Function == "suj" {
+			foundAgent = true
 			newCommands, err := translateNounPhrase(child, tokenById)
 			if err != nil {
 				return nil, err
@@ -136,6 +146,19 @@ func translateVerbPhrase(dependency parsing.Dependency,
 					child, childTag)
 			}
 			commands = append(commands, "ATTACH_ATR_TO_VP")
+		}
+
+		if !foundAgent {
+			if token.Person == "1" {
+				commands = append(commands, "ADD/NOUN/(yo)/I")
+				commands = append(commands, "MAKE_AGENT")
+			} else if token.Person == "2" {
+				commands = append(commands, "ADD/NOUN/(tú)/you")
+				commands = append(commands, "MAKE_AGENT")
+			} else if token.Person == "3" {
+			} else {
+				return nil, fmt.Errorf("Unknown person %s", token.Person)
+			}
 		}
 	}
 	return commands, nil

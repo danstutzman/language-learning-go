@@ -53,7 +53,7 @@ func main() {
 				var err error
 				verbToken := tokenById[dependency.Token]
 				if verbToken.Tag[0:1] == "V" &&
-					verbToken.Tag[2:7] == "IP3S0" { // indic present 3rd person singular
+					verbToken.Tag[2:4] == "IP" { // indicative present
 					commands, err = translateVerbPhrase(dependency, tokenById)
 				} else {
 					err = fmt.Errorf("Skipping non-VMIP3S0 sentence head")
