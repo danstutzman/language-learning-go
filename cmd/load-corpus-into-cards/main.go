@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -52,7 +51,7 @@ func main() {
 	for _, phrase := range phrases {
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
-		errorLists := importPhrase(output.Phrase, output.Parse, theModel)
+		errorLists := importPhrase(output.Parse, theModel)
 		for _, errorList := range errorLists {
 			for _, err := range errorList {
 				if err != nil {
@@ -63,14 +62,14 @@ func main() {
 	}
 }
 
-func importPhrase(phrase string, parse parsing.Parse,
-	theModel *model.Model) [][]error {
-
+func importPhrase(parse parsing.Parse, theModel *model.Model) [][]error {
 	errors := make([][]error, len(parse.Sentences))
 	for sentenceNum, sentence := range parse.Sentences {
 		tokenById := map[string]parsing.Token{}
+		allTokens := []parsing.Token{}
 		for _, token := range sentence.Tokens {
 			tokenById[token.Id] = token
+			allTokens = append(allTokens, token)
 		}
 
 		// Uncapitalize first token
@@ -96,19 +95,43 @@ func importPhrase(phrase string, parse parsing.Parse,
 		}
 
 		if len(errors[sentenceNum]) == 0 {
-			for _, constituent := range sentence.Constituents {
-				importConstituent(constituent, cardByTokenId, tokenById, true, theModel)
+			for _, dep := range sentence.Dependencies {
+				s, err := depToS(dep, tokenById)
+				if err != nil {
+					printTokensInOrder(os.Stderr, allTokens)
+					fmt.Fprintf(os.Stderr, "\\ %s\n", err)
+				} else {
+					printTokensInOrder(os.Stdout, s.GetAllTokens())
+					if len(s.vp) == 1 {
+						fmt.Printf("Conjugations: %v\n", s.vp[0].verbConjugation)
+					}
+
+					importConstituent(s, cardByTokenId, true, theModel)
+				}
 			}
 		}
 	}
 	return errors
 }
 
-func importConstituent(constituent parsing.Constituent,
-	cardByTokenId map[string]model.Card, tokenById map[string]parsing.Token,
+func importConstituent(constituent Constituent,
+	cardByTokenId map[string]model.Card,
 	isSentence bool, theModel *model.Model) model.Card {
 
-	tokens := getTokensForConstituent(constituent, tokenById)
+	tokens := constituent.GetAllTokens()
+	sort.SliceStable(tokens, func(i, j int) bool {
+		return mustAtoi(tokens[i].Begin) < mustAtoi(tokens[j].Begin)
+	})
+
+	hasBlankToken := false
+	for _, token := range tokens {
+		if token.Form == "" {
+			hasBlankToken = true
+		}
+	}
+	if hasBlankToken {
+		log.Fatalf("Blank token from %+v", constituent)
+	}
 
 	l2 := ""
 	for i, token := range tokens {
@@ -123,43 +146,15 @@ func importConstituent(constituent parsing.Constituent,
 		morphemes = append(morphemes, cardByTokenId[token.Id].Morphemes...)
 	}
 
-	for _, child := range constituent.Children {
-		importConstituent(child, cardByTokenId, tokenById, false, theModel)
+	for _, child := range constituent.GetChildren() {
+		importConstituent(child, cardByTokenId, false, theModel)
 	}
 
-	if constituent.Leaf == "1" {
-		return cardByTokenId[constituent.Token]
-	} else {
-		card := theModel.InsertCardIfNotExists(model.Card{
-			Type:       constituent.Label,
-			L2:         l2,
-			IsSentence: isSentence,
-			Morphemes:  morphemes,
-		})
-		return card
-	}
-}
-
-func getTokensForConstituent(constituent parsing.Constituent,
-	tokenById map[string]parsing.Token) []parsing.Token {
-
-	tokens := []parsing.Token{}
-	if constituent.Token != "" {
-		tokens = append(tokens, tokenById[constituent.Token])
-	}
-	for _, child := range constituent.Children {
-		tokens = append(tokens, getTokensForConstituent(child, tokenById)...)
-	}
-	sort.SliceStable(tokens, func(i, j int) bool {
-		return mustAtoi(tokens[i].Begin) < mustAtoi(tokens[j].Begin)
+	card := theModel.InsertCardIfNotExists(model.Card{
+		Type:       constituent.GetType(),
+		L2:         l2,
+		IsSentence: isSentence,
+		Morphemes:  morphemes,
 	})
-	return tokens
-}
-
-func mustAtoi(s string) int {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
-	}
-	return i
+	return card
 }

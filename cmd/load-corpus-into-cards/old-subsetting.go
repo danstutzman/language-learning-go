@@ -3,22 +3,10 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 )
 
-const PARSE_DIR = "db/1_parses"
-
-func main() {
-	if len(os.Args) != 1+1 { // Args[0] is name of program
-		log.Fatalf(`Usage:
-			Argument 1: .txt corpus to load`)
-	}
-	corpusPath := os.Args[1]
-
-	phrases := parsing.ListPhrasesInCorpusTxt(corpusPath)
-
+func oldSubsettingDemo(phrases []string) {
 	for phraseNum, phrase := range phrases {
 		if !strings.Contains(phrase, "prueba la manzana") {
 			//continue
@@ -52,6 +40,20 @@ func main() {
 		if false && phraseNum > 20 {
 			break
 		}
+	}
+}
+
+func printDeps(deps []parsing.Dependency, tokenById map[string]parsing.Token,
+	indentation int) {
+	for _, dep := range deps {
+
+		for i := 0; i < indentation; i += 1 {
+			fmt.Printf("  ")
+		}
+		fmt.Printf("%s: %s (%s)\n",
+			dep.Function, dep.Word, tokenById[dep.Token].Tag)
+
+		printDeps(dep.Children, tokenById, indentation+1)
 	}
 }
 

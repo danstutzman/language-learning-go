@@ -47,55 +47,55 @@ type Token struct {
 	Gen    string `json:"gen"`
 }
 
-func (token *Token) IsAdjective() bool {
+func (token Token) IsAdjective() bool {
 	return strings.HasPrefix(token.Tag, "A")
 }
 
-func (token *Token) IsAdverb() bool {
+func (token Token) IsAdverb() bool {
 	return strings.HasPrefix(token.Tag, "R")
 }
 
-func (token *Token) IsConjunction() bool {
+func (token Token) IsConjunction() bool {
 	return strings.HasPrefix(token.Tag, "C")
 }
 
-func (token *Token) IsDate() bool {
+func (token Token) IsDate() bool {
 	return strings.HasPrefix(token.Tag, "W")
 }
 
-func (token *Token) IsDeterminer() bool {
+func (token Token) IsDeterminer() bool {
 	return strings.HasPrefix(token.Tag, "D")
 }
 
-func (token *Token) IsPronoun() bool {
+func (token Token) IsPronoun() bool {
 	return strings.HasPrefix(token.Tag, "P")
 }
 
-func (token *Token) IsInterjection() bool {
+func (token Token) IsInterjection() bool {
 	return strings.HasPrefix(token.Tag, "I")
 }
 
-func (token *Token) IsPreposition() bool {
+func (token Token) IsPreposition() bool {
 	return strings.HasPrefix(token.Tag, "SP")
 }
 
-func (token *Token) IsProperNoun() bool {
+func (token Token) IsProperNoun() bool {
 	return strings.HasPrefix(token.Tag, "NP")
 }
 
-func (token *Token) IsNoun() bool {
+func (token Token) IsNoun() bool {
 	return strings.HasPrefix(token.Tag, "N")
 }
 
-func (token *Token) IsNumber() bool {
+func (token Token) IsNumber() bool {
 	return strings.HasPrefix(token.Tag, "Z")
 }
 
-func (token *Token) IsPunctuation() bool {
+func (token Token) IsPunctuation() bool {
 	return strings.HasPrefix(token.Tag, "F")
 }
 
-func (token *Token) IsVerb() bool {
+func (token Token) IsVerb() bool {
 	return strings.HasPrefix(token.Tag, "V")
 }
 

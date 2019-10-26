@@ -42,7 +42,7 @@ func PrintVerbExceptions(freelingDiccPath string) {
 
 			expected := true
 			if strings.HasPrefix(tag, "V") {
-				conjugations := analyzeVerb(lemma, tag)
+				conjugations := AnalyzeVerb(lemma, tag)
 				expected = false
 				for _, conjugation := range conjugations {
 					if conjugation.stem+conjugation.suffix == form {
@@ -67,7 +67,7 @@ func PrintVerbExceptions(freelingDiccPath string) {
 	}
 }
 
-func analyzeVerb(lemma, tag string) []Conjugation {
+func AnalyzeVerb(lemma, tag string) []Conjugation {
 	conjugations := []Conjugation{}
 
 	uniqueVerbs := findUniqueVerbs(lemma, tag[2:7])

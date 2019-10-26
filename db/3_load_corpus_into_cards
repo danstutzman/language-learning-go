@@ -49,9 +49,8 @@ CREATE TABLE challenges (
 );
 EOF
 
-$GOPATH/bin/load-noun-cards db/corpora/nouns.csv db/db.sqlite3
+#$GOPATH/bin/load-noun-cards db/corpora/nouns.csv db/db.sqlite3
 #$GOPATH/bin/load-corpus-into-cards db/corpora/spanishpod.yaml db/db.sqlite3
 #$GOPATH/bin/load-corpus-into-cards db/corpora/conjugations.txt db/db.sqlite3
-#$GOPATH/bin/load-corpus-into-cards \
-#  db/corpora/spanish-beginner-sentences/spanish-beginner-sentences.txt \
-#  db/db.sqlite3
+$GOPATH/bin/load-corpus-into-cards db/corpora/beginner-sentences.txt \
+  db/db.sqlite3
