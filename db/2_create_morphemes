@@ -1,0 +1,16 @@
+#!/bin/bash -ex
+
+cd `dirname $0`/..
+
+sqlite3 db/db.sqlite3 <<EOF
+DROP TABLE IF EXISTS morphemes;
+CREATE TABLE morphemes (
+  id                INTEGER PRIMARY KEY NOT NULL,
+  type              TEXT NOT NULL,
+  l2                TEXT NOT NULL,
+  lemma             TEXT, -- type=VERB_SUFFIX has no lemma
+  freeling_tag      TEXT,
+  verb_category     TEXT,
+  last_seen_at      DATETIME
+);
+EOF
