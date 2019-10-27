@@ -28,7 +28,8 @@ type ChallengeRow struct {
 }
 
 type ChallengeUpdate struct {
-	Id int
+	Id     int
+	CardId int
 
 	ShownAt        null.Time
 	AnsweredL1     null.String

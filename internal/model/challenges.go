@@ -6,6 +6,7 @@ import (
 	"gopkg.in/guregu/null.v3"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -117,60 +118,79 @@ func (model *Model) InsertChallenge(challenge Challenge) {
 func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
 	db.UpdateChallenge(model.db, update)
 
+	// Also break down which morphemes were involved, update their last_seen_at
+	where := "WHERE id IN (" +
+		"SELECT morpheme_id FROM cards_morphemes WHERE card_id = " +
+		strconv.Itoa(update.CardId) + ")"
+	db.TouchMorphemes(model.db, where)
+
 	challengeRows := db.FromChallenges(model.db,
 		"WHERE id="+strconv.Itoa(update.Id))
 	return challengeRowToChallenge(challengeRows[0])
 }
 
-func (model *Model) GetTopChallenge(type_ string) *Challenge {
-	challenges := db.FromChallenges(model.db,
-		"WHERE type="+db.Escape(type_)+
-			" AND shown_at IS NOT NULL "+
-			"ORDER BY id")
+type CardStaleness struct {
+	cardId    int
+	staleness time.Duration
+}
 
-	lastChallengeByCardId := map[int]db.ChallengeRow{}
-	for _, challenge := range challenges {
-		lastChallengeByCardId[challenge.CardId] = challenge
+func mustAtoi(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (model *Model) GetTopChallenge(type_ string) *Challenge {
+	allCards := db.FromCards(model.db, "")
+
+	cardById := map[int]db.CardRow{}
+	for _, card := range allCards {
+		cardById[card.Id] = card
 	}
 
-	cardsUnfiltered := db.FromCards(model.db, "")
+	allMorphemes := db.FromMorphemes(model.db, "")
 
-	cards := []db.CardRow{}
-	for _, card := range cardsUnfiltered {
-		lastChallenge, hasLastChallenge := lastChallengeByCardId[card.Id]
-		oneDayAgo := time.Now().UTC().AddDate(0, 0, -1)
+	morphemeById := map[int]db.MorphemeRow{}
+	for _, morpheme := range allMorphemes {
+		morphemeById[morpheme.Id] = morpheme
+	}
 
-		if !hasLastChallenge {
-			// Show card if it's never been shown
-			cards = append(cards, card)
-		} else if lastChallenge.ShownAt.Valid && !lastChallenge.Grade.Valid {
-			// Waiting for manual grade, so suspend card for now
-		} else if lastChallenge.Grade.String == "RIGHT_WITHOUT_MNEMONIC" &&
-			lastChallenge.ShownAt.Time.After(oneDayAgo) {
-			// Suspend card if correct within 24 hours
-		} else if lastChallenge.Grade.String == "BLANK" &&
-			((type_ == "Given1Type2" && card.Mnemonic21.String == "") ||
-				(type_ == "Given2Type1" && card.Mnemonic12.String == "")) {
-			// Suspend card if drew a blank but have no mnemonic
-		} else {
-			cards = append(cards, card)
+	now := time.Now().UTC()
+
+	cardStalenesses := []CardStaleness{}
+	for _, card := range allCards {
+		cardStaleness := time.Duration(0)
+		for _, morphemeId := range strings.Split(card.MorphemeIdsCsv, ",") {
+			morpheme := morphemeById[mustAtoi(morphemeId)]
+			morphemeStaleness := now.Sub(morpheme.LastSeenAt.Time)
+			if morphemeStaleness > time.Duration(10000)*time.Hour {
+				morphemeStaleness = time.Duration(10000) * time.Hour
+			}
+			cardStaleness += morphemeStaleness
+		}
+		cardStalenesses = append(cardStalenesses,
+			CardStaleness{cardId: card.Id, staleness: cardStaleness})
+	}
+
+	sort.Slice(cardStalenesses, func(i, j int) bool {
+		return cardStalenesses[i].staleness > cardStalenesses[j].staleness
+	})
+
+	if false {
+		for _, cardStaleness := range cardStalenesses {
+			fmt.Printf("%-50s -> %s\n",
+				cardById[cardStaleness.cardId].L2, cardStaleness.staleness)
 		}
 	}
 
-	if len(cards) == 0 {
-		return nil
-	}
-
-	sort.Slice(cards, func(i, j int) bool {
-		return lastChallengeByCardId[cards[i].Id].ShownAt.Time.Before(
-			lastChallengeByCardId[cards[j].Id].ShownAt.Time)
-	})
-	card := cards[0]
+	topCard := cardById[cardStalenesses[0].cardId]
 
 	newChallenge := model.challengeRowToChallengeJoinCard(
 		db.InsertChallenge(model.db, db.ChallengeRow{
 			Type:   type_,
-			CardId: card.Id,
+			CardId: topCard.Id,
 		}))
 
 	return &newChallenge
