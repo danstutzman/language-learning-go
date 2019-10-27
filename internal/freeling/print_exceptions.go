@@ -8,9 +8,9 @@ import (
 )
 
 type Conjugation struct {
-	stem   string
-	suffix string
-	group  string
+	Stem   string
+	Suffix string
+	Group  string
 }
 
 func PrintVerbExceptions(freelingDiccPath string) {
@@ -45,13 +45,13 @@ func PrintVerbExceptions(freelingDiccPath string) {
 				conjugations := AnalyzeVerb(lemma, tag)
 				expected = false
 				for _, conjugation := range conjugations {
-					if conjugation.stem+conjugation.suffix == form {
+					if conjugation.Stem+conjugation.Suffix == form {
 						expected = true
 					}
 				}
 				if false && !expected {
 					for _, conjugation := range conjugations {
-						fmt.Printf("%-20s %-20s %-10s %s %s\n", lemma, form, tag, conjugation.stem, conjugation.suffix)
+						fmt.Printf("%-20s %-20s %-10s %s %s\n", lemma, form, tag, conjugation.Stem, conjugation.Suffix)
 					}
 				}
 			}
@@ -74,9 +74,9 @@ func AnalyzeVerb(lemma, tag string) []Conjugation {
 	if len(uniqueVerbs) > 0 {
 		for _, uniqueVerb := range uniqueVerbs {
 			conjugation := Conjugation{
-				stem:   uniqueVerb.form,
-				suffix: "",
-				group:  "UNIQUE",
+				Stem:   uniqueVerb.form,
+				Suffix: "",
+				Group:  "UNIQUE",
 			}
 			conjugations = append(conjugations, conjugation)
 		}
@@ -131,9 +131,9 @@ func AnalyzeVerb(lemma, tag string) []Conjugation {
 
 		for _, stem := range stemsForGroup {
 			conjugation := Conjugation{
-				stem:   stem,
-				suffix: groupTag27Suffix.suffix,
-				group:  groupTag27Suffix.group,
+				Stem:   stem,
+				Suffix: groupTag27Suffix.suffix,
+				Group:  groupTag27Suffix.group,
 			}
 			conjugations = append(conjugations, conjugation)
 		}
