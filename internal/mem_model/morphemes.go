@@ -48,7 +48,7 @@ func (memModel *MemModel) TokenToCard(token parsing.Token) (Card, error) {
 			}
 			morphemes = []Morpheme{morpheme}
 		} else {
-			stemMorpheme, exists := memModel.morphemeByL2[token.Form]
+			stemMorpheme, exists := memModel.morphemeByL2[conjugation.Stem]
 			if !exists {
 				stemMorpheme = Morpheme{
 					Id:          memModel.getNextMorphemeId(),
@@ -61,7 +61,7 @@ func (memModel *MemModel) TokenToCard(token parsing.Token) (Card, error) {
 				memModel.morphemeByL2[stemMorpheme.L2] = stemMorpheme
 			}
 
-			suffixMorpheme, exists := memModel.morphemeByL2[token.Form]
+			suffixMorpheme, exists := memModel.morphemeByL2[conjugation.Suffix]
 			if !exists {
 				suffixMorpheme = Morpheme{
 					Id:          memModel.getNextMorphemeId(),
