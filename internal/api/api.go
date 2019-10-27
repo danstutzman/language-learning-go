@@ -57,7 +57,7 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.URL.Path == "/api/challenges/top" {
 		if r.Method == "GET" {
-			api.HandleGetTopChallengeRequest(w, r)
+			api.HandleGetTopChallengesRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

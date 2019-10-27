@@ -23,7 +23,7 @@ func (api *Api) HandleListChallengesRequest(w http.ResponseWriter,
 	w.Write(bytes)
 }
 
-func (api *Api) HandleGetTopChallengeRequest(w http.ResponseWriter,
+func (api *Api) HandleGetTopChallengesRequest(w http.ResponseWriter,
 	r *http.Request) {
 
 	setCORSHeaders(w)
@@ -36,14 +36,9 @@ func (api *Api) HandleGetTopChallengeRequest(w http.ResponseWriter,
 		return
 	}
 
-	challenge := api.model.GetTopChallenge(type_[0])
-	if challenge == nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Not Found"))
-		return
-	}
+	challengeList := api.model.GetTopChallenges(type_[0])
 
-	bytes, err := json.Marshal(challenge)
+	bytes, err := json.Marshal(challengeList)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}

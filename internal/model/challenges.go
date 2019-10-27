@@ -4,7 +4,6 @@ import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"fmt"
 	"gopkg.in/guregu/null.v3"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -129,11 +128,6 @@ func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
 	return challengeRowToChallenge(challengeRows[0])
 }
 
-type CardStaleness struct {
-	cardId    int
-	staleness time.Duration
-}
-
 func mustAtoi(s string) int {
 	i, err := strconv.Atoi(s)
 	if err != nil {
@@ -142,7 +136,7 @@ func mustAtoi(s string) int {
 	return i
 }
 
-func (model *Model) GetTopChallenge(type_ string) *Challenge {
+func (model *Model) GetTopChallenges(type_ string) ChallengeList {
 	allCards := db.FromCards(model.db, "")
 
 	cardById := map[int]db.CardRow{}
@@ -159,39 +153,59 @@ func (model *Model) GetTopChallenge(type_ string) *Challenge {
 
 	now := time.Now().UTC()
 
-	cardStalenesses := []CardStaleness{}
-	for _, card := range allCards {
-		cardStaleness := time.Duration(0)
-		for _, morphemeId := range strings.Split(card.MorphemeIdsCsv, ",") {
-			morpheme := morphemeById[mustAtoi(morphemeId)]
-			morphemeStaleness := now.Sub(morpheme.LastSeenAt.Time)
-			if morphemeStaleness > time.Duration(10000)*time.Hour {
-				morphemeStaleness = time.Duration(10000) * time.Hour
+	challenges := []Challenge{}
+
+	for i := 0; i < 10; i += 1 {
+		stalestCardId := 0
+		stalestStaleness := time.Duration(0)
+		for _, card := range allCards {
+			cardStaleness := time.Duration(0)
+			for _, morphemeId := range strings.Split(card.MorphemeIdsCsv, ",") {
+				morpheme := morphemeById[mustAtoi(morphemeId)]
+				morphemeStaleness := now.Sub(morpheme.LastSeenAt.Time)
+				if morphemeStaleness > time.Duration(10000)*time.Hour {
+					morphemeStaleness = time.Duration(10000) * time.Hour
+				}
+				cardStaleness += morphemeStaleness
 			}
-			cardStaleness += morphemeStaleness
+
+			if cardStaleness > stalestStaleness {
+				stalestCardId = card.Id
+				stalestStaleness = cardStaleness
+			}
 		}
-		cardStalenesses = append(cardStalenesses,
-			CardStaleness{cardId: card.Id, staleness: cardStaleness})
+
+		topCard := cardById[stalestCardId]
+		if false {
+			fmt.Printf("%-50s -> %s\n", topCard.L2, stalestStaleness)
+			for _, morphemeId := range strings.Split(topCard.MorphemeIdsCsv, ",") {
+				morpheme := morphemeById[mustAtoi(morphemeId)]
+				fmt.Printf("  %s -> %s\n", morpheme.L2,
+					now.Sub(morpheme.LastSeenAt.Time))
+			}
+		}
+
+		newChallenge := model.challengeRowToChallengeJoinCard(
+			db.InsertChallenge(model.db, db.ChallengeRow{
+				Type:   type_,
+				CardId: stalestCardId,
+			}))
+		challenges = append(challenges, newChallenge)
+
+		// simulate morpheme staleness being updated so that each card in the
+		// return challengeList has a non-overlapping set of morphemes.
+		topCard = cardById[stalestCardId]
+		for _, morphemeId := range strings.Split(topCard.MorphemeIdsCsv, ",") {
+			morphemeById[mustAtoi(morphemeId)] = updateLastSeenAt(
+				morphemeById[mustAtoi(morphemeId)], null.TimeFrom(now))
+		}
 	}
 
-	sort.Slice(cardStalenesses, func(i, j int) bool {
-		return cardStalenesses[i].staleness > cardStalenesses[j].staleness
-	})
+	return ChallengeList{Challenges: challenges}
+}
 
-	if false {
-		for _, cardStaleness := range cardStalenesses {
-			fmt.Printf("%-50s -> %s\n",
-				cardById[cardStaleness.cardId].L2, cardStaleness.staleness)
-		}
-	}
-
-	topCard := cardById[cardStalenesses[0].cardId]
-
-	newChallenge := model.challengeRowToChallengeJoinCard(
-		db.InsertChallenge(model.db, db.ChallengeRow{
-			Type:   type_,
-			CardId: topCard.Id,
-		}))
-
-	return &newChallenge
+func updateLastSeenAt(morpheme db.MorphemeRow,
+	lastSeenAt null.Time) db.MorphemeRow {
+	morpheme.LastSeenAt = lastSeenAt
+	return morpheme
 }
