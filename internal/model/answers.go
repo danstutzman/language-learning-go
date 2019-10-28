@@ -10,18 +10,12 @@ type AnswerList struct {
 	Answers []Answer `json:"answers"`
 }
 
-type AnsweredMorpheme struct {
-	L2         string `json:"l2"`
-	Begin      int    `json:"begin"`
-	AnsweredL2 string `json:"answeredL2"`
-}
-
 type Answer struct {
-	Id        int                `json:"id"`
-	Type      string             `json:"type"`
-	CardId    int                `json:"cardId"`
-	Card      *Card              `json:"card"`
-	Morphemes []AnsweredMorpheme `json:"morphemes"`
+	Id        int                    `json:"id"`
+	Type      string                 `json:"type"`
+	CardId    int                    `json:"cardId"`
+	Card      *Card                  `json:"card"`
+	Morphemes []db.AnswerMorphemeRow `json:"morphemes"`
 
 	Expectation string `json:"expectation"`
 
@@ -76,8 +70,10 @@ func (model *Model) ListAnswers() AnswerList {
 	}
 
 	cardIds := []int{}
+	answerIds := []int{}
 	for _, answer := range answers {
 		cardIds = append(cardIds, answer.CardId)
+		answerIds = append(answerIds, answer.Id)
 	}
 
 	cardRows := db.FromCards(model.db, "WHERE "+db.InIntList("id", cardIds))
@@ -87,24 +83,19 @@ func (model *Model) ListAnswers() AnswerList {
 		cardById[row.Id] = model.cardRowToCardJoinMorphemes(row)
 	}
 
+	answerMorphemes := db.FromAnswerMorphemes(model.db,
+		"WHERE "+db.InIntList("answer_id", answerIds))
+
+	answerMorphemesById := map[int][]db.AnswerMorphemeRow{}
+	for _, answerMorpheme := range answerMorphemes {
+		answerMorphemesById[answerMorpheme.AnswerId] =
+			append(answerMorphemesById[answerMorpheme.AnswerId], answerMorpheme)
+	}
+
 	for i, answer := range answers {
 		card := cardById[answers[i].CardId]
 		answers[i].Card = &card
-
-		answeredL2Runes := []rune(answer.AnsweredL2.String)
-		alignments := AlignRuneArrays([]rune(card.L2), answeredL2Runes)
-
-		answeredMorphemes := []AnsweredMorpheme{}
-		for _, cardMorpheme := range card.Morphemes {
-			answeredMorpheme := AnsweredMorpheme{
-				L2:    cardMorpheme.L2,
-				Begin: cardMorpheme.Begin,
-				AnsweredL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
-					cardMorpheme.Begin, cardMorpheme.Begin+len([]rune(cardMorpheme.L2)))),
-			}
-			answeredMorphemes = append(answeredMorphemes, answeredMorpheme)
-		}
-		answers[i].Morphemes = answeredMorphemes
+		answers[i].Morphemes = answerMorphemesById[answer.Id]
 	}
 
 	return AnswerList{Answers: answers}
@@ -123,9 +114,23 @@ func gatherAnsweredL2(alignments []Alignment, answeredL2Runes []rune,
 	return out
 }
 
-func (model *Model) InsertAnswer(answer Answer) Answer {
-	row := db.InsertAnswer(model.db, answerToAnswerRow(answer))
-	return answerRowToAnswer(row)
+func (model *Model) InsertAnswer(answer Answer) {
+	answerRow := db.InsertAnswer(model.db, answerToAnswerRow(answer))
+
+	card := model.GetCardJoinMorphemes(answer.CardId)
+	answeredL2Runes := []rune(answer.AnsweredL2.String)
+	alignments := AlignRuneArrays([]rune(card.L2), answeredL2Runes)
+
+	for _, cardMorpheme := range card.Morphemes {
+		db.InsertAnswerMorpheme(model.db, db.AnswerMorphemeRow{
+			AnswerId:   answerRow.Id,
+			MorphemeId: cardMorpheme.Morpheme.Id,
+			ShownAt:    answerRow.ShownAt,
+			CorrectL2:  cardMorpheme.L2,
+			AlignedL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
+				cardMorpheme.Begin, cardMorpheme.Begin+len([]rune(cardMorpheme.L2)))),
+		})
+	}
 }
 
 func updateLastSeenAt(morpheme db.MorphemeRow,

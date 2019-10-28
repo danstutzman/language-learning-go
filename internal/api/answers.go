@@ -41,11 +41,7 @@ func (api *Api) HandlePostAnswerRequest(w http.ResponseWriter,
 		panic(err)
 	}
 
-	answer := api.model.InsertAnswer(unsavedAnswer)
+	api.model.InsertAnswer(unsavedAnswer)
 
-	bytes, err := json.Marshal(answer)
-	if err != nil {
-		log.Fatalf("Error from json.Marshal: %s", err)
-	}
-	w.Write(bytes)
+	w.WriteHeader(http.StatusNoContent)
 }

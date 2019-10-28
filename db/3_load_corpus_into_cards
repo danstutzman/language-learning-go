@@ -45,6 +45,19 @@ CREATE TABLE answers (
   first_key_millis INTEGER NOT NULL,
   last_key_millis  INTEGER NOT NULL
 );
+
+DROP TABLE IF EXISTS answer_morphemes;
+CREATE TABLE answer_morphemes (
+  id          INTEGER PRIMARY KEY NOT NULL,
+  answer_id   INTEGER NOT NULL,
+  morpheme_id INTEGER NOT NULL,
+  shown_at    DATETIME NOT NULL,
+  correct_l2  TEXT,
+  aligned_l2  TEXT
+);
+CREATE INDEX idx_answer_morphemes_answer_id ON answer_morphemes(answer_id);
+CREATE INDEX idx_answer_morphemes_morpheme_id ON answer_morphemes(morpheme_id);
+
 EOF
 
 #$GOPATH/bin/load-noun-cards db/corpora/nouns.csv db/db.sqlite3
