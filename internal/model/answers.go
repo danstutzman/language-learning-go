@@ -10,11 +10,16 @@ type AnswerList struct {
 	Answers []Answer `json:"answers"`
 }
 
+type AnsweredMorpheme struct {
+	L2 string
+}
+
 type Answer struct {
-	Id     int    `json:"id"`
-	Type   string `json:"type"`
-	CardId int    `json:"cardId"`
-	Card   *Card  `json:"card"`
+	Id        int                `json:"id"`
+	Type      string             `json:"type"`
+	CardId    int                `json:"cardId"`
+	Card      *Card              `json:"card"`
+	Morphemes []AnsweredMorpheme `json:"morphemes"`
 
 	Expectation string `json:"expectation"`
 
@@ -92,6 +97,12 @@ func (model *Model) ListAnswers() AnswerList {
 	for i, _ := range answers {
 		card := cardById[answers[i].CardId]
 		answers[i].Card = &card
+
+		morphemes := []AnsweredMorpheme{}
+		for _, morpheme := range card.Morphemes {
+			morphemes = append(morphemes, AnsweredMorpheme{L2: morpheme.L2})
+		}
+		answers[i].Morphemes = morphemes
 	}
 
 	return AnswerList{Answers: answers}
