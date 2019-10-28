@@ -11,8 +11,9 @@ type AnswerList struct {
 }
 
 type AnsweredMorpheme struct {
-	L2    string `json:"l2"`
-	Begin int    `json:"begin"`
+	L2         string `json:"l2"`
+	Begin      int    `json:"begin"`
+	AnsweredL2 string `json:"answeredL2"`
 }
 
 type Answer struct {
@@ -95,21 +96,40 @@ func (model *Model) ListAnswers() AnswerList {
 		cardById[row.Id] = model.cardRowToCardJoinMorphemes(row)
 	}
 
-	for i, _ := range answers {
+	for i, answer := range answers {
 		card := cardById[answers[i].CardId]
 		answers[i].Card = &card
 
-		morphemes := []AnsweredMorpheme{}
+		answeredL2Runes := []rune(answer.AnsweredL2.String)
+		alignments := AlignRuneArrays([]rune(card.L2), answeredL2Runes)
+
+		answeredMorphemes := []AnsweredMorpheme{}
 		for _, cardMorpheme := range card.Morphemes {
-			morphemes = append(morphemes, AnsweredMorpheme{
+			answeredMorpheme := AnsweredMorpheme{
 				L2:    cardMorpheme.L2,
 				Begin: cardMorpheme.Begin,
-			})
+				AnsweredL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
+					cardMorpheme.Begin, cardMorpheme.Begin+len([]rune(cardMorpheme.L2)))),
+			}
+			answeredMorphemes = append(answeredMorphemes, answeredMorpheme)
 		}
-		answers[i].Morphemes = morphemes
+		answers[i].Morphemes = answeredMorphemes
 	}
 
 	return AnswerList{Answers: answers}
+}
+
+func gatherAnsweredL2(alignments []Alignment, answeredL2Runes []rune,
+	begin int, end int) []rune {
+	out := []rune{}
+	for _, alignment := range alignments {
+		if alignment.X >= begin && alignment.X < end {
+			if alignment.Y != -1 {
+				out = append(out, answeredL2Runes[alignment.Y])
+			}
+		}
+	}
+	return out
 }
 
 func (model *Model) InsertAnswer(answer Answer) Answer {
