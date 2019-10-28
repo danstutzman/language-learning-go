@@ -49,8 +49,20 @@ func (model *Model) cardRowToCardJoinMorphemes(row db.CardRow) Card {
 		morphemeIds = append(morphemeIds, cardsMorphemes.MorphemeId)
 	}
 
-	card.Morphemes = morphemeRowsToMorphemes(
-		db.FromMorphemes(model.db, "WHERE "+db.InIntList("id", morphemeIds)))
+	morphemeRows := db.FromMorphemes(model.db,
+		"WHERE "+db.InIntList("id", morphemeIds))
+
+	morphemeRowById := map[int]db.MorphemeRow{}
+	for _, morphemeRow := range morphemeRows {
+		morphemeRowById[morphemeRow.Id] = morphemeRow
+	}
+
+	var morphemes []Morpheme
+	for _, cardMorpheme := range cardsMorphemes {
+		morpheme := morphemeRowToMorpheme(morphemeRowById[cardMorpheme.MorphemeId])
+		morphemes = append(morphemes, morpheme)
+	}
+	card.Morphemes = morphemes
 
 	return card
 }
