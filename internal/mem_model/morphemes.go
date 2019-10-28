@@ -77,7 +77,7 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 				Id:    memModel.getNextMorphemeId(),
 				Type:  "VERB_SUFFIX",
 				L2:    conjugation.Suffix,
-				Lemma: null.StringFrom(token.Lemma),
+				Lemma: null.String{},
 				Tag:   null.StringFrom(token.Tag),
 			}
 			memModel.morphemes = append(memModel.morphemes, suffixMorpheme)
