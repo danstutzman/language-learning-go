@@ -23,28 +23,6 @@ func (api *Api) HandleListAnswersRequest(w http.ResponseWriter,
 	w.Write(bytes)
 }
 
-func (api *Api) HandleGetTopChallengesRequest(w http.ResponseWriter,
-	r *http.Request) {
-
-	setCORSHeaders(w)
-	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
-
-	type_ := r.URL.Query()["type"]
-	if len(type_) != 1 || type_[0] == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Bad Request"))
-		return
-	}
-
-	challengeList := api.model.GetTopChallenges(type_[0])
-
-	bytes, err := json.Marshal(challengeList)
-	if err != nil {
-		log.Fatalf("Error from json.Marshal: %s", err)
-	}
-	w.Write(bytes)
-}
-
 func (api *Api) HandlePostAnswerRequest(w http.ResponseWriter,
 	r *http.Request) {
 

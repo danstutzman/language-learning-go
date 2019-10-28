@@ -49,7 +49,7 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.URL.Path == "/api/cards/top" {
 		if r.Method == "GET" {
-			api.HandleGetTopChallengesRequest(w, r)
+			api.HandleGetTopCardsRequest(w, r)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
