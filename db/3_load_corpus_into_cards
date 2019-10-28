@@ -43,10 +43,7 @@ CREATE TABLE answers (
   answered_l2      TEXT,
   showed_mnemonic  BOOLEAN NOT NULL,
   first_key_millis INTEGER NOT NULL,
-  last_key_millis  INTEGER NOT NULL,
-
-  grade                TEXT,
-  misconnected_card_id INTEGER
+  last_key_millis  INTEGER NOT NULL
 );
 EOF
 

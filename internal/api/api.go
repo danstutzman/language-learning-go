@@ -81,12 +81,6 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	} else if r.URL.Path == "/api/skills" {
-		if r.Method == "GET" {
-			api.HandleListSkillsRequest(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
 	} else if match := regexp.MustCompile(
 		`^/api/morphemes/(-?[0-9]+)$`).FindStringSubmatch(r.URL.Path); match != nil {
 		morphemeId := MustAtoi(match[1])

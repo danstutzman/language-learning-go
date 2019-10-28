@@ -23,9 +23,6 @@ type AnswerRow struct {
 	ShowedMnemonic bool
 	FirstKeyMillis int
 	LastKeyMillis  int
-
-	Grade              null.String
-	MisconnectedCardId null.Int
 }
 
 type AnswerUpdate struct {
@@ -38,17 +35,13 @@ type AnswerUpdate struct {
 	ShowedMnemonic null.Bool
 	FirstKeyMillis null.Int
 	LastKeyMillis  null.Int
-
-	Grade              null.String
-	MisconnectedCardId null.Int
 }
 
 func AssertAnswersHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, type, card_id,
   		expectation,
 	    shown_at, answered_l1, showed_mnemonic,
-			first_key_millis, last_key_millis,
-		  grade, misconnected_card_id
+			first_key_millis, last_key_millis
 	  FROM answers
 		LIMIT 1`
 	if LOG {
@@ -67,8 +60,7 @@ func FromAnswers(db *sql.DB, where string) []AnswerRow {
 	query := `SELECT id, type, card_id,
   	expectation,
 	  shown_at, answered_l1, answered_l2, showed_mnemonic,
-		first_key_millis, last_key_millis,
-	  grade, misconnected_card_id
+		first_key_millis, last_key_millis
 	  FROM answers ` + where
 	if LOG {
 		log.Println(query)
@@ -84,8 +76,7 @@ func FromAnswers(db *sql.DB, where string) []AnswerRow {
 		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
 			&row.Expectation,
 			&row.ShownAt, &row.AnsweredL1, &row.AnsweredL2, &row.ShowedMnemonic,
-			&row.FirstKeyMillis, &row.LastKeyMillis,
-			&row.Grade, &row.MisconnectedCardId)
+			&row.FirstKeyMillis, &row.LastKeyMillis)
 		if err != nil {
 			panic(err)
 		}
@@ -102,19 +93,16 @@ func FromAnswers(db *sql.DB, where string) []AnswerRow {
 
 func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
 	query := fmt.Sprintf(`INSERT INTO answers
-	(type, card_id, grade,
+	(type, card_id,
 		expectation,
 	  shown_at, answered_l1, answered_l2, showed_mnemonic,
-		first_key_millis, last_key_millis,
-	  grade, misconnected_card_id)
-		VALUES (%s, %d, %s,
+		first_key_millis, last_key_millis)
+		VALUES (%s, %d,
 		  %s,
 		  %s, %s, %s, %s,
-			%d, %d,
-			%s, %s)`,
+			%d, %d)`,
 		Escape(answer.Type),
 		answer.CardId,
-		EscapeNullString(answer.Grade),
 
 		Escape(answer.Expectation),
 
@@ -123,10 +111,7 @@ func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
 		EscapeNullString(answer.AnsweredL2),
 		EscapeBool(answer.ShowedMnemonic),
 		answer.FirstKeyMillis,
-		answer.LastKeyMillis,
-
-		EscapeNullString(answer.Grade),
-		EscapeNullInt(answer.MisconnectedCardId))
+		answer.LastKeyMillis)
 
 	if LOG {
 		log.Println(query)
@@ -164,16 +149,9 @@ func UpdateAnswer(db *sql.DB, update AnswerUpdate) {
 	if update.LastKeyMillis.Valid {
 		pairs = append(pairs, "last_key_millis="+EscapeNullInt(update.LastKeyMillis))
 	}
-	if update.Grade.Valid {
-		pairs = append(pairs, "grade="+EscapeNullString(update.Grade))
-	}
 	if update.ShowedMnemonic.Valid {
 		pairs = append(pairs, "showed_mnemonic="+
 			EscapeNullBool(update.ShowedMnemonic))
-	}
-	if update.MisconnectedCardId.Valid {
-		pairs = append(pairs, "misconnected_card_id="+
-			EscapeNullInt(update.MisconnectedCardId))
 	}
 
 	if len(pairs) == 0 {

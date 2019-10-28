@@ -31,9 +31,6 @@ type Answer struct {
 	ShowedMnemonic bool        `json:"showedMnemonic"`
 	FirstKeyMillis int         `json:"firstKeyMillis"`
 	LastKeyMillis  int         `json:"lastKeyMillis"`
-
-	Grade              null.String `json:"grade"`
-	MisconnectedCardId null.Int    `json:"misconnectedCardId"`
 }
 
 func answerToAnswerRow(answer Answer) db.AnswerRow {
@@ -50,9 +47,6 @@ func answerToAnswerRow(answer Answer) db.AnswerRow {
 		ShowedMnemonic: answer.ShowedMnemonic,
 		FirstKeyMillis: answer.FirstKeyMillis,
 		LastKeyMillis:  answer.LastKeyMillis,
-
-		Grade:              answer.Grade,
-		MisconnectedCardId: answer.MisconnectedCardId,
 	}
 }
 
@@ -70,9 +64,6 @@ func answerRowToAnswer(row db.AnswerRow) Answer {
 		ShowedMnemonic: row.ShowedMnemonic,
 		FirstKeyMillis: row.FirstKeyMillis,
 		LastKeyMillis:  row.LastKeyMillis,
-
-		Grade:              row.Grade,
-		MisconnectedCardId: row.MisconnectedCardId,
 	}
 }
 
