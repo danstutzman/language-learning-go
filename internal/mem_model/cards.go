@@ -14,7 +14,7 @@ type Card struct {
 	Type       string
 	IsSentence bool
 	L2         string
-	Morphemes  []Morpheme
+	Morphemes  []CardMorpheme
 }
 
 func (memModel *MemModel) getNextCardId() int {
@@ -78,10 +78,10 @@ func (memModel *MemModel) SaveCardsToDb(db *sql.DB) {
 			panic(err)
 		}
 
-		for numMorpheme, morpheme := range card.Morphemes {
+		for numMorpheme, cardMorpheme := range card.Morphemes {
 			query = fmt.Sprintf(`INSERT INTO cards_morphemes
-				(card_id, morpheme_id, num_morpheme) VALUES (%d, %d, %d)`,
-				card.Id, morpheme.Id, numMorpheme+1)
+				(card_id, morpheme_id, num_morpheme, begin) VALUES (%d, %d, %d, %d)`,
+				card.Id, cardMorpheme.Morpheme.Id, numMorpheme+1, cardMorpheme.Begin)
 
 			_, err = tx.Exec(query)
 			if err != nil {

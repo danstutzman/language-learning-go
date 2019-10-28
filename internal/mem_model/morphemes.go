@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"gopkg.in/guregu/null.v3"
+	"strconv"
 	"strings"
 )
 
@@ -17,6 +18,11 @@ type Morpheme struct {
 	L2    string
 	Lemma null.String
 	Tag   null.String
+}
+
+type CardMorpheme struct {
+	Morpheme
+	Begin int
 }
 
 func (memModel *MemModel) getNextMorphemeId() int {
@@ -32,7 +38,7 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 	}
 	conjugation := conjugations[0]
 
-	var morphemes []Morpheme
+	var cardMorphemes []CardMorpheme
 	if conjugation.Suffix == "" {
 		morpheme, exists := memModel.morphemeByL2Tag[token.Form+token.Tag]
 		if !exists {
@@ -46,7 +52,10 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 			memModel.morphemes = append(memModel.morphemes, morpheme)
 			memModel.morphemeByL2Tag[token.Form+token.Tag] = morpheme
 		}
-		morphemes = []Morpheme{morpheme}
+		cardMorphemes = []CardMorpheme{{
+			Morpheme: morpheme,
+			Begin:    mustAtoi(token.Begin),
+		}}
 	} else {
 		stemMorpheme, exists := memModel.morphemeByL2Tag[conjugation.Stem+""]
 		if !exists {
@@ -74,7 +83,11 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 			memModel.morphemes = append(memModel.morphemes, suffixMorpheme)
 			memModel.morphemeByL2Tag[conjugation.Suffix+token.Tag] = suffixMorpheme
 		}
-		morphemes = []Morpheme{stemMorpheme, suffixMorpheme}
+		cardMorphemes = []CardMorpheme{
+			{Morpheme: stemMorpheme, Begin: mustAtoi(token.Begin)},
+			{Morpheme: suffixMorpheme,
+				Begin: mustAtoi(token.Begin) + len([]rune(conjugation.Stem))},
+		}
 	}
 
 	card, exists := memModel.cardByL2[token.Form]
@@ -83,7 +96,7 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 			Id:        memModel.getNextCardId(),
 			Type:      "VERB",
 			L2:        token.Form,
-			Morphemes: morphemes,
+			Morphemes: cardMorphemes,
 		}
 	}
 	return card, nil
@@ -134,7 +147,7 @@ func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
 		}
 	}
 
-	var morphemes []Morpheme
+	var cardMorphemes []CardMorpheme
 	if stem != "" {
 		stemMorpheme, exists := memModel.morphemeByL2Tag[stem+""]
 		if !exists {
@@ -162,8 +175,12 @@ func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
 			memModel.morphemes = append(memModel.morphemes, suffixMorpheme)
 			memModel.morphemeByL2Tag[suffix+token.Tag] = suffixMorpheme
 		}
-		morphemes = []Morpheme{stemMorpheme, suffixMorpheme}
 
+		cardMorphemes = []CardMorpheme{
+			{Morpheme: stemMorpheme, Begin: mustAtoi(token.Begin)},
+			{Morpheme: suffixMorpheme,
+				Begin: mustAtoi(token.Begin) + len([]rune(stem))},
+		}
 	} else {
 		morpheme, exists := memModel.morphemeByL2Tag[form+token.Tag]
 		if !exists {
@@ -177,7 +194,9 @@ func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
 			memModel.morphemes = append(memModel.morphemes, morpheme)
 			memModel.morphemeByL2Tag[form+token.Tag] = morpheme
 		}
-		morphemes = []Morpheme{morpheme}
+		cardMorphemes = []CardMorpheme{{
+			Morpheme: morpheme, Begin: mustAtoi(token.Begin),
+		}}
 	}
 
 	card, exists := memModel.cardByL2[form]
@@ -186,7 +205,7 @@ func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
 			Id:        memModel.getNextCardId(),
 			Type:      "NOUN_OR_ADJECTIVE",
 			L2:        token.Form,
-			Morphemes: morphemes,
+			Morphemes: cardMorphemes,
 		}
 	}
 	return card, nil
@@ -238,9 +257,12 @@ func (memModel *MemModel) TokenToCard(token parsing.Token) (Card, error) {
 		card, exists := memModel.cardByL2[token.Form]
 		if !exists {
 			card = Card{
-				Type:      type_,
-				L2:        token.Form,
-				Morphemes: []Morpheme{morpheme},
+				Type: type_,
+				L2:   token.Form,
+				Morphemes: []CardMorpheme{{
+					Morpheme: morpheme,
+					Begin:    mustAtoi(token.Begin),
+				}},
 			}
 		}
 		return card, nil
@@ -278,4 +300,12 @@ func (memModel *MemModel) SaveMorphemesToDb(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func mustAtoi(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
 }

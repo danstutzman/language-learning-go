@@ -17,8 +17,13 @@ type Card struct {
 	Mnemonic21 null.String `json:"mnemonic21"`
 	Type       string      `json:"type"`
 
-	Morphemes []Morpheme `json:"morphemes"`
-	State     string     `json:"state"`
+	Morphemes []CardMorpheme `json:"morphemes"`
+	State     string         `json:"state"`
+}
+
+type CardMorpheme struct {
+	Morpheme
+	Begin int `json:"begin"`
 }
 
 type CardList struct {
@@ -34,7 +39,7 @@ func (model *Model) cardRowToCard(row db.CardRow) Card {
 		Type:       row.Type,
 		Mnemonic12: row.Mnemonic12,
 		Mnemonic21: row.Mnemonic21,
-		Morphemes:  []Morpheme{},
+		Morphemes:  []CardMorpheme{},
 	}
 }
 
@@ -57,12 +62,13 @@ func (model *Model) cardRowToCardJoinMorphemes(row db.CardRow) Card {
 		morphemeRowById[morphemeRow.Id] = morphemeRow
 	}
 
-	var morphemes []Morpheme
+	var cardMorphemes []CardMorpheme
 	for _, cardMorpheme := range cardsMorphemes {
 		morpheme := morphemeRowToMorpheme(morphemeRowById[cardMorpheme.MorphemeId])
-		morphemes = append(morphemes, morpheme)
+		cardMorpheme := CardMorpheme{Morpheme: morpheme, Begin: cardMorpheme.Begin}
+		cardMorphemes = append(cardMorphemes, cardMorpheme)
 	}
-	card.Morphemes = morphemes
+	card.Morphemes = cardMorphemes
 
 	return card
 }
@@ -103,14 +109,11 @@ func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 		"WHERE "+db.InIntList("card_id", cardIds))
 
 	allMorphemeIds := []int{}
-	morphemeIdsByCardId := map[int][]int{}
+	cardsMorphemesByCardId := map[int][]db.CardsMorphemesRow{}
 	for _, cardsMorphemes := range cardsMorphemes {
-		cardId := cardsMorphemes.CardId
-		morphemeId := cardsMorphemes.MorphemeId
-
-		allMorphemeIds = append(allMorphemeIds, morphemeId)
-		morphemeIdsByCardId[cardId] =
-			append(morphemeIdsByCardId[cardId], morphemeId)
+		allMorphemeIds = append(allMorphemeIds, cardsMorphemes.MorphemeId)
+		cardsMorphemesByCardId[cardsMorphemes.CardId] =
+			append(cardsMorphemesByCardId[cardsMorphemes.CardId], cardsMorphemes)
 	}
 
 	allMorphemeRows := db.FromMorphemes(model.db,
@@ -123,9 +126,13 @@ func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 
 	cards := []Card{}
 	for _, cardRow := range cardRows {
-		morphemes := []Morpheme{}
-		for _, morphemeId := range morphemeIdsByCardId[cardRow.Id] {
-			morphemes = append(morphemes, morphemeById[morphemeId])
+		cardMorphemes := []CardMorpheme{}
+		for _, cardsMorphemes := range cardsMorphemesByCardId[cardRow.Id] {
+			cardMorpheme := CardMorpheme{
+				Morpheme: morphemeById[cardsMorphemes.MorphemeId],
+				Begin:    cardsMorphemes.Begin,
+			}
+			cardMorphemes = append(cardMorphemes, cardMorpheme)
 		}
 
 		card := Card{
@@ -137,7 +144,7 @@ func (model *Model) cardRowsToCardsJoinMorphemes(cardRows []db.CardRow) []Card {
 			Mnemonic21: cardRow.Mnemonic21,
 			Type:       cardRow.Type,
 
-			Morphemes: morphemes,
+			Morphemes: cardMorphemes,
 		}
 		cards = append(cards, card)
 	}

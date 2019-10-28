@@ -153,9 +153,9 @@ func importConstituent(constituent Constituent,
 		l2 += token.Form
 	}
 
-	morphemes := []mem_model.Morpheme{}
+	cardMorphemes := []mem_model.CardMorpheme{}
 	for _, token := range tokens {
-		morphemes = append(morphemes, cardByTokenId[token.Id].Morphemes...)
+		cardMorphemes = append(cardMorphemes, cardByTokenId[token.Id].Morphemes...)
 	}
 
 	for _, child := range constituent.GetChildren() {
@@ -166,6 +166,6 @@ func importConstituent(constituent Constituent,
 		Type:       constituent.GetType(),
 		L2:         l2,
 		IsSentence: isSentence,
-		Morphemes:  morphemes,
+		Morphemes:  cardMorphemes,
 	})
 }

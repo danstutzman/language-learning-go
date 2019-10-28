@@ -11,7 +11,8 @@ type AnswerList struct {
 }
 
 type AnsweredMorpheme struct {
-	L2 string
+	L2    string `json:"l2"`
+	Begin int    `json:"begin"`
 }
 
 type Answer struct {
@@ -99,8 +100,11 @@ func (model *Model) ListAnswers() AnswerList {
 		answers[i].Card = &card
 
 		morphemes := []AnsweredMorpheme{}
-		for _, morpheme := range card.Morphemes {
-			morphemes = append(morphemes, AnsweredMorpheme{L2: morpheme.L2})
+		for _, cardMorpheme := range card.Morphemes {
+			morphemes = append(morphemes, AnsweredMorpheme{
+				L2:    cardMorpheme.L2,
+				Begin: cardMorpheme.Begin,
+			})
 		}
 		answers[i].Morphemes = morphemes
 	}
