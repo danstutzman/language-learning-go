@@ -8,16 +8,15 @@ import (
 )
 
 type MorphemeRow struct {
-	Id         int
-	Type       string
-	L2         string
-	Lemma      null.String
-	Tag        null.String
-	LastSeenAt null.Time
+	Id    int
+	Type  string
+	L2    string
+	Lemma null.String
+	Tag   null.String
 }
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
-	query := "SELECT id, type, l2, lemma, tag, last_seen_at " +
+	query := "SELECT id, type, l2, lemma, tag " +
 		"FROM morphemes LIMIT 1"
 	if LOG {
 		log.Println(query)
@@ -30,7 +29,7 @@ func AssertMorphemesHasCorrectSchema(db *sql.DB) {
 }
 
 func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
-	query := "SELECT id, type, l2, lemma, tag, last_seen_at " +
+	query := "SELECT id, type, l2, lemma, tag " +
 		"FROM morphemes " + where
 	if LOG {
 		log.Println(query)
@@ -42,8 +41,7 @@ func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
 		&row.Type,
 		&row.L2,
 		&row.Lemma,
-		&row.Tag,
-		&row.LastSeenAt); err {
+		&row.Tag); err {
 	case sql.ErrNoRows:
 		return nil
 	case nil:
@@ -54,7 +52,7 @@ func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
 }
 
 func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
-	query := "SELECT id, type, l2, lemma, tag, last_seen_at " +
+	query := "SELECT id, type, l2, lemma, tag " +
 		"FROM morphemes " + whereLimit
 	if LOG {
 		log.Println(query)
@@ -69,8 +67,7 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 	rows := []MorphemeRow{}
 	for rset.Next() {
 		var row MorphemeRow
-		err = rset.Scan(&row.Id, &row.Type, &row.L2, &row.Lemma, &row.Tag,
-			&row.LastSeenAt)
+		err = rset.Scan(&row.Id, &row.Type, &row.L2, &row.Lemma, &row.Tag)
 		if err != nil {
 			panic(err)
 		}
@@ -87,10 +84,9 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 
 func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 	query := fmt.Sprintf(`INSERT INTO morphemes
-  	(type, l2, lemma, tag, last_seen_at)
-		VALUES (%s, %s, %s, %s, %s)`, Escape(morpheme.Type), Escape(morpheme.L2),
-		EscapeNullString(morpheme.Lemma), EscapeNullString(morpheme.Tag),
-		EscapeNullTime(morpheme.LastSeenAt))
+  	(type, l2, lemma, tag)
+		VALUES (%s, %s, %s, %s)`, Escape(morpheme.Type), Escape(morpheme.L2),
+		EscapeNullString(morpheme.Lemma), EscapeNullString(morpheme.Tag))
 	if LOG {
 		log.Println(query)
 	}
@@ -111,23 +107,11 @@ func InsertMorpheme(db *sql.DB, morpheme MorphemeRow) MorphemeRow {
 
 func UpdateMorpheme(db *sql.DB, morpheme MorphemeRow) {
 	query := fmt.Sprintf(`UPDATE morphemes
-		SET type=%s, l2=%s, lemma=%s, tag=%s, last_seen_at=%s WHERE id=%d`,
+		SET type=%s, l2=%s, lemma=%s, tag=%s WHERE id=%d`,
 		Escape(morpheme.Type), Escape(morpheme.L2),
 		EscapeNullString(morpheme.Lemma),
 		EscapeNullString(morpheme.Tag),
-		EscapeNullTime(morpheme.LastSeenAt), morpheme.Id)
-	if LOG {
-		log.Println(query)
-	}
-
-	_, err := db.Exec(query)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func TouchMorphemes(db *sql.DB, where string) {
-	query := fmt.Sprintf("UPDATE morphemes SET last_seen_at=DATETIME()" + where)
+		morpheme.Id)
 	if LOG {
 		log.Println(query)
 	}

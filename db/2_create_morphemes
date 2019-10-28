@@ -10,8 +10,7 @@ CREATE TABLE morphemes (
   l2                TEXT NOT NULL,
   lemma             TEXT, -- type=VERB_SUFFIX has no lemma
   tag               TEXT,
-  verb_category     TEXT,
-  last_seen_at      DATETIME
+  verb_category     TEXT
 );
 CREATE UNIQUE INDEX idx_morphemes_l2_tag ON morphemes(l2, tag);
 EOF

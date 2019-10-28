@@ -132,9 +132,3 @@ func (model *Model) InsertAnswer(answer Answer) {
 		})
 	}
 }
-
-func updateLastSeenAt(morpheme db.MorphemeRow,
-	lastSeenAt null.Time) db.MorphemeRow {
-	morpheme.LastSeenAt = lastSeenAt
-	return morpheme
-}
