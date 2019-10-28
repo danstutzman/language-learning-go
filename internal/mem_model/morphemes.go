@@ -177,6 +177,7 @@ func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
 			memModel.morphemes = append(memModel.morphemes, morpheme)
 			memModel.morphemeByL2Tag[form+token.Tag] = morpheme
 		}
+		morphemes = []Morpheme{morpheme}
 	}
 
 	card, exists := memModel.cardByL2[form]
