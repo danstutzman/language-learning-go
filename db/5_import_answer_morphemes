@@ -1,0 +1,40 @@
+#!/bin/bash -ex
+
+cd `dirname $0`/..
+
+sqlite3 db/db.sqlite3 <<EOF
+
+DROP TABLE IF EXISTS imported_answer_morphemes;
+CREATE TABLE imported_answer_morphemes (
+  shown_at     DATETIME NOT NULL,
+  morpheme_l2  TEXT NOT NULL,
+  morpheme_tag TEXT NOT NULL,
+  correct_l2   TEXT NOT NULL,
+  aligned_l2   TEXT NOT NULL
+);
+
+.mode csv imported_answer_morphemes
+
+.import db/5_answer_morphemes.csv imported_answer_morphemes
+
+DELETE FROM answer_morphemes;
+
+INSERT INTO answer_morphemes (answer_id, morpheme_id,
+  shown_at, correct_l2, aligned_l2)
+SELECT
+  0 as answer_id,
+  morphemes.id as morpheme_id,
+  CASE WHEN imported_answer_morphemes.shown_at = 'NULL' THEN NULL
+    ELSE imported_answer_morphemes.shown_at END, 
+  CASE WHEN imported_answer_morphemes.correct_l2 = 'NULL' THEN NULL
+    ELSE imported_answer_morphemes.correct_l2 END,
+  CASE WHEN imported_answer_morphemes.aligned_l2 = 'NULL' THEN NULL
+    ELSE imported_answer_morphemes.aligned_l2 END
+FROM imported_answer_morphemes
+JOIN morphemes
+  ON morphemes.l2 = imported_answer_morphemes.morpheme_l2
+  AND morphemes.tag = imported_answer_morphemes.morpheme_tag;
+
+DROP TABLE imported_answer_morphemes;
+
+EOF

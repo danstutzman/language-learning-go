@@ -1,0 +1,22 @@
+#!/bin/bash -ex
+
+cd `dirname $0`/..
+
+sqlite3 db/db.sqlite3 <<EOF
+.headers on
+.mode csv
+.output db/5_answer_morphemes.csv
+.nullvalue NULL
+
+SELECT answer_morphemes.shown_at,
+  morphemes.l2 as morpheme_l2,
+  morphemes.tag as morpheme_tag,
+  answer_morphemes.correct_l2,
+  answer_morphemes.aligned_l2
+FROM answer_morphemes
+JOIN morphemes ON morphemes.id = answer_morphemes.morpheme_id;
+EOF
+
+cat db/5_answer_morphemes.csv | \
+  ruby -e 'puts STDIN.read.gsub("\r", "")' > db/5_answer_morphemes.csv.new
+mv db/5_answer_morphemes.csv.new db/5_answer_morphemes.csv
