@@ -11,11 +11,11 @@ import (
 )
 
 type Morpheme struct {
-	Id          int
-	Type        string
-	L2          string
-	Lemma       null.String
-	FreelingTag null.String
+	Id    int
+	Type  string
+	L2    string
+	Lemma null.String
+	Tag   null.String
 }
 
 func (memModel *MemModel) getNextMorphemeId() int {
@@ -34,44 +34,45 @@ func (memModel *MemModel) TokenToCard(token parsing.Token) (Card, error) {
 
 		var morphemes []Morpheme
 		if conjugation.Suffix == "" {
-			morpheme, exists := memModel.morphemeByL2[token.Form]
+			morpheme, exists := memModel.morphemeByL2Tag[token.Form+token.Tag]
 			if !exists {
 				morpheme = Morpheme{
-					Id:          memModel.getNextMorphemeId(),
-					Type:        "VERB_UNIQUE",
-					L2:          conjugation.Stem,
-					Lemma:       null.StringFrom(token.Lemma),
-					FreelingTag: null.StringFrom(token.Tag),
+					Id:    memModel.getNextMorphemeId(),
+					Type:  "VERB_UNIQUE",
+					L2:    conjugation.Stem,
+					Lemma: null.StringFrom(token.Lemma),
+					Tag:   null.StringFrom(token.Tag),
 				}
 				memModel.morphemes = append(memModel.morphemes, morpheme)
-				memModel.morphemeByL2[morpheme.L2] = morpheme
+				memModel.morphemeByL2Tag[token.Form+token.Tag] = morpheme
 			}
 			morphemes = []Morpheme{morpheme}
 		} else {
-			stemMorpheme, exists := memModel.morphemeByL2[conjugation.Stem]
+			stemMorpheme, exists := memModel.morphemeByL2Tag[conjugation.Stem+""]
 			if !exists {
 				stemMorpheme = Morpheme{
-					Id:          memModel.getNextMorphemeId(),
-					Type:        "VERB_STEM",
-					L2:          conjugation.Stem,
-					Lemma:       null.StringFrom(token.Lemma),
-					FreelingTag: null.StringFrom(token.Tag),
+					Id:    memModel.getNextMorphemeId(),
+					Type:  "VERB_STEM",
+					L2:    conjugation.Stem,
+					Lemma: null.StringFrom(token.Lemma),
+					Tag:   null.StringFrom(token.Tag),
 				}
 				memModel.morphemes = append(memModel.morphemes, stemMorpheme)
-				memModel.morphemeByL2[stemMorpheme.L2] = stemMorpheme
+				memModel.morphemeByL2Tag[conjugation.Stem+""] = stemMorpheme
 			}
 
-			suffixMorpheme, exists := memModel.morphemeByL2[conjugation.Suffix]
+			suffixMorpheme, exists :=
+				memModel.morphemeByL2Tag[conjugation.Suffix+token.Tag]
 			if !exists {
 				suffixMorpheme = Morpheme{
-					Id:          memModel.getNextMorphemeId(),
-					Type:        "VERB_SUFFIX",
-					L2:          conjugation.Suffix,
-					Lemma:       null.StringFrom(token.Lemma),
-					FreelingTag: null.StringFrom(token.Tag),
+					Id:    memModel.getNextMorphemeId(),
+					Type:  "VERB_SUFFIX",
+					L2:    conjugation.Suffix,
+					Lemma: null.StringFrom(token.Lemma),
+					Tag:   null.StringFrom(token.Tag),
 				}
 				memModel.morphemes = append(memModel.morphemes, suffixMorpheme)
-				memModel.morphemeByL2[suffixMorpheme.L2] = suffixMorpheme
+				memModel.morphemeByL2Tag[conjugation.Suffix+token.Tag] = suffixMorpheme
 			}
 			morphemes = []Morpheme{stemMorpheme, suffixMorpheme}
 		}
@@ -115,17 +116,17 @@ func (memModel *MemModel) TokenToCard(token parsing.Token) (Card, error) {
 				token.Tag, token.Form)
 		}
 
-		morpheme, exists := memModel.morphemeByL2[token.Form]
+		morpheme, exists := memModel.morphemeByL2Tag[token.Form+token.Tag]
 		if !exists {
 			morpheme = Morpheme{
-				Id:          memModel.getNextMorphemeId(),
-				Type:        type_,
-				L2:          token.Form,
-				Lemma:       null.StringFrom(token.Lemma),
-				FreelingTag: null.StringFrom(token.Tag),
+				Id:    memModel.getNextMorphemeId(),
+				Type:  type_,
+				L2:    token.Form,
+				Lemma: null.StringFrom(token.Lemma),
+				Tag:   null.StringFrom(token.Tag),
 			}
 			memModel.morphemes = append(memModel.morphemes, morpheme)
-			memModel.morphemeByL2[morpheme.L2] = morpheme
+			memModel.morphemeByL2Tag[token.Form+token.Tag] = morpheme
 		}
 
 		card, exists := memModel.cardByL2[token.Form]
@@ -154,12 +155,12 @@ func (memModel *MemModel) SaveMorphemesToDb(db *sql.DB) {
 
 	for _, morpheme := range memModel.morphemes {
 		query := fmt.Sprintf(`INSERT INTO morphemes
-			(id, type, l2, lemma, freeling_tag)
+			(id, type, l2, lemma, tag)
 			VALUES (%d, %s, %s, %s, %s)`, morpheme.Id,
 			dbPkg.Escape(morpheme.Type),
 			dbPkg.Escape(morpheme.L2),
 			dbPkg.EscapeNullString(morpheme.Lemma),
-			dbPkg.EscapeNullString(morpheme.FreelingTag))
+			dbPkg.EscapeNullString(morpheme.Tag))
 
 		_, err := tx.Exec(query)
 		if err != nil {

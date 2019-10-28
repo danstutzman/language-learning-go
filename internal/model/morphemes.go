@@ -12,30 +12,30 @@ import (
 var L2_WORD_REGEXP = regexp.MustCompile(`(?i)[a-zñáéíóúü]+`)
 
 type Morpheme struct {
-	Id          int         `json:"id"`
-	Type        string      `json:"type"`
-	L2          string      `json:"l2"`
-	Lemma       null.String `json:"lemma"`
-	FreelingTag null.String `json:"freeling_tag"`
+	Id    int         `json:"id"`
+	Type  string      `json:"type"`
+	L2    string      `json:"l2"`
+	Lemma null.String `json:"lemma"`
+	Tag   null.String `json:"tag"`
 }
 
 func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
 	return db.MorphemeRow{
-		Id:          morpheme.Id,
-		Type:        morpheme.Type,
-		L2:          morpheme.L2,
-		Lemma:       morpheme.Lemma,
-		FreelingTag: morpheme.FreelingTag,
+		Id:    morpheme.Id,
+		Type:  morpheme.Type,
+		L2:    morpheme.L2,
+		Lemma: morpheme.Lemma,
+		Tag:   morpheme.Tag,
 	}
 }
 
 func morphemeRowToMorpheme(row db.MorphemeRow) Morpheme {
 	return Morpheme{
-		Id:          row.Id,
-		Type:        row.Type,
-		L2:          row.L2,
-		Lemma:       row.Lemma,
-		FreelingTag: row.FreelingTag,
+		Id:    row.Id,
+		Type:  row.Type,
+		L2:    row.L2,
+		Lemma: row.Lemma,
+		Tag:   row.Tag,
 	}
 }
 
@@ -151,7 +151,7 @@ func (model *Model) DeleteMorpheme(id int) {
 
 func (model *Model) findVerbSuffix(l2, verbCategory, tag string) *Morpheme {
 	where := fmt.Sprintf(`WHERE type='VERB_SUFFIX' 
-		AND l2=%s AND verb_category=%s AND freeling_tag=%s`,
+		AND l2=%s AND verb_category=%s AND tag=%s`,
 		db.Escape(l2), db.Escape(verbCategory), db.Escape(tag))
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
@@ -168,7 +168,7 @@ func (model *Model) listVerbStemChanges(lemma string) []Morpheme {
 
 func (model *Model) findVerbUnique(l2, lemma, tag string) *Morpheme {
 	where := fmt.Sprintf(
-		"WHERE type='VERB_UNIQUE' AND l2=%s AND lemma=%s AND freeling_tag=%s",
+		"WHERE type='VERB_UNIQUE' AND l2=%s AND lemma=%s AND tag=%s",
 		db.Escape(l2), db.Escape(lemma), db.Escape(tag))
 	return morphemeRowPtrToMorphemePtr(db.OneFromMorphemes(model.db, where))
 }
@@ -284,10 +284,10 @@ func (model *Model) TokenToCard(token parsing.Token) (*Card, error) {
 		}
 
 		morpheme := model.UpsertMorpheme(Morpheme{
-			Type:        type_,
-			L2:          token.Form,
-			Lemma:       null.StringFrom(token.Lemma),
-			FreelingTag: null.StringFrom(token.Tag),
+			Type:  type_,
+			L2:    token.Form,
+			Lemma: null.StringFrom(token.Lemma),
+			Tag:   null.StringFrom(token.Tag),
 		})
 
 		card = Card{
