@@ -1,20 +1,20 @@
 package api
 
 import (
-	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"bitbucket.org/danstutzman/language-learning-go/internal/model"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 )
 
-func (api *Api) HandleListChallengesRequest(w http.ResponseWriter,
+func (api *Api) HandleListAnswersRequest(w http.ResponseWriter,
 	r *http.Request) {
 
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
 
-	answerList := api.model.ListChallenges()
+	answerList := api.model.ListAnswers()
 
 	bytes, err := json.Marshal(answerList)
 	if err != nil {
@@ -45,8 +45,8 @@ func (api *Api) HandleGetTopChallengesRequest(w http.ResponseWriter,
 	w.Write(bytes)
 }
 
-func (api *Api) HandleAnswerChallengeRequest(w http.ResponseWriter,
-	r *http.Request, challengeId int) {
+func (api *Api) HandlePostAnswerRequest(w http.ResponseWriter,
+	r *http.Request) {
 
 	setCORSHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=\"utf-8\"")
@@ -57,15 +57,15 @@ func (api *Api) HandleAnswerChallengeRequest(w http.ResponseWriter,
 	}
 	defer r.Body.Close()
 
-	var update db.ChallengeUpdate
-	err = json.Unmarshal(body, &update)
+	var unsavedAnswer model.Answer
+	err = json.Unmarshal(body, &unsavedAnswer)
 	if err != nil {
 		panic(err)
 	}
 
-	challenge := api.model.UpdateChallenge(update)
+	answer := api.model.InsertAnswer(unsavedAnswer)
 
-	bytes, err := json.Marshal(challenge)
+	bytes, err := json.Marshal(answer)
 	if err != nil {
 		log.Fatalf("Error from json.Marshal: %s", err)
 	}

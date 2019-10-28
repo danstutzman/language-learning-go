@@ -7,27 +7,28 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
-type ChallengeRow struct {
+type AnswerRow struct {
 	Id     int
 	Type   string
 	CardId int
 
 	Expectation string
 
-	ShownAt        null.Time
+	ShownAt        time.Time
 	AnsweredL1     null.String
 	AnsweredL2     null.String
-	ShowedMnemonic null.Bool
-	FirstKeyMillis null.Int
-	LastKeyMillis  null.Int
+	ShowedMnemonic bool
+	FirstKeyMillis int
+	LastKeyMillis  int
 
 	Grade              null.String
 	MisconnectedCardId null.Int
 }
 
-type ChallengeUpdate struct {
+type AnswerUpdate struct {
 	Id     int
 	CardId int
 
@@ -42,13 +43,13 @@ type ChallengeUpdate struct {
 	MisconnectedCardId null.Int
 }
 
-func AssertChallengesHasCorrectSchema(db *sql.DB) {
+func AssertAnswersHasCorrectSchema(db *sql.DB) {
 	query := `SELECT id, type, card_id,
   		expectation,
 	    shown_at, answered_l1, showed_mnemonic,
 			first_key_millis, last_key_millis,
 		  grade, misconnected_card_id
-	  FROM challenges
+	  FROM answers
 		LIMIT 1`
 	if LOG {
 		log.Println(query)
@@ -60,15 +61,15 @@ func AssertChallengesHasCorrectSchema(db *sql.DB) {
 	}
 }
 
-func FromChallenges(db *sql.DB, where string) []ChallengeRow {
-	rows := []ChallengeRow{}
+func FromAnswers(db *sql.DB, where string) []AnswerRow {
+	rows := []AnswerRow{}
 
 	query := `SELECT id, type, card_id,
   	expectation,
 	  shown_at, answered_l1, answered_l2, showed_mnemonic,
 		first_key_millis, last_key_millis,
 	  grade, misconnected_card_id
-	  FROM challenges ` + where
+	  FROM answers ` + where
 	if LOG {
 		log.Println(query)
 	}
@@ -79,7 +80,7 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	defer rset.Close()
 
 	for rset.Next() {
-		var row ChallengeRow
+		var row AnswerRow
 		err = rset.Scan(&row.Id, &row.Type, &row.CardId,
 			&row.Expectation,
 			&row.ShownAt, &row.AnsweredL1, &row.AnsweredL2, &row.ShowedMnemonic,
@@ -99,8 +100,8 @@ func FromChallenges(db *sql.DB, where string) []ChallengeRow {
 	return rows
 }
 
-func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
-	query := fmt.Sprintf(`INSERT INTO challenges
+func InsertAnswer(db *sql.DB, answer AnswerRow) AnswerRow {
+	query := fmt.Sprintf(`INSERT INTO answers
 	(type, card_id, grade,
 		expectation,
 	  shown_at, answered_l1, answered_l2, showed_mnemonic,
@@ -109,23 +110,23 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 		VALUES (%s, %d, %s,
 		  %s,
 		  %s, %s, %s, %s,
-			%s, %s,
+			%d, %d,
 			%s, %s)`,
-		Escape(challenge.Type),
-		challenge.CardId,
-		EscapeNullString(challenge.Grade),
+		Escape(answer.Type),
+		answer.CardId,
+		EscapeNullString(answer.Grade),
 
-		Escape(challenge.Expectation),
+		Escape(answer.Expectation),
 
-		EscapeNullTime(challenge.ShownAt),
-		EscapeNullString(challenge.AnsweredL1),
-		EscapeNullString(challenge.AnsweredL2),
-		EscapeNullBool(challenge.ShowedMnemonic),
-		EscapeNullInt(challenge.FirstKeyMillis),
-		EscapeNullInt(challenge.LastKeyMillis),
+		EscapeTime(answer.ShownAt),
+		EscapeNullString(answer.AnsweredL1),
+		EscapeNullString(answer.AnsweredL2),
+		EscapeBool(answer.ShowedMnemonic),
+		answer.FirstKeyMillis,
+		answer.LastKeyMillis,
 
-		EscapeNullString(challenge.Grade),
-		EscapeNullInt(challenge.MisconnectedCardId))
+		EscapeNullString(answer.Grade),
+		EscapeNullInt(answer.MisconnectedCardId))
 
 	if LOG {
 		log.Println(query)
@@ -140,12 +141,12 @@ func InsertChallenge(db *sql.DB, challenge ChallengeRow) ChallengeRow {
 	if err != nil {
 		panic(err)
 	}
-	challenge.Id = int(id)
+	answer.Id = int(id)
 
-	return challenge
+	return answer
 }
 
-func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
+func UpdateAnswer(db *sql.DB, update AnswerUpdate) {
 	pairs := []string{}
 	if update.ShownAt.Valid {
 		pairs = append(pairs, "shown_at="+EscapeNullTime(update.ShownAt))
@@ -179,7 +180,7 @@ func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
 		return
 	}
 
-	query := "UPDATE challenges SET " +
+	query := "UPDATE answers SET " +
 		strings.Join(pairs, ", ") +
 		" WHERE id=" + strconv.Itoa(update.Id)
 	if LOG {
@@ -192,8 +193,8 @@ func UpdateChallenge(db *sql.DB, update ChallengeUpdate) {
 	}
 }
 
-func DeleteFromChallenges(db *sql.DB, where string) {
-	query := "DELETE FROM challenges " + where
+func DeleteFromAnswers(db *sql.DB, where string) {
+	query := "DELETE FROM answers " + where
 	if LOG {
 		log.Println(query)
 	}

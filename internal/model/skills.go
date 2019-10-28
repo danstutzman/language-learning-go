@@ -25,19 +25,19 @@ type Skill struct {
 }
 
 func (model *Model) ListSkills() SkillList {
-	challenges := db.FromChallenges(model.db,
+	answers := db.FromAnswers(model.db,
 		"WHERE shown_at IS NOT NULL "+
 			"ORDER BY id")
 
-	lastChallengeByCardId := map[int]db.ChallengeRow{}
-	for _, challenge := range challenges {
-		lastChallengeByCardId[challenge.CardId] = challenge
+	lastAnswerByCardId := map[int]db.AnswerRow{}
+	for _, answer := range answers {
+		lastAnswerByCardId[answer.CardId] = answer
 	}
 
 	numFailuresByCardId := map[int]int{}
-	for _, challenge := range challenges {
-		if challenge.Grade.Valid && GRADE_TO_IS_FAILURE[challenge.Grade.String] {
-			numFailuresByCardId[challenge.CardId] += 1
+	for _, answer := range answers {
+		if answer.Grade.Valid && GRADE_TO_IS_FAILURE[answer.Grade.String] {
+			numFailuresByCardId[answer.CardId] += 1
 		}
 	}
 
@@ -47,18 +47,18 @@ func (model *Model) ListSkills() SkillList {
 
 	skills := []Skill{}
 	for _, card := range cards {
-		lastChallenge, hasLastChallenge := lastChallengeByCardId[card.Id]
+		lastAnswer, hasLastAnswer := lastAnswerByCardId[card.Id]
 		oneDayAgo := time.Now().UTC().AddDate(0, 0, -1)
 
 		var state string
-		if !hasLastChallenge {
+		if !hasLastAnswer {
 			state = "UNTESTED"
-		} else if lastChallenge.ShownAt.Valid && !lastChallenge.Grade.Valid {
+		} else if !lastAnswer.Grade.Valid {
 			state = "NEEDS_GRADE"
-		} else if lastChallenge.Grade.String == "RIGHT_WITHOUT_MNEMONIC" &&
-			lastChallenge.ShownAt.Time.After(oneDayAgo) {
+		} else if lastAnswer.Grade.String == "RIGHT_WITHOUT_MNEMONIC" &&
+			lastAnswer.ShownAt.After(oneDayAgo) {
 			state = "RETEST_IN_1D"
-		} else if lastChallenge.Grade.String == "BLANK" &&
+		} else if lastAnswer.Grade.String == "BLANK" &&
 			(card.Mnemonic21.String == "" || card.Mnemonic12.String == "") {
 			state = "NEEDS_MNEMONIC"
 		} else {

@@ -30,19 +30,19 @@ CREATE TABLE cards_morphemes (
 CREATE INDEX idx_cards_morphemes_card_id ON cards_morphemes(card_id);
 CREATE INDEX idx_cards_morphemes_morpheme_id ON cards_morphemes(morpheme_id);
 
-DROP TABLE IF EXISTS challenges;
-CREATE TABLE challenges (
+DROP TABLE IF EXISTS answers;
+CREATE TABLE answers (
   id              INTEGER PRIMARY KEY NOT NULL,
   type            TEXT NOT NULL,
   card_id         INTEGER NOT NULL,
   expectation     TEXT NOT NULL,
 
-  shown_at         DATETIME,
+  shown_at         DATETIME NOT NULL,
   answered_l1      TEXT,
   answered_l2      TEXT,
-  showed_mnemonic  BOOLEAN,
-  first_key_millis INTEGER,
-  last_key_millis  INTEGER,
+  showed_mnemonic  BOOLEAN NOT NULL,
+  first_key_millis INTEGER NOT NULL,
+  last_key_millis  INTEGER NOT NULL,
 
   grade                TEXT,
   misconnected_card_id INTEGER

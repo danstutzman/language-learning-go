@@ -9,11 +9,11 @@ import (
 	"time"
 )
 
-type ChallengeList struct {
-	Challenges []Challenge `json:"challenges"`
+type AnswerList struct {
+	Answers []Answer `json:"answers"`
 }
 
-type Challenge struct {
+type Answer struct {
 	Id     int    `json:"id"`
 	Type   string `json:"type"`
 	CardId int    `json:"cardId"`
@@ -21,39 +21,39 @@ type Challenge struct {
 
 	Expectation string `json:"expectation"`
 
-	ShownAt        null.Time   `json:"shownAt"`
+	ShownAt        time.Time   `json:"shownAt"`
 	AnsweredL1     null.String `json:"answeredL1"`
 	AnsweredL2     null.String `json:"answeredL2"`
-	ShowedMnemonic null.Bool   `json:"showedMnemonic"`
-	FirstKeyMillis null.Int    `json:"firstKeyMillis"`
-	LastKeyMillis  null.Int    `json:"lastKeyMillis"`
+	ShowedMnemonic bool        `json:"showedMnemonic"`
+	FirstKeyMillis int         `json:"firstKeyMillis"`
+	LastKeyMillis  int         `json:"lastKeyMillis"`
 
 	Grade              null.String `json:"grade"`
 	MisconnectedCardId null.Int    `json:"misconnectedCardId"`
 }
 
-func challengeToChallengeRow(challenge Challenge) db.ChallengeRow {
-	return db.ChallengeRow{
-		Id:     challenge.Id,
-		Type:   challenge.Type,
-		CardId: challenge.CardId,
+func answerToAnswerRow(answer Answer) db.AnswerRow {
+	return db.AnswerRow{
+		Id:     answer.Id,
+		Type:   answer.Type,
+		CardId: answer.CardId,
 
-		Expectation: challenge.Expectation,
+		Expectation: answer.Expectation,
 
-		ShownAt:        challenge.ShownAt,
-		AnsweredL1:     challenge.AnsweredL1,
-		AnsweredL2:     challenge.AnsweredL2,
-		ShowedMnemonic: challenge.ShowedMnemonic,
-		FirstKeyMillis: challenge.FirstKeyMillis,
-		LastKeyMillis:  challenge.LastKeyMillis,
+		ShownAt:        answer.ShownAt,
+		AnsweredL1:     answer.AnsweredL1,
+		AnsweredL2:     answer.AnsweredL2,
+		ShowedMnemonic: answer.ShowedMnemonic,
+		FirstKeyMillis: answer.FirstKeyMillis,
+		LastKeyMillis:  answer.LastKeyMillis,
 
-		Grade:              challenge.Grade,
-		MisconnectedCardId: challenge.MisconnectedCardId,
+		Grade:              answer.Grade,
+		MisconnectedCardId: answer.MisconnectedCardId,
 	}
 }
 
-func challengeRowToChallenge(row db.ChallengeRow) Challenge {
-	return Challenge{
+func answerRowToAnswer(row db.AnswerRow) Answer {
+	return Answer{
 		Id:     row.Id,
 		Type:   row.Type,
 		CardId: row.CardId,
@@ -72,27 +72,17 @@ func challengeRowToChallenge(row db.ChallengeRow) Challenge {
 	}
 }
 
-func (model *Model) challengeRowToChallengeJoinCard(
-	row db.ChallengeRow) Challenge {
+func (model *Model) ListAnswers() AnswerList {
+	answerRows := db.FromAnswers(model.db, "ORDER BY card_id, id")
 
-	challenge := challengeRowToChallenge(row)
-	cards := db.FromCards(model.db, fmt.Sprintf("WHERE id=%d", row.CardId))
-	card := model.cardRowToCard(cards[0])
-	challenge.Card = &card
-	return challenge
-}
-
-func (model *Model) ListChallenges() ChallengeList {
-	challengeRows := db.FromChallenges(model.db, "ORDER BY card_id, id")
-
-	challenges := []Challenge{}
-	for _, challengeRow := range challengeRows {
-		challenges = append(challenges, challengeRowToChallenge(challengeRow))
+	answers := []Answer{}
+	for _, answerRow := range answerRows {
+		answers = append(answers, answerRowToAnswer(answerRow))
 	}
 
 	cardIds := []int{}
-	for _, challenge := range challenges {
-		cardIds = append(cardIds, challenge.CardId)
+	for _, answer := range answers {
+		cardIds = append(cardIds, answer.CardId)
 	}
 
 	cardRows := db.FromCards(model.db, "WHERE "+db.InIntList("id", cardIds))
@@ -102,30 +92,17 @@ func (model *Model) ListChallenges() ChallengeList {
 		cardById[row.Id] = model.cardRowToCardJoinMorphemes(row)
 	}
 
-	for i, _ := range challenges {
-		card := cardById[challenges[i].CardId]
-		challenges[i].Card = &card
+	for i, _ := range answers {
+		card := cardById[answers[i].CardId]
+		answers[i].Card = &card
 	}
 
-	return ChallengeList{Challenges: challenges}
+	return AnswerList{Answers: answers}
 }
 
-func (model *Model) InsertChallenge(challenge Challenge) {
-	db.InsertChallenge(model.db, challengeToChallengeRow(challenge))
-}
-
-func (model *Model) UpdateChallenge(update db.ChallengeUpdate) Challenge {
-	db.UpdateChallenge(model.db, update)
-
-	// Also break down which morphemes were involved, update their last_seen_at
-	where := "WHERE id IN (" +
-		"SELECT morpheme_id FROM cards_morphemes WHERE card_id = " +
-		strconv.Itoa(update.CardId) + ")"
-	db.TouchMorphemes(model.db, where)
-
-	challengeRows := db.FromChallenges(model.db,
-		"WHERE id="+strconv.Itoa(update.Id))
-	return challengeRowToChallenge(challengeRows[0])
+func (model *Model) InsertAnswer(answer Answer) Answer {
+	row := db.InsertAnswer(model.db, answerToAnswerRow(answer))
+	return answerRowToAnswer(row)
 }
 
 func mustAtoi(s string) int {
@@ -136,7 +113,7 @@ func mustAtoi(s string) int {
 	return i
 }
 
-func (model *Model) GetTopChallenges(type_ string) ChallengeList {
+func (model *Model) GetTopChallenges(type_ string) CardList {
 	allCards := db.FromCards(model.db, "")
 
 	cardById := map[int]db.CardRow{}
@@ -153,8 +130,7 @@ func (model *Model) GetTopChallenges(type_ string) ChallengeList {
 
 	now := time.Now().UTC()
 
-	challenges := []Challenge{}
-
+	cardRows := []db.CardRow{}
 	for i := 0; i < 10; i += 1 {
 		stalestCardId := 0
 		stalestStaleness := time.Duration(0)
@@ -185,12 +161,7 @@ func (model *Model) GetTopChallenges(type_ string) ChallengeList {
 			}
 		}
 
-		newChallenge := model.challengeRowToChallengeJoinCard(
-			db.InsertChallenge(model.db, db.ChallengeRow{
-				Type:   type_,
-				CardId: stalestCardId,
-			}))
-		challenges = append(challenges, newChallenge)
+		cardRows = append(cardRows, topCard)
 
 		// simulate morpheme staleness being updated so that each card in the
 		// return challengeList has a non-overlapping set of morphemes.
@@ -201,7 +172,8 @@ func (model *Model) GetTopChallenges(type_ string) ChallengeList {
 		}
 	}
 
-	return ChallengeList{Challenges: challenges}
+	cards := model.cardRowsToCardsJoinMorphemes(cardRows)
+	return CardList{Cards: cards}
 }
 
 func updateLastSeenAt(morpheme db.MorphemeRow,
