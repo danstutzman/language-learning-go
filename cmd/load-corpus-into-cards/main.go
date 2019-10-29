@@ -3,7 +3,6 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"bitbucket.org/danstutzman/language-learning-go/internal/mem_model"
-	"bitbucket.org/danstutzman/language-learning-go/internal/model"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"database/sql"
 	"fmt"
@@ -36,7 +35,6 @@ func main() {
 	db.AssertCardsHasCorrectSchema(dbConn)
 	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
-	theModel := model.NewModel(dbConn)
 	memModel := mem_model.NewMemModel()
 
 	var phrases []string
@@ -53,7 +51,7 @@ func main() {
 	for _, phrase := range phrases {
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
-		errorLists := importPhrase(output.Parse, theModel, memModel)
+		errorLists := importPhrase(output.Parse, memModel)
 		for _, errorList := range errorLists {
 			for _, err := range errorList {
 				if err != nil {
@@ -72,8 +70,7 @@ func lowercaseToken(token parsing.Token) parsing.Token {
 	return token
 }
 
-func importPhrase(parse parsing.Parse, theModel *model.Model,
-	memModel *mem_model.MemModel) [][]error {
+func importPhrase(parse parsing.Parse, memModel *mem_model.MemModel) [][]error {
 
 	errors := make([][]error, len(parse.Sentences))
 	for sentenceNum, sentence := range parse.Sentences {
@@ -117,7 +114,7 @@ func importPhrase(parse parsing.Parse, theModel *model.Model,
 						fmt.Printf("Conjugations: %v\n", s.vp[0].verbConjugation)
 					}
 
-					importConstituent(s, cardByTokenId, true, theModel, memModel)
+					importConstituent(s, cardByTokenId, true, memModel)
 				}
 			}
 		}
@@ -127,8 +124,7 @@ func importPhrase(parse parsing.Parse, theModel *model.Model,
 
 func importConstituent(constituent Constituent,
 	cardByTokenId map[string]mem_model.Card,
-	isSentence bool, theModel *model.Model,
-	memModel *mem_model.MemModel) {
+	isSentence bool, memModel *mem_model.MemModel) {
 
 	tokens := constituent.GetAllTokens()
 	sort.SliceStable(tokens, func(i, j int) bool {
@@ -159,7 +155,7 @@ func importConstituent(constituent Constituent,
 	}
 
 	for _, child := range constituent.GetChildren() {
-		importConstituent(child, cardByTokenId, false, theModel, memModel)
+		importConstituent(child, cardByTokenId, false, memModel)
 	}
 
 	memModel.InsertCardIfNotExists(mem_model.Card{
