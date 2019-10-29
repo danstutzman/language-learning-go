@@ -71,6 +71,27 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
+func translateVerb(verb parsing.Token, dictionary english.Dictionary) string {
+	if verb.Lemma == "estar" || verb.Lemma == "ser" {
+		return map[string]string{
+			"VMIP1S0": "am",
+			"VMIP1P0": "are",
+			"VMIP2S0": "are",
+			"VMIP2P0": "are",
+			"VMIP3S0": "is",
+			"VMIP3P0": "are",
+		}[verb.Tag]
+	} else {
+		en := dictionary.Lookup(verb.Lemma, "v")
+		if verb.Tense == "present" &&
+			verb.Num == "singular" &&
+			verb.Person == "3" {
+			en = english.ConjugateVerb(en, english.PRES_S)
+		}
+		return en
+	}
+}
+
 func (vp VP) Translate(dictionary english.Dictionary) []string {
 	var l1 []string
 
@@ -78,25 +99,7 @@ func (vp VP) Translate(dictionary english.Dictionary) []string {
 		l1 = append(l1, suj.Translate(dictionary)...)
 	}
 
-	var en string
-	if vp.verb.Lemma == "estar" || vp.verb.Lemma == "ser" {
-		en = map[string]string{
-			"VMIP1S0": "am",
-			"VMIP1P0": "are",
-			"VMIP2S0": "are",
-			"VMIP2P0": "are",
-			"VMIP3S0": "is",
-			"VMIP3P0": "are",
-		}[vp.verb.Tag]
-	} else {
-		en = dictionary.Lookup(vp.verb.Lemma, "v")
-		if vp.verb.Tense == "present" &&
-			vp.verb.Num == "singular" &&
-			vp.verb.Person == "3" {
-			en = english.ConjugateVerb(en, english.PRES_S)
-		}
-	}
-	l1 = append(l1, en)
+	l1 = append(l1, translateVerb(vp.verb, dictionary))
 
 	for _, cd := range vp.cd {
 		l1 = append(l1, cd.Translate(dictionary)...)
