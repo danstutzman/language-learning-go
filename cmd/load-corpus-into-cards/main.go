@@ -2,6 +2,7 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
+	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/mem_model"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"database/sql"
@@ -16,13 +17,15 @@ import (
 const PARSE_DIR = "db/1_parses"
 
 func main() {
-	if len(os.Args) != 2+1 { // Args[0] is name of program
+	if len(os.Args) != 3+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
 		Argument 1: path to corpus (.yaml or .csv or .txt file)
-		Argument 2: path to sqlite3 database file`)
+		Argument 2: path to sqlite3 database file
+		Argument 3: path to dictionary sqlite3 database file`)
 	}
 	corpusPath := os.Args[1]
 	dbPath := os.Args[2]
+	dictionaryDbPath := os.Args[3]
 
 	// Set mode=rw so it doesn't create database if file doesn't exist
 	connString := fmt.Sprintf("file:%s?mode=rw", dbPath)
@@ -48,10 +51,12 @@ func main() {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}
 
+	dictionary := english.LoadDictionary(dictionaryDbPath)
+
 	for _, phrase := range phrases {
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
-		errorLists := importPhrase(output.Parse, memModel)
+		errorLists := importPhrase(output.Parse, dictionary, memModel)
 		for _, errorList := range errorLists {
 			for _, err := range errorList {
 				if err != nil {
@@ -70,7 +75,8 @@ func lowercaseToken(token parsing.Token) parsing.Token {
 	return token
 }
 
-func importPhrase(parse parsing.Parse, memModel *mem_model.MemModel) [][]error {
+func importPhrase(parse parsing.Parse, dictionary english.Dictionary,
+	memModel *mem_model.MemModel) [][]error {
 
 	errors := make([][]error, len(parse.Sentences))
 	for sentenceNum, sentence := range parse.Sentences {
@@ -106,15 +112,19 @@ func importPhrase(parse parsing.Parse, memModel *mem_model.MemModel) [][]error {
 			for _, dep := range sentence.Dependencies {
 				s, err := depToS(dep, tokenById)
 				if err != nil {
-					printTokensInOrder(os.Stderr, allTokens)
-					fmt.Fprintf(os.Stderr, "\\ %s\n", err)
+					if false {
+						printTokensInOrder(os.Stderr, allTokens)
+						fmt.Fprintf(os.Stderr, "\\ %s\n", err)
+					}
 				} else {
-					printTokensInOrder(os.Stdout, s.GetAllTokens())
-					if len(s.vp) == 1 {
-						fmt.Printf("Conjugations: %v\n", s.vp[0].verbConjugation)
+					if false {
+						printTokensInOrder(os.Stdout, s.GetAllTokens())
+						if len(s.vp) == 1 {
+							fmt.Printf("Conjugations: %v\n", s.vp[0].verbConjugation)
+						}
 					}
 
-					importConstituent(s, cardByTokenId, true, memModel)
+					importConstituent(s, cardByTokenId, true, dictionary, memModel)
 				}
 			}
 		}
@@ -124,7 +134,8 @@ func importPhrase(parse parsing.Parse, memModel *mem_model.MemModel) [][]error {
 
 func importConstituent(constituent Constituent,
 	cardByTokenId map[string]mem_model.Card,
-	isSentence bool, memModel *mem_model.MemModel) {
+	isSentence bool, dictionary english.Dictionary,
+	memModel *mem_model.MemModel) {
 
 	tokens := constituent.GetAllTokens()
 	sort.SliceStable(tokens, func(i, j int) bool {
@@ -155,7 +166,13 @@ func importConstituent(constituent Constituent,
 	}
 
 	for _, child := range constituent.GetChildren() {
-		importConstituent(child, cardByTokenId, false, memModel)
+		importConstituent(child, cardByTokenId, false, dictionary, memModel)
+	}
+
+	if constituent.GetType() == "VP" {
+		l2Infinitive := constituent.(VP).verb.Lemma
+		fmt.Printf("%s -> %s\n",
+			l2Infinitive, dictionary.Lookup(l2Infinitive, "v"))
 	}
 
 	memModel.InsertCardIfNotExists(mem_model.Card{

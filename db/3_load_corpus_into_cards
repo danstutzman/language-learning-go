@@ -64,4 +64,5 @@ EOF
 #$GOPATH/bin/load-corpus-into-cards db/corpora/spanishpod.yaml db/db.sqlite3
 #$GOPATH/bin/load-corpus-into-cards db/corpora/conjugations.txt db/db.sqlite3
 $GOPATH/bin/load-corpus-into-cards db/corpora/beginner-sentences.txt \
-  db/db.sqlite3
+  db/db.sqlite3 \
+  "/Users/dan/Documents/language learning resources/spanish/anki-decks/dictionary/dictionary.csv"
