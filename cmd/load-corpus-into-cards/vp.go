@@ -12,8 +12,8 @@ type VP struct {
 	verb            parsing.Token
 	verbConjugation freeling.Conjugation
 	suj             []NP
-	cd              []NP
-	ci              []NP
+	cd              []NP // direct object
+	ci              []NP // indirect objec
 	atrAdj          []parsing.Token
 	atrAdv          []parsing.Token
 	atrPP           []PP
@@ -80,9 +80,15 @@ func translateVerb(verb parsing.Token, dictionary english.Dictionary) string {
 			"VMIP2P0": "are",
 			"VMIP3S0": "is",
 			"VMIP3P0": "are",
+			"VSIP1S0": "am",
+			"VSIP1P0": "are",
+			"VSIP2S0": "are",
+			"VSIP2P0": "are",
+			"VSIP3S0": "is",
+			"VSIP3P0": "are",
 		}[verb.Tag]
 	} else {
-		en := dictionary.Lookup(verb.Lemma, "v")
+		en := dictionary.Lookup(strings.ToLower(verb.Lemma), "v")
 		if verb.Tense == "present" &&
 			verb.Num == "singular" &&
 			verb.Person == "3" {
@@ -98,11 +104,39 @@ func (vp VP) Translate(dictionary english.Dictionary) []string {
 	for _, suj := range vp.suj {
 		l1 = append(l1, suj.Translate(dictionary)...)
 	}
+	if len(vp.suj) == 0 {
+		pronoun := map[string]string{
+			"1singular": "I",
+			"1plural":   "we",
+			"2singular": "you",
+			"2plural":   "you",
+			"3singular": "he/she/it",
+			"3plural":   "they",
+		}[vp.verb.Person+vp.verb.Num]
+		l1 = append(l1, pronoun)
+	}
 
 	l1 = append(l1, translateVerb(vp.verb, dictionary))
 
 	for _, cd := range vp.cd {
 		l1 = append(l1, cd.Translate(dictionary)...)
+	}
+
+	for _, atrAdj := range vp.atrAdj {
+		if atrAdj.IsAdjective() {
+			l1 = append(l1, dictionary.Lookup(atrAdj.Lemma, "adj"))
+		} else if atrAdj.IsVerb() {
+			verb := dictionary.Lookup(atrAdj.Lemma, "v")
+			l1 = append(l1, english.ConjugateVerb(verb, english.PAST_PART))
+		}
+	}
+
+	for _, atrPP := range vp.atrPP {
+		l1 = append(l1, atrPP.Translate(dictionary)...)
+	}
+
+	for _, atrNP := range vp.atrNP {
+		l1 = append(l1, atrNP.Translate(dictionary)...)
 	}
 
 	return l1

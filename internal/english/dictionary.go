@@ -63,11 +63,23 @@ func LoadDictionary(path string) Dictionary {
 			english = english[3:len(english)]
 		}
 
+		switch partOfSpeech {
+		case "nm":
+			partOfSpeech = "n"
+		case "nf":
+			partOfSpeech = "n"
+		case "nc":
+			partOfSpeech = "n"
+		case "nf el":
+			partOfSpeech = "n"
+		}
+
 		englishByEsAndPartOfSpeech[es+"/"+partOfSpeech] = english
 	}
 
 	englishByEsAndPartOfSpeech["llevar"+"/"+"v"] = "wear"
 	englishByEsAndPartOfSpeech["gustar"+"/"+"v"] = "please"
+	englishByEsAndPartOfSpeech["usted"+"/"+"pron"] = "your grace"
 
 	return Dictionary{englishByEsAndPartOfSpeech}
 }
