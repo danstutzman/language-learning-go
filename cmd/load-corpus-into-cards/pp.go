@@ -24,11 +24,22 @@ func (pp PP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func (pp PP) Translate(dictionary english.Dictionary) []string {
+func (pp PP) Translate(dictionary english.Dictionary) ([]string, error) {
 	l1 := []string{}
-	l1 = append(l1, dictionary.Lookup(pp.prep.Form, "prep"))
-	l1 = append(l1, pp.np.Translate(dictionary)...)
-	return l1
+
+	prepL1, err := dictionary.Lookup(pp.prep.Form, "prep")
+	if err != nil {
+		return nil, err
+	}
+	l1 = append(l1, prepL1)
+
+	npL1, err := pp.np.Translate(dictionary)
+	if err != nil {
+		return nil, err
+	}
+	l1 = append(l1, npL1...)
+
+	return l1, nil
 }
 
 func depToPP(dep parsing.Dependency,

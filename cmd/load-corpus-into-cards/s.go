@@ -43,15 +43,26 @@ func (s S) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func (s S) Translate(dictionary english.Dictionary) []string {
+func (s S) Translate(dictionary english.Dictionary) ([]string, error) {
 	l1 := []string{}
+
 	for _, np := range s.np {
-		l1 = append(l1, np.Translate(dictionary)...)
+		npL1, err := np.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, npL1...)
 	}
+
 	for _, vp := range s.vp {
-		l1 = append(l1, vp.Translate(dictionary)...)
+		vpL1, err := vp.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, vpL1...)
 	}
-	return l1
+
+	return l1, nil
 }
 
 func depToS(dep parsing.Dependency,

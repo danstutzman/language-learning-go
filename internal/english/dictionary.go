@@ -20,8 +20,12 @@ type Dictionary struct {
 	englishByEsAndPartOfSpeech map[string]string
 }
 
-func (dictionary Dictionary) Lookup(es, partOfSpeech string) string {
-	return dictionary.englishByEsAndPartOfSpeech[es+"/"+partOfSpeech]
+func (dictionary Dictionary) Lookup(es, partOfSpeech string) (string, error) {
+	found, ok := dictionary.englishByEsAndPartOfSpeech[es+"/"+partOfSpeech]
+	if !ok {
+		return "", fmt.Errorf("Can't find %s %s", partOfSpeech, es)
+	}
+	return found, nil
 }
 
 func LoadDictionary(path string) Dictionary {

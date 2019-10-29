@@ -124,7 +124,10 @@ func importPhrase(parse parsing.Parse, dictionary english.Dictionary,
 						}
 					}
 
-					importConstituent(s, cardByTokenId, true, dictionary, memModel)
+					err = importConstituent(s, cardByTokenId, true, dictionary, memModel)
+					if err != nil {
+						errors[sentenceNum] = append(errors[sentenceNum], err)
+					}
 				}
 			}
 		}
@@ -135,7 +138,7 @@ func importPhrase(parse parsing.Parse, dictionary english.Dictionary,
 func importConstituent(constituent Constituent,
 	cardByTokenId map[string]mem_model.Card,
 	isSentence bool, dictionary english.Dictionary,
-	memModel *mem_model.MemModel) {
+	memModel *mem_model.MemModel) error {
 
 	tokens := constituent.GetAllTokens()
 	sort.SliceStable(tokens, func(i, j int) bool {
@@ -166,14 +169,23 @@ func importConstituent(constituent Constituent,
 	}
 
 	for _, child := range constituent.GetChildren() {
-		importConstituent(child, cardByTokenId, false, dictionary, memModel)
+		err := importConstituent(child, cardByTokenId, false, dictionary, memModel)
+		if err != nil {
+			return err
+		}
+	}
+
+	l1, err := constituent.Translate(dictionary)
+	if err != nil {
+		return err
 	}
 
 	memModel.InsertCardIfNotExists(mem_model.Card{
 		Type:       constituent.GetType(),
-		L1:         strings.Join(constituent.Translate(dictionary), " "),
+		L1:         strings.Join(l1, " "),
 		L2:         l2,
 		IsSentence: isSentence,
 		Morphemes:  cardMorphemes,
 	})
+	return nil
 }

@@ -39,58 +39,68 @@ func (np NP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func translatePronoun(form string) string {
-	return map[string]string{
-		"un":       "a",
-		"una":      "a",
-		"unos":     "some",
-		"unas":     "some",
-		"el":       "the",
-		"la":       "the",
-		"los":      "the",
-		"las":      "the",
-		"mi":       "my",
-		"mis":      "my",
-		"tu":       "your",
-		"tus":      "your",
-		"su":       "his/her/its",
-		"sus":      "his/her/its",
-		"nuestro":  "our",
-		"nuestros": "our",
-		"nuestra":  "our",
-		"nuestras": "our",
-		"este":     "this",
-		"esta":     "this",
-		"estos":    "these",
-		"estas":    "these",
-		"ese":      "that",
-		"esa":      "that",
-		"esos":     "those",
-		"esas":     "those",
-		"poco":     "little",
-		"poca":     "little",
-		"pocos":    "little",
-		"pocas":    "little",
-	}[strings.ToLower(form)]
+var L2_PRONOUN_TO_L1 = map[string]string{
+	"un":       "a",
+	"una":      "a",
+	"unos":     "some",
+	"unas":     "some",
+	"el":       "the",
+	"la":       "the",
+	"los":      "the",
+	"las":      "the",
+	"mi":       "my",
+	"mis":      "my",
+	"tu":       "your",
+	"tus":      "your",
+	"su":       "his/her/its",
+	"sus":      "his/her/its",
+	"nuestro":  "our",
+	"nuestros": "our",
+	"nuestra":  "our",
+	"nuestras": "our",
+	"este":     "this",
+	"esta":     "this",
+	"estos":    "these",
+	"estas":    "these",
+	"ese":      "that",
+	"esa":      "that",
+	"esos":     "those",
+	"esas":     "those",
+	"poco":     "little",
+	"poca":     "little",
+	"pocos":    "little",
+	"pocas":    "little",
 }
 
-func (np NP) Translate(dictionary english.Dictionary) []string {
+func translatePronoun(form string) (string, error) {
+	l1, ok := L2_PRONOUN_TO_L1[strings.ToLower(form)]
+	if !ok {
+		return "", fmt.Errorf("Can't find pronoun %s", strings.ToLower(form))
+	}
+	return l1, nil
+}
+
+func (np NP) Translate(dictionary english.Dictionary) ([]string, error) {
 	l1 := []string{}
 
 	for _, spec := range np.spec {
-		en := translatePronoun(spec.Form)
-		if en != "" {
-			l1 = append(l1, en)
+		en, err := translatePronoun(spec.Form)
+		if err != nil {
+			return nil, err
 		}
+		l1 = append(l1, en)
 	}
 
-	nounEn := translateNoun(np.noun, dictionary)
+	nounEn, err := translateNoun(np.noun, dictionary)
+	if err != nil {
+		return nil, err
+	}
 	if np.noun.Num == "plural" {
 		nounEn = english.PluralizeNoun(nounEn)
 	}
 	l1 = append(l1, nounEn)
 
-	return l1
+	return l1, nil
 }
 
 func depToNP(dep parsing.Dependency,
@@ -125,16 +135,14 @@ func depToNP(dep parsing.Dependency,
 	return NP{noun: tokenById[dep.Token], spec: spec, sa: sa}, nil
 }
 
-func translateNoun(noun parsing.Token, dictionary english.Dictionary) string {
+func translateNoun(noun parsing.Token,
+	dictionary english.Dictionary) (string, error) {
 	if noun.IsNoun() {
 		return dictionary.Lookup(noun.Lemma, "n")
 	} else if noun.IsPronoun() {
-		l1 := strings.ToLower(translatePronoun(noun.Form))
-		if l1 == "" {
-			l1 = dictionary.Lookup(noun.Lemma, "pron")
-		}
-		return l1
+		return translatePronoun(strings.ToLower(noun.Form))
 	} else {
-		return ""
+		return "",
+			fmt.Errorf("Don't know how to translateNoun with tag %s", noun.Tag)
 	}
 }

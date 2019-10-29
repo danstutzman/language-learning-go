@@ -71,9 +71,10 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func translateVerb(verb parsing.Token, dictionary english.Dictionary) string {
+func translateVerb(verb parsing.Token,
+	dictionary english.Dictionary) (string, error) {
 	if verb.Lemma == "estar" || verb.Lemma == "ser" {
-		return map[string]string{
+		l1, found := map[string]string{
 			"VMIP1S0": "am",
 			"VMIP1P0": "are",
 			"VMIP2S0": "are",
@@ -87,23 +88,36 @@ func translateVerb(verb parsing.Token, dictionary english.Dictionary) string {
 			"VSIP3S0": "is",
 			"VSIP3P0": "are",
 		}[verb.Tag]
+		if !found {
+			return "", fmt.Errorf("Can't find verb for tag %s", verb.Tag)
+		}
+		return l1, nil
 	} else {
-		en := dictionary.Lookup(strings.ToLower(verb.Lemma), "v")
+		en, err := dictionary.Lookup(strings.ToLower(verb.Lemma), "v")
+		if err != nil {
+			return "", err
+		}
+
 		if verb.Tense == "present" &&
 			verb.Num == "singular" &&
 			verb.Person == "3" {
 			en = english.ConjugateVerb(en, english.PRES_S)
 		}
-		return en
+		return en, nil
 	}
 }
 
-func (vp VP) Translate(dictionary english.Dictionary) []string {
+func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 	var l1 []string
 
 	for _, suj := range vp.suj {
-		l1 = append(l1, suj.Translate(dictionary)...)
+		sujL1, err := suj.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, sujL1...)
 	}
+
 	if len(vp.suj) == 0 {
 		pronoun := map[string]string{
 			"1singular": "I",
@@ -113,33 +127,62 @@ func (vp VP) Translate(dictionary english.Dictionary) []string {
 			"3singular": "he/she/it",
 			"3plural":   "they",
 		}[vp.verb.Person+vp.verb.Num]
+		if pronoun == "" {
+			return nil, fmt.Errorf("Can't find pronoun for %s,%s",
+				vp.verb.Person, vp.verb.Num)
+		}
 		l1 = append(l1, pronoun)
 	}
 
-	l1 = append(l1, translateVerb(vp.verb, dictionary))
+	verbL1, err := translateVerb(vp.verb, dictionary)
+	if err != nil {
+		return nil, err
+	}
+	l1 = append(l1, verbL1)
 
 	for _, cd := range vp.cd {
-		l1 = append(l1, cd.Translate(dictionary)...)
+		cdL1, err := cd.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, cdL1...)
 	}
 
 	for _, atrAdj := range vp.atrAdj {
 		if atrAdj.IsAdjective() {
-			l1 = append(l1, dictionary.Lookup(atrAdj.Lemma, "adj"))
+			adjL1, err := dictionary.Lookup(atrAdj.Lemma, "adj")
+			if err != nil {
+				return nil, err
+			}
+			l1 = append(l1, adjL1)
 		} else if atrAdj.IsVerb() {
-			verb := dictionary.Lookup(atrAdj.Lemma, "v")
-			l1 = append(l1, english.ConjugateVerb(verb, english.PAST_PART))
+			verbL1, err := dictionary.Lookup(atrAdj.Lemma, "v")
+			if err != nil {
+				return nil, err
+			}
+			l1 = append(l1, english.ConjugateVerb(verbL1, english.PAST_PART))
+		} else {
+			return nil, fmt.Errorf("Don't know how to translate atrAdj")
 		}
 	}
 
 	for _, atrPP := range vp.atrPP {
-		l1 = append(l1, atrPP.Translate(dictionary)...)
+		atrPPL1, err := atrPP.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, atrPPL1...)
 	}
 
 	for _, atrNP := range vp.atrNP {
-		l1 = append(l1, atrNP.Translate(dictionary)...)
+		atrNPL1, err := atrNP.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, atrNPL1...)
 	}
 
-	return l1
+	return l1, nil
 }
 
 func depToVP(dep parsing.Dependency,

@@ -40,5 +40,5 @@ type Constituent interface {
 	GetAllTokens() []parsing.Token
 	GetType() string
 	GetChildren() []Constituent
-	Translate(dictionary english.Dictionary) []string
+	Translate(dictionary english.Dictionary) ([]string, error)
 }
