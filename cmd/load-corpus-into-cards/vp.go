@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/freeling"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"fmt"
@@ -68,6 +69,40 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	tokens = append(tokens, vp.adverbs...)
 	tokens = append(tokens, vp.auxVs...)
 	return tokens
+}
+
+func (vp VP) Translate(dictionary english.Dictionary) []string {
+	var l1 []string
+
+	for _, suj := range vp.suj {
+		l1 = append(l1, suj.Translate(dictionary)...)
+	}
+
+	var en string
+	if vp.verb.Lemma == "estar" || vp.verb.Lemma == "ser" {
+		en = map[string]string{
+			"VMIP1S0": "am",
+			"VMIP1P0": "are",
+			"VMIP2S0": "are",
+			"VMIP2P0": "are",
+			"VMIP3S0": "is",
+			"VMIP3P0": "are",
+		}[vp.verb.Tag]
+	} else {
+		en = dictionary.Lookup(vp.verb.Lemma, "v")
+		if vp.verb.Tense == "present" &&
+			vp.verb.Num == "singular" &&
+			vp.verb.Person == "3" {
+			en = english.ConjugateVerb(en, english.PRES_S)
+		}
+	}
+	l1 = append(l1, en)
+
+	for _, cd := range vp.cd {
+		l1 = append(l1, cd.Translate(dictionary)...)
+	}
+
+	return l1
 }
 
 func depToVP(dep parsing.Dependency,

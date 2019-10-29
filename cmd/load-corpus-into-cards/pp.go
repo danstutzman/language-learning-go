@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"fmt"
 )
@@ -21,6 +22,13 @@ func (pp PP) GetAllTokens() []parsing.Token {
 	tokens = append(tokens, pp.prep)
 	tokens = append(tokens, pp.np.GetAllTokens()...)
 	return tokens
+}
+
+func (pp PP) Translate(dictionary english.Dictionary) []string {
+	l1 := []string{}
+	l1 = append(l1, dictionary.Lookup(pp.prep.Form, "prep"))
+	l1 = append(l1, pp.np.Translate(dictionary)...)
+	return l1
 }
 
 func depToPP(dep parsing.Dependency,

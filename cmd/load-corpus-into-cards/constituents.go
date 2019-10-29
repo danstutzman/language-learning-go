@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"fmt"
 	"os"
@@ -39,4 +40,5 @@ type Constituent interface {
 	GetAllTokens() []parsing.Token
 	GetType() string
 	GetChildren() []Constituent
+	Translate(dictionary english.Dictionary) []string
 }

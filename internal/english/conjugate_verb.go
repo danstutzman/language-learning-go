@@ -715,7 +715,7 @@ func ConjugateVerb(vb, to string) string {
 	return vb
 }
 
-func main() {
+func demoConjugateVerb() {
 	vb := "see"
 	fmt.Println(ConjugateVerb(vb, PRES_S))
 	fmt.Println(ConjugateVerb(vb, GERUND))

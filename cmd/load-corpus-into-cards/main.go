@@ -169,14 +169,9 @@ func importConstituent(constituent Constituent,
 		importConstituent(child, cardByTokenId, false, dictionary, memModel)
 	}
 
-	if constituent.GetType() == "VP" {
-		l2Infinitive := constituent.(VP).verb.Lemma
-		fmt.Printf("%s -> %s\n",
-			l2Infinitive, dictionary.Lookup(l2Infinitive, "v"))
-	}
-
 	memModel.InsertCardIfNotExists(mem_model.Card{
 		Type:       constituent.GetType(),
+		L1:         strings.Join(constituent.Translate(dictionary), " "),
 		L2:         l2,
 		IsSentence: isSentence,
 		Morphemes:  cardMorphemes,

@@ -13,6 +13,7 @@ type Card struct {
 	Id         int
 	Type       string
 	IsSentence bool
+	L1         string
 	L2         string
 	Morphemes  []CardMorpheme
 }
@@ -66,9 +67,10 @@ func (memModel *MemModel) SaveCardsToDb(db *sql.DB) {
 
 		query := fmt.Sprintf(`INSERT INTO cards
       (id, type, l1, l2, is_sentence, morpheme_ids_csv)
-      VALUES (%d, %s, '', %s, %s, '%s')`,
+      VALUES (%d, %s, %s, %s, %s, '%s')`,
 			card.Id,
 			dbPkg.Escape(card.Type),
+			dbPkg.Escape(card.L1),
 			dbPkg.Escape(card.L2),
 			dbPkg.EscapeBool(card.IsSentence),
 			strings.Join(morphemeIds, ","))

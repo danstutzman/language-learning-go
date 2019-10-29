@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
 	"fmt"
+	"strings"
 )
 
 type NP struct {
@@ -37,6 +39,48 @@ func (np NP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
+func (np NP) Translate(dictionary english.Dictionary) []string {
+	l1 := []string{}
+
+	for _, spec := range np.spec {
+		en := map[string]string{
+			"un":       "a",
+			"una":      "a",
+			"unos":     "some",
+			"unas":     "some",
+			"el":       "the",
+			"la":       "the",
+			"los":      "the",
+			"las":      "the",
+			"mi":       "my",
+			"mis":      "my",
+			"tu":       "your",
+			"tus":      "your",
+			"su":       "his/her/its",
+			"sus":      "his/her/its",
+			"nuestro":  "our",
+			"nuestros": "our",
+			"nuestra":  "our",
+			"nuestras": "our",
+			"este":     "this",
+			"esta":     "this",
+			"estos":    "these",
+			"estas":    "these",
+		}[strings.ToLower(spec.Form)]
+		if en != "" {
+			l1 = append(l1, en)
+		}
+	}
+
+	nounEn := translateNoun(np.noun.Lemma, dictionary)
+	if np.noun.Num == "plural" {
+		nounEn = english.PluralizeNoun(nounEn)
+	}
+	l1 = append(l1, nounEn)
+
+	return l1
+}
+
 func depToNP(dep parsing.Dependency,
 	tokenById map[string]parsing.Token) (NP, error) {
 	var spec []parsing.Token
@@ -67,4 +111,28 @@ func depToNP(dep parsing.Dependency,
 		}
 	}
 	return NP{noun: tokenById[dep.Token], spec: spec, sa: sa}, nil
+}
+
+func translateNoun(l2 string, dictionary english.Dictionary) string {
+	l1 := dictionary.Lookup(l2, "nm")
+	if l1 != "" {
+		return l1
+	}
+
+	l1 = dictionary.Lookup(l2, "nf")
+	if l1 != "" {
+		return l1
+	}
+
+	l1 = dictionary.Lookup(l2, "nc")
+	if l1 != "" {
+		return l1
+	}
+
+	l1 = dictionary.Lookup(l2, "pron")
+	if l1 != "" {
+		return l1
+	}
+
+	return ""
 }
