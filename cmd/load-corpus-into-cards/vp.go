@@ -136,6 +136,8 @@ func translateVerb(verb parsing.Token,
 			en = english.ConjugateVerb(en, english.PAST_PART)
 		} else if verb.Tense == "conditional" {
 			en = "would " + en
+		} else if verb.Mood == "gerund" {
+			en = english.ConjugateVerb(en, english.GERUND)
 		}
 		return en, nil
 	}
