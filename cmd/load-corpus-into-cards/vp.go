@@ -12,7 +12,8 @@ type VP struct {
 	verb            parsing.Token
 	verbConjugation freeling.Conjugation
 	suj             []NP
-	cd              []NP // direct object
+	cdNP            []NP // direct object
+	cdVP            []VP // direct object
 	ci              []NP // indirect objec
 	atrAdj          []parsing.Token
 	atrAdv          []parsing.Token
@@ -30,8 +31,11 @@ func (vp VP) GetChildren() []Constituent {
 	for _, suj := range vp.suj {
 		children = append(children, suj)
 	}
-	for _, cd := range vp.cd {
-		children = append(children, cd)
+	for _, cdNP := range vp.cdNP {
+		children = append(children, cdNP)
+	}
+	for _, cdVP := range vp.cdVP {
+		children = append(children, cdVP)
 	}
 	for _, ci := range vp.ci {
 		children = append(children, ci)
@@ -51,8 +55,11 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	for _, suj := range vp.suj {
 		tokens = append(tokens, suj.GetAllTokens()...)
 	}
-	for _, cd := range vp.cd {
-		tokens = append(tokens, cd.GetAllTokens()...)
+	for _, cdNP := range vp.cdNP {
+		tokens = append(tokens, cdNP.GetAllTokens()...)
+	}
+	for _, cdVP := range vp.cdVP {
+		tokens = append(tokens, cdVP.GetAllTokens()...)
 	}
 	for _, ci := range vp.ci {
 		tokens = append(tokens, ci.GetAllTokens()...)
@@ -140,8 +147,16 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 	}
 	l1 = append(l1, verbL1)
 
-	for _, cd := range vp.cd {
-		cdL1, err := cd.Translate(dictionary)
+	for _, cdNP := range vp.cdNP {
+		cdL1, err := cdNP.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, cdL1...)
+	}
+
+	for _, cdVP := range vp.cdVP {
+		cdL1, err := cdVP.Translate(dictionary)
 		if err != nil {
 			return nil, err
 		}
@@ -188,7 +203,8 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 func depToVP(dep parsing.Dependency,
 	tokenById map[string]parsing.Token) (VP, error) {
 	var suj []NP
-	var cd []NP
+	var cdNP []NP
+	var cdVP []VP
 	var ci []NP
 	var atrAdj []parsing.Token
 	var atrAdv []parsing.Token
@@ -205,12 +221,18 @@ func depToVP(dep parsing.Dependency,
 				return VP{}, err
 			}
 			suj = append(suj, np)
-		} else if child.Function == "cd" {
+		} else if child.Function == "cd" && childToken.IsNoun() {
 			np, err := depToNP(child, tokenById)
 			if err != nil {
 				return VP{}, err
 			}
-			cd = append(cd, np)
+			cdNP = append(cdNP, np)
+		} else if child.Function == "cd" && childToken.IsVerb() {
+			vp, err := depToVP(child, tokenById)
+			if err != nil {
+				return VP{}, err
+			}
+			cdVP = append(cdVP, vp)
 		} else if child.Function == "ci" {
 			np, err := depToNP(child, tokenById)
 			if err != nil {
@@ -249,7 +271,7 @@ func depToVP(dep parsing.Dependency,
 			if err != nil {
 				return VP{}, err
 			}
-			cd = append(cd, np)
+			cdNP = append(cdNP, np)
 		} else if child.Function == "pass" && strings.ToLower(child.Word) == "se" {
 			se = append(se, childToken)
 		} else if child.Function == "cc" && childToken.IsAdverb() {
@@ -270,7 +292,7 @@ func depToVP(dep parsing.Dependency,
 	conjugation := conjugations[0]
 
 	return VP{verb: tokenById[dep.Token], verbConjugation: conjugation,
-		suj: suj, cd: cd, ci: ci, se: se,
+		suj: suj, cdNP: cdNP, cdVP: cdVP, ci: ci, se: se,
 		atrAdj: atrAdj, atrNP: atrNP, atrPP: atrPP, adverbs: adverbs,
 		auxVs: auxVs}, nil
 }
