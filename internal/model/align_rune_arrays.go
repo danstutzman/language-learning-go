@@ -40,15 +40,16 @@ func AlignRuneArrays(xRunes, yRunes []rune) []Alignment {
 				up := maxScoreRows[y-1][x] - 1
 				left := maxScoreRow[x-1] - 1
 
-				if up >= upLeft && up >= left {
+				// Test upLeft first so we prioritize it
+				if upLeft >= up && upLeft >= left {
+					maxScore = upLeft
+					arrowDirection = UP_LEFT
+				} else if up >= upLeft && up >= left {
 					maxScore = up
 					arrowDirection = UP
 				} else if left >= upLeft && left >= up {
 					maxScore = left
 					arrowDirection = LEFT
-				} else if upLeft >= up && upLeft >= left {
-					maxScore = upLeft
-					arrowDirection = UP_LEFT
 				} else {
 					panic("Impossible to reach this line")
 				}
