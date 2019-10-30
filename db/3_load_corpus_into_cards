@@ -4,8 +4,8 @@ cd $(dirname $0)/..
 
 pushd $GOPATH/src/bitbucket.org/danstutzman/language-learning-go
 go vet bitbucket.org/danstutzman/language-learning-go/...
-popd
 go install -v bitbucket.org/danstutzman/language-learning-go/...
+popd
 
 sqlite3 db/db.sqlite3 <<EOF
 DROP TABLE IF EXISTS cards;
