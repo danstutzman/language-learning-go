@@ -14,6 +14,7 @@ type VP struct {
 	suj             []NP
 	cdNP            []NP // direct object
 	cdVP            []VP // direct object
+	cdPP            []PP // direct object, probably starting with "a"
 	ci              []NP // indirect objec
 	atrAdj          []parsing.Token
 	atrAdv          []parsing.Token
@@ -36,6 +37,9 @@ func (vp VP) GetChildren() []Constituent {
 	}
 	for _, cdVP := range vp.cdVP {
 		children = append(children, cdVP)
+	}
+	for _, cdPP := range vp.cdPP {
+		children = append(children, cdPP)
 	}
 	for _, ci := range vp.ci {
 		children = append(children, ci)
@@ -60,6 +64,9 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	}
 	for _, cdVP := range vp.cdVP {
 		tokens = append(tokens, cdVP.GetAllTokens()...)
+	}
+	for _, cdPP := range vp.cdPP {
+		tokens = append(tokens, cdPP.GetAllTokens()...)
 	}
 	for _, ci := range vp.ci {
 		tokens = append(tokens, ci.GetAllTokens()...)
@@ -177,6 +184,15 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 		l1 = append(l1, cdL1...)
 	}
 
+	for _, cdPP := range vp.cdPP {
+		cdL1, err := cdPP.Translate(dictionary)
+		log.Printf("TRANSLATION OF PP %+v", cdL1)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, cdL1...)
+	}
+
 	for _, atrAdj := range vp.atrAdj {
 		if atrAdj.IsAdjective() {
 			adjL1, err := dictionary.Lookup(atrAdj.Lemma, "adj")
@@ -219,6 +235,7 @@ func depToVP(dep parsing.Dependency,
 	var suj []NP
 	var cdNP []NP
 	var cdVP []VP
+	var cdPP []PP
 	var ci []NP
 	var atrAdj []parsing.Token
 	var atrAdv []parsing.Token
@@ -235,18 +252,30 @@ func depToVP(dep parsing.Dependency,
 				return VP{}, err
 			}
 			suj = append(suj, np)
-		} else if child.Function == "cd" && childToken.IsNoun() {
-			np, err := depToNP(child, tokenById)
-			if err != nil {
-				return VP{}, err
+		} else if child.Function == "cd" {
+
+			if childToken.IsNoun() {
+				np, err := depToNP(child, tokenById)
+				if err != nil {
+					return VP{}, err
+				}
+				cdNP = append(cdNP, np)
+			} else if childToken.IsVerb() {
+				vp, err := depToVP(child, tokenById)
+				if err != nil {
+					return VP{}, err
+				}
+				cdVP = append(cdVP, vp)
+			} else if childToken.IsPreposition() {
+				pp, err := depToPP(child, tokenById)
+				if err != nil {
+					return VP{}, err
+				}
+				cdPP = append(cdPP, pp)
+			} else {
+				return VP{}, fmt.Errorf(
+					"VP's child of cd has unexpected tag : %v/%s", dep, childToken.Tag)
 			}
-			cdNP = append(cdNP, np)
-		} else if child.Function == "cd" && childToken.IsVerb() {
-			vp, err := depToVP(child, tokenById)
-			if err != nil {
-				return VP{}, err
-			}
-			cdVP = append(cdVP, vp)
 		} else if child.Function == "ci" {
 			np, err := depToNP(child, tokenById)
 			if err != nil {
@@ -306,7 +335,7 @@ func depToVP(dep parsing.Dependency,
 	conjugation := conjugations[0]
 
 	return VP{verb: tokenById[dep.Token], verbConjugation: conjugation,
-		suj: suj, cdNP: cdNP, cdVP: cdVP, ci: ci, se: se,
+		suj: suj, cdNP: cdNP, cdVP: cdVP, cdPP: cdPP, ci: ci, se: se,
 		atrAdj: atrAdj, atrNP: atrNP, atrPP: atrPP, adverbs: adverbs,
 		auxVs: auxVs}, nil
 }
