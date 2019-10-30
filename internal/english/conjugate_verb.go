@@ -600,9 +600,9 @@ func ConjugateVerb(vb, to string) string {
 			return conjugations[2]
 		} else if to == GERUND {
 			return conjugations[3]
-		} else if to == PAST_PART {
-			return conjugations[0]
 		} else if to == PAST {
+			return conjugations[0]
+		} else if to == PAST_PART {
 			return conjugations[1]
 		} else {
 			return vb
