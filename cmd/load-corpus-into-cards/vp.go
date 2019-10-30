@@ -109,6 +109,10 @@ func translateVerb(verb parsing.Token,
 			verb.Num == "singular" &&
 			verb.Person == "3" {
 			en = english.ConjugateVerb(en, english.PRES_S)
+		} else if verb.Mood == "infinitive" {
+			en = "to " + en
+		} else if verb.Tense == "conditional" {
+			en = "would " + en
 		}
 		return en, nil
 	}
@@ -134,11 +138,9 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 			"3singular": "he/she/it",
 			"3plural":   "they",
 		}[vp.verb.Person+vp.verb.Num]
-		if pronoun == "" {
-			return nil, fmt.Errorf("Can't find pronoun for %s,%s",
-				vp.verb.Person, vp.verb.Num)
+		if pronoun != "" {
+			l1 = append(l1, pronoun)
 		}
-		l1 = append(l1, pronoun)
 	}
 
 	verbL1, err := translateVerb(vp.verb, dictionary)
