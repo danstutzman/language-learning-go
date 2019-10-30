@@ -155,17 +155,17 @@ func translateVerb(verb parsing.Token,
 		if verb.Tense == "present" &&
 			verb.Num == "singular" &&
 			verb.Person == "3" {
-			en = english.ConjugateVerb(en, english.PRES_S)
+			en = english.ConjugateVerbPhrase(en, english.PRES_S)
 		} else if verb.Tense == "past" {
-			en = english.ConjugateVerb(en, english.PAST)
+			en = english.ConjugateVerbPhrase(en, english.PAST)
 		} else if verb.Mood == "infinitive" {
 			en = "to " + en
 		} else if verb.Mood == "participle" {
-			en = english.ConjugateVerb(en, english.PAST_PART)
+			en = english.ConjugateVerbPhrase(en, english.PAST_PART)
 		} else if verb.Tense == "conditional" {
 			en = "would " + en
 		} else if verb.Mood == "gerund" {
-			en = english.ConjugateVerb(en, english.GERUND)
+			en = english.ConjugateVerbPhrase(en, english.GERUND)
 		} else if verb.Tense == "imperfect" {
 			en = "used to " + en
 		}

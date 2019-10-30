@@ -15,6 +15,7 @@ package english
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 const (
@@ -591,6 +592,12 @@ var irregulars = map[string][4]string{
 	"yak":           [4]string{"yakked", "yakked", "yaks", "yakking"},
 	"yen":           [4]string{"yenned", "yenned", "yens", "yenning"},
 	"zinc":          [4]string{"zincked", "zincked", "zincs", "zincking"},
+}
+
+func ConjugateVerbPhrase(phrase, to string) string {
+	words := strings.Split(phrase, " ")
+	words[0] = ConjugateVerb(words[0], to)
+	return strings.Join(words, " ")
 }
 
 func ConjugateVerb(vb, to string) string {
