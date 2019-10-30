@@ -40,7 +40,7 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 
 	var cardMorphemes []CardMorpheme
 	if conjugation.Suffix == "" {
-		morpheme, exists := memModel.morphemeByL2Tag[token.Form+token.Tag]
+		morpheme, exists := memModel.morphemeByL2Tag[conjugation.Stem+token.Tag]
 		if !exists {
 			morpheme = Morpheme{
 				Id:    memModel.getNextMorphemeId(),
@@ -50,7 +50,7 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 				Tag:   null.StringFrom(token.Tag),
 			}
 			memModel.morphemes = append(memModel.morphemes, morpheme)
-			memModel.morphemeByL2Tag[token.Form+token.Tag] = morpheme
+			memModel.morphemeByL2Tag[conjugation.Stem+token.Tag] = morpheme
 		}
 		cardMorphemes = []CardMorpheme{{
 			Morpheme: morpheme,
