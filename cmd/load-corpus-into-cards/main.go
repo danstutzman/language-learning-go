@@ -112,6 +112,7 @@ func importPhrase(parse parsing.Parse, dictionary english.Dictionary,
 			for _, dep := range sentence.Dependencies {
 				s, err := depToS(dep, tokenById)
 				if err != nil {
+					errors[sentenceNum] = append(errors[sentenceNum], err)
 					if false {
 						printTokensInOrder(os.Stderr, allTokens)
 						fmt.Fprintf(os.Stderr, "\\ %s\n", err)
