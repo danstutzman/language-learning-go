@@ -109,8 +109,12 @@ func translateVerb(verb parsing.Token,
 			verb.Num == "singular" &&
 			verb.Person == "3" {
 			en = english.ConjugateVerb(en, english.PRES_S)
+		} else if verb.Tense == "past" {
+			en = english.ConjugateVerb(en, english.PAST)
 		} else if verb.Mood == "infinitive" {
 			en = "to " + en
+		} else if verb.Mood == "participle" {
+			en = english.ConjugateVerb(en, english.PAST_PART)
 		} else if verb.Tense == "conditional" {
 			en = "would " + en
 		}
@@ -141,6 +145,14 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 		if pronoun != "" {
 			l1 = append(l1, pronoun)
 		}
+	}
+
+	for _, auxV := range vp.auxVs {
+		verbL1, err := translateVerb(auxV, dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, verbL1)
 	}
 
 	verbL1, err := translateVerb(vp.verb, dictionary)
