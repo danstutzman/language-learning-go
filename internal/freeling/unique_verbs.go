@@ -43,6 +43,7 @@ var uniqueVerbs = []UniqueVerb{
 	{"ir", "G0000", "yendo"},
 	{"ir", "II1P0", "íbamos"},
 	{"ir", "M01P0", "vayamos"},
+	{"ir", "N0000", "ir"},
 	{"ser", "II1S0", "era"},
 	{"ser", "II3S0", "era"},
 	{"ser", "II2P0", "erais"},

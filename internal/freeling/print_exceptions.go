@@ -104,7 +104,8 @@ func AnalyzeVerb(lemma, tag string) []Conjugation {
 			groups["ER_ENDS_WITH_N"] = true
 		}
 		groups["ER"] = true
-	} else if strings.HasSuffix(lemma, "ir") || strings.HasSuffix(lemma, "ír") {
+	} else if (strings.HasSuffix(lemma, "ir") ||
+		strings.HasSuffix(lemma, "ír")) && lemma != "ir" {
 		if ENDS_WITH_A_E_O_OR_U.MatchString(defaultStem) {
 			groups["IR_ENDS_WITH_A_E_O_OR_U"] = true
 		}
