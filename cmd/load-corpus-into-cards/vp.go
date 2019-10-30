@@ -166,6 +166,8 @@ func translateVerb(verb parsing.Token,
 			en = "would " + en
 		} else if verb.Mood == "gerund" {
 			en = english.ConjugateVerb(en, english.GERUND)
+		} else if verb.Tense == "imperfect" {
+			en = "used to " + en
 		}
 		return en, nil
 	}
