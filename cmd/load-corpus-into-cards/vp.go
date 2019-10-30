@@ -101,6 +101,18 @@ func translateVerb(verb parsing.Token,
 			"VSIP2P0": "are",
 			"VSIP3S0": "is",
 			"VSIP3P0": "are",
+			"VAII1S0": "used to be",
+			"VAII1P0": "used to be",
+			"VAII2S0": "used to be",
+			"VAII2P0": "used to be",
+			"VAII3S0": "used to be",
+			"VAII3P0": "used to be",
+			"VMII1S0": "used to be",
+			"VMII1P0": "used to be",
+			"VMII2S0": "used to be",
+			"VMII2P0": "used to be",
+			"VMII3S0": "used to be",
+			"VMII3P0": "used to be",
 		}[verb.Tag]
 		if !found {
 			return "", fmt.Errorf("Can't find verb for tag %s", verb.Tag)
