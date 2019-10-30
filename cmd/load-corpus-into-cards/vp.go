@@ -20,6 +20,8 @@ type VP struct {
 	atrAdv          []parsing.Token
 	atrPP           []PP
 	atrNP           []NP
+	atrVP           []VP // usually a participle?
+	creg            []PP // "prepositional complement"
 	se              []parsing.Token
 	adverbs         []parsing.Token
 	auxVs           []parsing.Token
@@ -50,6 +52,12 @@ func (vp VP) GetChildren() []Constituent {
 	for _, atrNP := range vp.atrNP {
 		children = append(children, atrNP)
 	}
+	for _, atrVP := range vp.atrVP {
+		children = append(children, atrVP)
+	}
+	for _, creg := range vp.creg {
+		children = append(children, creg)
+	}
 	return children
 }
 
@@ -78,6 +86,12 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	}
 	for _, atrNP := range vp.atrNP {
 		tokens = append(tokens, atrNP.GetAllTokens()...)
+	}
+	for _, atrVP := range vp.atrVP {
+		tokens = append(tokens, atrVP.GetAllTokens()...)
+	}
+	for _, creg := range vp.creg {
+		tokens = append(tokens, creg.GetAllTokens()...)
 	}
 	tokens = append(tokens, vp.se...)
 	tokens = append(tokens, vp.adverbs...)
@@ -200,7 +214,6 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 
 	for _, cdPP := range vp.cdPP {
 		cdL1, err := cdPP.Translate(dictionary)
-		log.Printf("TRANSLATION OF PP %+v", cdL1)
 		if err != nil {
 			return nil, err
 		}
@@ -214,12 +227,6 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 				return nil, err
 			}
 			l1 = append(l1, adjL1)
-		} else if atrAdj.IsVerb() {
-			verbL1, err := dictionary.Lookup(atrAdj.Lemma, "v")
-			if err != nil {
-				return nil, err
-			}
-			l1 = append(l1, english.ConjugateVerb(verbL1, english.PAST_PART))
 		} else {
 			return nil, fmt.Errorf("Don't know how to translate atrAdj")
 		}
@@ -241,6 +248,22 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 		l1 = append(l1, atrNPL1...)
 	}
 
+	for _, atrVP := range vp.atrVP {
+		atrVPL1, err := atrVP.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, atrVPL1...)
+	}
+
+	for _, creg := range vp.creg {
+		cregL1, err := creg.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, cregL1...)
+	}
+
 	return l1, nil
 }
 
@@ -255,6 +278,8 @@ func depToVP(dep parsing.Dependency,
 	var atrAdv []parsing.Token
 	var atrPP []PP
 	var atrNP []NP
+	var atrVP []VP
+	var creg []PP
 	var se []parsing.Token
 	var adverbs []parsing.Token
 	var auxVs []parsing.Token
@@ -315,9 +340,12 @@ func depToVP(dep parsing.Dependency,
 		} else if child.Function == "atr" && len(child.Children) == 0 &&
 			childToken.IsAdjective() {
 			atrAdj = append(atrAdj, childToken)
-		} else if child.Function == "atr" && len(child.Children) == 0 &&
-			strings.HasPrefix(childToken.Tag, "VMP") {
-			atrAdj = append(atrAdj, childToken)
+		} else if child.Function == "atr" && childToken.IsVerb() {
+			vp, err := depToVP(child, tokenById)
+			if err != nil {
+				return VP{}, err
+			}
+			atrVP = append(atrVP, vp)
 		} else if child.Function == "atr" && len(child.Children) == 0 &&
 			childToken.IsAdverb() {
 			atrAdj = append(atrAdv, childToken)
@@ -335,6 +363,12 @@ func depToVP(dep parsing.Dependency,
 			adverbs = append(adverbs, childToken)
 		} else if child.Function == "v" && len(child.Children) == 0 {
 			auxVs = append(auxVs, childToken)
+		} else if child.Function == "creg" && childToken.IsPreposition() {
+			pp, err := depToPP(child, tokenById)
+			if err != nil {
+				return VP{}, err
+			}
+			creg = append(creg, pp)
 		} else {
 			return VP{}, fmt.Errorf(
 				"VP child of %s: %v/%s", child.Function, dep, childToken.Tag)
@@ -350,6 +384,6 @@ func depToVP(dep parsing.Dependency,
 
 	return VP{verb: tokenById[dep.Token], verbConjugation: conjugation,
 		suj: suj, cdNP: cdNP, cdVP: cdVP, cdPP: cdPP, ci: ci, se: se,
-		atrAdj: atrAdj, atrNP: atrNP, atrPP: atrPP, adverbs: adverbs,
-		auxVs: auxVs}, nil
+		atrAdj: atrAdj, atrNP: atrNP, atrPP: atrPP, atrVP: atrVP, adverbs: adverbs,
+		creg: creg, auxVs: auxVs}, nil
 }
