@@ -10,6 +10,12 @@ import (
 	"strings"
 )
 
+type Phrase struct {
+	L2      string
+	LineNum int
+	CharNum int
+}
+
 func clean(s string) string {
 	s = strings.ReplaceAll(s, "/", "")
 	s = strings.ReplaceAll(s, ">>i: ", "")
@@ -88,7 +94,7 @@ func indexOf(needle string, haystack []string) int {
 	panic(fmt.Sprintf("Needle '%s' not found in %v", needle, haystack))
 }
 
-func ListPhrasesInCorpusTxt(path string) []string {
+func ListPhrasesInCorpusTxt(path string) []Phrase {
 	file, err := os.Open(path)
 	defer file.Close()
 	if err != nil {
@@ -97,8 +103,11 @@ func ListPhrasesInCorpusTxt(path string) []string {
 
 	reader := bufio.NewReader(file)
 
-	phrases := []string{}
+	phrases := []Phrase{}
+	lineNum := 0
 	for {
+		lineNum += 1
+
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
 			break
@@ -106,9 +115,14 @@ func ListPhrasesInCorpusTxt(path string) []string {
 			panic(err)
 		}
 
-		phrase := strings.TrimSpace(line)
-		phrase = clean(phrase)
-		if phrase != "" {
+		line = strings.TrimSpace(line)
+		line = clean(line)
+		if line != "" {
+			phrase := Phrase{
+				L2:      line,
+				LineNum: lineNum,
+				CharNum: 1,
+			}
 			phrases = append(phrases, phrase)
 		}
 	}

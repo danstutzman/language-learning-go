@@ -17,6 +17,6 @@ func main() {
 	phrase := os.Args[2]
 
 	outputs := parsing.ParsePhrasesWithFreeling(
-		[]string{phrase}, freelingHostAndPort)
+		[]parsing.Phrase{{L2: phrase}}, freelingHostAndPort)
 	fmt.Println(outputs[0].ParseJson)
 }

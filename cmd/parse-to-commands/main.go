@@ -37,8 +37,6 @@ func main() {
 	numSentences := 0
 	numErroredSentences := 0
 	for _, phrase := range phrases {
-		fmt.Fprintf(os.Stderr, "Phrase: %s\n", phrase)
-
 		parse := parsing.LoadSavedParse(phrase, PARSE_DIR).Parse
 		for _, sentence := range parse.Sentences {
 			numSentences += 1

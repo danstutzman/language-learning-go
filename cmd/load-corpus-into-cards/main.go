@@ -19,7 +19,7 @@ const PARSE_DIR = "db/1_parses"
 func main() {
 	if len(os.Args) != 3+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to corpus (.yaml or .csv or .txt file)
+		Argument 1: path to corpus (.txt file)
 		Argument 2: path to sqlite3 database file
 		Argument 3: path to dictionary sqlite3 database file`)
 	}
@@ -40,12 +40,8 @@ func main() {
 	db.AssertMorphemesHasCorrectSchema(dbConn)
 	memModel := mem_model.NewMemModel()
 
-	var phrases []string
-	if strings.HasSuffix(corpusPath, ".yaml") {
-		phrases = parsing.ListPhrasesInCorpusYaml(corpusPath)
-	} else if strings.HasSuffix(corpusPath, ".csv") {
-		phrases = parsing.ListPhrasesInCorpusCsv(corpusPath)
-	} else if strings.HasSuffix(corpusPath, ".txt") {
+	var phrases []parsing.Phrase
+	if strings.HasSuffix(corpusPath, ".txt") {
 		phrases = parsing.ListPhrasesInCorpusTxt(corpusPath)
 	} else {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
@@ -54,14 +50,17 @@ func main() {
 	dictionary := english.LoadDictionary(dictionaryDbPath)
 
 	for _, phrase := range phrases {
+		if phrase.L2 != "Ella manejaba un auto verde cuando la vi." {
+			//continue
+		}
+
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
-		errorLists := importPhrase(output.Parse, dictionary, memModel)
-		for _, errorList := range errorLists {
-			for _, err := range errorList {
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s\n", err)
-				}
+		output2s := importPhrase(output, dictionary, memModel)
+		for _, output2 := range output2s {
+			if output2.Error != nil {
+				fmt.Fprintf(os.Stderr, "%d:%d %s\n",
+					output2.Phrase.LineNum, output2.Phrase.CharNum, output2.Error)
 			}
 		}
 	}
@@ -75,11 +74,16 @@ func lowercaseToken(token parsing.Token) parsing.Token {
 	return token
 }
 
-func importPhrase(parse parsing.Parse, dictionary english.Dictionary,
-	memModel *mem_model.MemModel) [][]error {
+type Output2 struct {
+	Phrase parsing.Phrase
+	Error  error
+}
 
-	errors := make([][]error, len(parse.Sentences))
-	for sentenceNum, sentence := range parse.Sentences {
+func importPhrase(output parsing.Output, dictionary english.Dictionary,
+	memModel *mem_model.MemModel) []Output2 {
+
+	output2s := []Output2{}
+	for _, sentence := range output.Parse.Sentences {
 		tokenById := map[string]parsing.Token{}
 		allTokens := []parsing.Token{}
 		for _, token := range sentence.Tokens {
@@ -98,42 +102,53 @@ func importPhrase(parse parsing.Parse, dictionary english.Dictionary,
 		}
 
 		cardByTokenId := map[string]mem_model.Card{}
-		errors[sentenceNum] = []error{}
 		for _, token := range sentence.Tokens {
 			card, err := memModel.TokenToCard(token)
-			if err == nil {
-				cardByTokenId[token.Id] = card
-			} else {
-				errors[sentenceNum] = append(errors[sentenceNum], err)
+			if err != nil {
+				output2s = append(output2s, Output2{
+					Phrase: parsing.Phrase{
+						L2:      token.Form,
+						LineNum: output.Phrase.LineNum,
+						CharNum: output.Phrase.CharNum + mustAtoi(token.Begin),
+					},
+					Error: err,
+				})
+				continue
 			}
+			cardByTokenId[token.Id] = card
 		}
 
-		if len(errors[sentenceNum]) == 0 {
-			for _, dep := range sentence.Dependencies {
-				s, err := depToS(dep, tokenById)
-				if err != nil {
-					errors[sentenceNum] = append(errors[sentenceNum], err)
-					if false {
-						printTokensInOrder(os.Stderr, allTokens)
-						fmt.Fprintf(os.Stderr, "\\ %s\n", err)
-					}
-				} else {
-					if false {
-						printTokensInOrder(os.Stdout, s.GetAllTokens())
-						if len(s.vp) == 1 {
-							fmt.Printf("Conjugations: %v\n", s.vp[0].verbConjugation)
-						}
-					}
-
-					err = importConstituent(s, cardByTokenId, true, dictionary, memModel)
-					if err != nil {
-						errors[sentenceNum] = append(errors[sentenceNum], err)
-					}
+		for _, dep := range sentence.Dependencies {
+			s, err := depToS(dep, tokenById)
+			if err != nil {
+				if false {
+					printTokensInOrder(os.Stderr, allTokens)
+					fmt.Fprintf(os.Stderr, "\\ %s\n", err)
 				}
+
+				output2s = append(output2s, Output2{
+					Phrase: parsing.Phrase{
+						L2:      "TODO",
+						LineNum: output.Phrase.LineNum,
+						CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
+					},
+					Error: err,
+				})
+				continue
 			}
+
+			err = importConstituent(s, cardByTokenId, true, dictionary, memModel)
+			output2s = append(output2s, Output2{
+				Phrase: parsing.Phrase{
+					L2:      "TODO",
+					LineNum: output.Phrase.LineNum,
+					CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
+				},
+				Error: err,
+			})
 		}
 	}
-	return errors
+	return output2s
 }
 
 func importConstituent(constituent Constituent,
@@ -189,4 +204,19 @@ func importConstituent(constituent Constituent,
 		Morphemes:  cardMorphemes,
 	})
 	return nil
+}
+
+func minBeginForDep(dep parsing.Dependency,
+	tokenById map[string]parsing.Token) int {
+
+	minBegin := mustAtoi(tokenById[dep.Token].Begin)
+
+	for _, child := range dep.Children {
+		childMinBegin := minBeginForDep(child, tokenById)
+		if childMinBegin < minBegin {
+			minBegin = childMinBegin
+		}
+	}
+
+	return minBegin
 }

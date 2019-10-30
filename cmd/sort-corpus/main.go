@@ -23,34 +23,30 @@ type Summary struct {
 func main() {
 	if len(os.Args) != 1+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to corpus (.yaml or .csv or .txt file)`)
+		Argument 1: path to corpus (.txt file)`)
 	}
 	corpusPath := os.Args[1]
 
-	var phrases []string
-	if strings.HasSuffix(corpusPath, ".yaml") {
-		phrases = parsing.ListPhrasesInCorpusYaml(corpusPath)
-	} else if strings.HasSuffix(corpusPath, ".csv") {
-		phrases = parsing.ListPhrasesInCorpusCsv(corpusPath)
-	} else if strings.HasSuffix(corpusPath, ".txt") {
+	var phrases []parsing.Phrase
+	if strings.HasSuffix(corpusPath, ".txt") {
 		phrases = parsing.ListPhrasesInCorpusTxt(corpusPath)
 	} else {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}
 
 	for _, phrase := range phrases {
-		if len(phrase) >= 200 {
+		if len(phrase.L2) >= 200 {
 			continue
 		}
 
 		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
 
-		summary := summarizePhrase(output.Phrase, output.Parse)
+		summary := summarizePhrase(output.Phrase.L2, output.Parse)
 
-		fmt.Printf("%-20s %s\n", strings.Join(summary.sexp, ""), phrase)
+		fmt.Printf("%-20s %s\n", strings.Join(summary.sexp, ""), phrase.L2)
 
 		if !hasNonEasyVerbType(summary.verbTypes) {
-			fmt.Printf("%-20s %s\n", strings.Join(summary.verbTypes, " "), phrase)
+			fmt.Printf("%-20s %s\n", strings.Join(summary.verbTypes, " "), phrase.L2)
 		}
 	}
 }

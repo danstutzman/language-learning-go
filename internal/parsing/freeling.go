@@ -14,9 +14,10 @@ import (
 const BATCH_SIZE = 1
 
 type Output struct {
-	Phrase    string
+	Phrase    Phrase
 	ParseJson string
 	Parse     Parse
+	Error     error
 }
 
 type Parse struct {
@@ -166,7 +167,7 @@ func unmarshalParseJson(parseJson string) Parse {
       ]}]}]}
 ]*/
 
-func ParsePhrasesWithFreeling(phrases []string,
+func ParsePhrasesWithFreeling(phrases []Phrase,
 	freelingHostAndPort string) []Output {
 
 	log.Printf("Conecting to %s\n", freelingHostAndPort)
@@ -195,20 +196,36 @@ func ParsePhrasesWithFreeling(phrases []string,
 
 	outputs := []Output{}
 	for _, phrase := range phrases {
-		if strings.ContainsRune(phrase, '\x00') {
-			log.Panicf("Phrase contains \\x00: '%s'", phrase)
+		l2 := phrase.L2
+
+		if strings.ContainsRune(l2, '\x00') {
+			outputs = append(outputs, Output{
+				Phrase: phrase,
+				Error:  fmt.Errorf("L2 contains \\x00: '%s'", l2),
+			})
+			continue
 		}
-		if strings.ContainsRune(phrase, '\n') {
-			log.Panicf("Phrase contains newline: '%s'", phrase)
+		if strings.ContainsRune(l2, '\n') {
+			outputs = append(outputs, Output{
+				Phrase: phrase,
+				Error:  fmt.Errorf("L2 contains newline: '%s'", l2),
+			})
+			continue
+		}
+		if strings.HasSuffix(l2, "...") {
+			l2 = l2 + " ." // prevent freeling from responding in two parts
 		}
 
-		if len(phrase) > 120 {
-			outputs = append(outputs, Output{})
+		if len(l2) > 120 {
+			outputs = append(outputs, Output{
+				Phrase: phrase,
+				Error:  fmt.Errorf("L2 is too long"),
+			})
 			continue
 		}
 
 		log.Printf("Writing...\n")
-		_, err := conn.Write([]byte(phrase + "\x00"))
+		_, err := conn.Write([]byte(l2 + "\x00"))
 		if err != nil {
 			panic(err)
 		}
@@ -255,30 +272,29 @@ func ParsePhrasesWithFreeling(phrases []string,
 	if len(outputs) != len(phrases) {
 		if false {
 			for i, phrase := range phrases {
-				log.Printf("Phrase[%d]: %s", i, phrase)
+				log.Printf("Phrase[%d]: %v", i, phrase)
 			}
 			for i, output := range outputs {
-				log.Printf("Output[%d]: %s", i, output.Phrase)
+				log.Printf("Output[%d]: %v", i, output.Phrase)
 			}
 		}
-		log.Printf("len(outputs)=%d but len(phrases)=%d for phrases=%v",
+		log.Panicf("len(outputs)=%d but len(phrases)=%d for phrases=%v",
 			len(outputs), len(phrases), phrases)
-		return []Output{}
 	}
 
 	return outputs
 }
 
-func SaveParse(phrase, parseJson, phraseDir string) {
-	path := phraseDir + "/" + phrase + ".json"
+func SaveParse(phrase Phrase, parseJson, phraseDir string) {
+	path := phraseDir + "/" + phrase.L2 + ".json"
 	err := ioutil.WriteFile(path, []byte(parseJson), 0644)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func LoadSavedParse(phrase string, phraseDir string) Output {
-	path := phraseDir + "/" + phrase + ".json"
+func LoadSavedParse(phrase Phrase, phraseDir string) Output {
+	path := phraseDir + "/" + phrase.L2 + ".json"
 	parseJson, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -292,26 +308,24 @@ func LoadSavedParse(phrase string, phraseDir string) Output {
 	}
 }
 
-func ParsePhrasesWithFreelingCached(phrases []string,
+func ParsePhrasesWithFreelingCached(phrases []Phrase,
 	freelingHostAndPort string, parseDir string) {
 
-	newPhrases := []string{}
+	newPhrases := []Phrase{}
 	for i, phrase := range phrases {
-		if strings.HasSuffix(phrase, "...") {
-			phrase = phrase + " ." // prevent freeling from responding in two parts
-		}
-
-		if !fileExists(parseDir + "/" + phrase + ".json") {
+		if !fileExists(parseDir + "/" + phrase.L2 + ".json") {
 			newPhrases = append(newPhrases, phrase)
 		}
 
 		if len(newPhrases) >= BATCH_SIZE || i == len(phrases)-1 {
 			outputs := ParsePhrasesWithFreeling(newPhrases, freelingHostAndPort)
-			newPhrases = []string{}
+			newPhrases = []Phrase{}
 
 			for _, output := range outputs {
-				SaveParse(output.Phrase, output.ParseJson, parseDir)
-				fmt.Fprintf(os.Stderr, "%s\n", parseDir+"/"+output.Phrase+".json")
+				if output.Error == nil {
+					SaveParse(output.Phrase, output.ParseJson, parseDir)
+					fmt.Fprintf(os.Stderr, "%s\n", parseDir+"/"+output.Phrase.L2+".json")
+				}
 			}
 		}
 	}

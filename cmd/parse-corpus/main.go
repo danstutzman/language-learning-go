@@ -13,7 +13,7 @@ const PARSE_DIR = "db/1_parses"
 func main() {
 	if len(os.Args) != 2+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to corpus (.yaml or .csv .txt file)
+		Argument 1: path to corpus (.txt file)
 		Argument 2: hostname:port for freeling server`)
 	}
 	corpusPath := os.Args[1]
@@ -24,12 +24,8 @@ func main() {
 		log.Fatalf("Specify GOOGLE_TRANSLATE_API_KEY environment variable")
 	}
 
-	var phrases []string
+	var phrases []parsing.Phrase
 	if strings.HasSuffix(corpusPath, ".yaml") {
-		phrases = parsing.ListPhrasesInCorpusYaml(corpusPath)
-	} else if strings.HasSuffix(corpusPath, ".csv") {
-		phrases = parsing.ListPhrasesInCorpusCsv(corpusPath)
-	} else if strings.HasSuffix(corpusPath, ".txt") {
 		phrases = parsing.ListPhrasesInCorpusTxt(corpusPath)
 	} else {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
