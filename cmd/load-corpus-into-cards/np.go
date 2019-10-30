@@ -117,12 +117,19 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string, error) {
 		l1 = append(l1, en)
 	}
 
-	nounEn, err := translateNoun(np.noun, dictionary)
-	if err != nil {
-		return nil, err
-	}
-	if np.noun.Num == "plural" {
-		nounEn = english.PluralizeNoun(nounEn)
+	var nounEn string
+	if np.noun.IsProperNoun() {
+		nounEn = np.noun.Form // Leave proper nouns untranslated
+	} else {
+		var err error
+		nounEn, err = translateNoun(np.noun, dictionary)
+		if err != nil {
+			return nil, err
+		}
+
+		if np.noun.Num == "plural" {
+			nounEn = english.PluralizeNoun(nounEn)
+		}
 	}
 	l1 = append(l1, nounEn)
 
@@ -148,7 +155,7 @@ func depToNP(dep parsing.Dependency,
 			} else {
 				return NP{}, fmt.Errorf("NP child of s.a not len 0: %v", dep)
 			}
-		} else if child.Function == "sp" {
+		} else if child.Function == "sp" || child.Function == "cc" {
 			pp, err := depToPP(child, tokenById)
 			if err != nil {
 				return NP{}, err
