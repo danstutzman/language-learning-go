@@ -95,7 +95,7 @@ var L2_PRONOUN_TO_L1 = map[string]string{
 	"todas":    "all",
 	"todos":    "all",
 	"usted":    "your grace",
-	"yo":       "me",
+	"yo":       "I/me",
 }
 
 func translatePronoun(form string) (string, error) {
