@@ -21,6 +21,8 @@ type VP struct {
 	atrPP           []PP
 	atrNP           []NP
 	atrVP           []VP // usually a participle?
+	ccPP            []PP
+	ccCP            []CP
 	creg            []PP // "prepositional complement"
 	se              []parsing.Token
 	adverbs         []parsing.Token
@@ -54,6 +56,12 @@ func (vp VP) GetChildren() []Constituent {
 	}
 	for _, atrVP := range vp.atrVP {
 		children = append(children, atrVP)
+	}
+	for _, ccPP := range vp.ccPP {
+		children = append(children, ccPP)
+	}
+	for _, ccCP := range vp.ccCP {
+		children = append(children, ccCP)
 	}
 	for _, creg := range vp.creg {
 		children = append(children, creg)
@@ -89,6 +97,12 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	}
 	for _, atrVP := range vp.atrVP {
 		tokens = append(tokens, atrVP.GetAllTokens()...)
+	}
+	for _, ccPP := range vp.ccPP {
+		tokens = append(tokens, ccPP.GetAllTokens()...)
+	}
+	for _, ccCP := range vp.ccCP {
+		tokens = append(tokens, ccCP.GetAllTokens()...)
 	}
 	for _, creg := range vp.creg {
 		tokens = append(tokens, creg.GetAllTokens()...)
@@ -256,6 +270,22 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 		l1 = append(l1, atrVPL1...)
 	}
 
+	for _, ccPP := range vp.ccPP {
+		ccPPL1, err := ccPP.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, ccPPL1...)
+	}
+
+	for _, ccCP := range vp.ccCP {
+		ccCPL1, err := ccCP.Translate(dictionary)
+		if err != nil {
+			return nil, err
+		}
+		l1 = append(l1, ccCPL1...)
+	}
+
 	for _, creg := range vp.creg {
 		cregL1, err := creg.Translate(dictionary)
 		if err != nil {
@@ -279,6 +309,8 @@ func depToVP(dep parsing.Dependency,
 	var atrPP []PP
 	var atrNP []NP
 	var atrVP []VP
+	var ccPP []PP
+	var ccCP []CP
 	var creg []PP
 	var se []parsing.Token
 	var adverbs []parsing.Token
@@ -293,7 +325,7 @@ func depToVP(dep parsing.Dependency,
 			suj = append(suj, np)
 		} else if child.Function == "cd" {
 
-			if childToken.IsNoun() {
+			if childToken.IsNoun() || childToken.IsPronoun() {
 				np, err := depToNP(child, tokenById)
 				if err != nil {
 					return VP{}, err
@@ -313,7 +345,7 @@ func depToVP(dep parsing.Dependency,
 				cdPP = append(cdPP, pp)
 			} else {
 				return VP{}, fmt.Errorf(
-					"VP's child of cd has unexpected tag : %v/%s", dep, childToken.Tag)
+					"VP's child of cd has unexpected tag: %v/%s", dep, childToken.Tag)
 			}
 		} else if child.Function == "ci" {
 			np, err := depToNP(child, tokenById)
@@ -321,11 +353,7 @@ func depToVP(dep parsing.Dependency,
 				return VP{}, err
 			}
 			ci = append(ci, np)
-		} else if (child.Function == "atr" || child.Function == "cc") &&
-			childToken.Tag == "SP" &&
-			len(child.Children) == 1 &&
-			(child.Children[0].Function == "sn" ||
-				child.Children[0].Function == "sadv") {
+		} else if child.Function == "atr" && childToken.Tag == "SP" {
 			pp, err := depToPP(child, tokenById)
 			if err != nil {
 				return VP{}, err
@@ -359,8 +387,25 @@ func depToVP(dep parsing.Dependency,
 			cdNP = append(cdNP, np)
 		} else if child.Function == "pass" && strings.ToLower(child.Word) == "se" {
 			se = append(se, childToken)
-		} else if child.Function == "cc" && childToken.IsAdverb() {
-			adverbs = append(adverbs, childToken)
+		} else if child.Function == "cc" {
+			if childToken.IsAdverb() {
+				adverbs = append(adverbs, childToken)
+			} else if childToken.IsPreposition() {
+				pp, err := depToPP(child, tokenById)
+				if err != nil {
+					return VP{}, err
+				}
+				ccPP = append(ccPP, pp)
+			} else if childToken.IsVerb() {
+				cp, err := depToCP(child, tokenById)
+				if err != nil {
+					return VP{}, err
+				}
+				ccCP = append(ccCP, cp)
+			} else {
+				return VP{}, fmt.Errorf(
+					"VP's cc child has unexpected Tag: %v/%s", dep, childToken.Tag)
+			}
 		} else if child.Function == "v" && len(child.Children) == 0 {
 			auxVs = append(auxVs, childToken)
 		} else if child.Function == "creg" && childToken.IsPreposition() {
@@ -385,5 +430,5 @@ func depToVP(dep parsing.Dependency,
 	return VP{verb: tokenById[dep.Token], verbConjugation: conjugation,
 		suj: suj, cdNP: cdNP, cdVP: cdVP, cdPP: cdPP, ci: ci, se: se,
 		atrAdj: atrAdj, atrNP: atrNP, atrPP: atrPP, atrVP: atrVP, adverbs: adverbs,
-		creg: creg, auxVs: auxVs}, nil
+		ccPP: ccPP, ccCP: ccCP, creg: creg, auxVs: auxVs}, nil
 }
