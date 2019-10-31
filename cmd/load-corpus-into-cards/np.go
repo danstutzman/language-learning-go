@@ -115,7 +115,7 @@ func translateMainPronoun(form string) (string, error) {
 	return l1, nil
 }
 
-func translateSpecPronoun(form, enNoun string) (string, error) {
+func translateSpecPronoun(form, enNoun string) (string, *CantTranslate) {
 	formLower := strings.ToLower(form)
 
 	if formLower == "un" || formLower == "una" {
@@ -124,12 +124,15 @@ func translateSpecPronoun(form, enNoun string) (string, error) {
 
 	l1, ok := L2_SPEC_PRONOUN_TO_L1[formLower]
 	if !ok {
-		return "", fmt.Errorf("Can't find spec pronoun %s", formLower)
+		return "", &CantTranslate{
+			Message: fmt.Sprintf("Can't find spec pronoun %s", formLower),
+		}
 	}
 	return l1, nil
 }
 
-func (np NP) Translate(dictionary english.Dictionary) ([]string, error) {
+func (np NP) Translate(dictionary english.Dictionary) ([]string,
+	*CantTranslate) {
 	l1 := []string{}
 
 	var nounEn string
@@ -139,7 +142,7 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string, error) {
 		var err error
 		nounEn, err = translateNoun(np.noun, dictionary)
 		if err != nil {
-			return nil, err
+			return nil, &CantTranslate{Message: err.Error(), Token: np.noun}
 		}
 
 		if np.noun.Num == "plural" {
@@ -150,6 +153,7 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string, error) {
 	for _, spec := range np.spec {
 		en, err := translateSpecPronoun(spec.Form, nounEn)
 		if err != nil {
+			err.Token = spec
 			return nil, err
 		}
 		l1 = append(l1, en)

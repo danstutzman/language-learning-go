@@ -114,7 +114,7 @@ func (vp VP) GetAllTokens() []parsing.Token {
 }
 
 func translateVerb(verb parsing.Token,
-	dictionary english.Dictionary) (string, error) {
+	dictionary english.Dictionary) (string, *CantTranslate) {
 	if verb.Lemma == "estar" || verb.Lemma == "ser" {
 		l1, found := map[string]string{
 			"VMIP1S0": "am",
@@ -143,13 +143,16 @@ func translateVerb(verb parsing.Token,
 			"VMII3P0": "used to be",
 		}[verb.Tag]
 		if !found {
-			return "", fmt.Errorf("Can't find verb for tag %s", verb.Tag)
+			return "", &CantTranslate{
+				Message: fmt.Sprintf("Can't find verb for tag %s", verb.Tag),
+				Token:   verb,
+			}
 		}
 		return l1, nil
 	} else {
 		en, err := dictionary.Lookup(strings.ToLower(verb.Lemma), "v")
 		if err != nil {
-			return "", err
+			return "", &CantTranslate{Message: err.Error(), Token: verb}
 		}
 
 		if verb.Tense == "present" &&
@@ -173,7 +176,8 @@ func translateVerb(verb parsing.Token,
 	}
 }
 
-func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
+func (vp VP) Translate(dictionary english.Dictionary) ([]string,
+	*CantTranslate) {
 	var l1 []string
 
 	for _, suj := range vp.suj {
@@ -240,11 +244,15 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string, error) {
 		if atrAdj.IsAdjective() {
 			adjL1, err := dictionary.Lookup(atrAdj.Lemma, "adj")
 			if err != nil {
-				return nil, err
+				return nil, &CantTranslate{Message: err.Error(), Token: atrAdj}
 			}
 			l1 = append(l1, adjL1)
 		} else {
-			return nil, fmt.Errorf("Don't know how to translate atrAdj")
+			return nil, &CantTranslate{
+				Message: fmt.Sprintf("Don't know how to translate atrAdj with tag=%s",
+					atrAdj.Tag),
+				Token: atrAdj,
+			}
 		}
 	}
 

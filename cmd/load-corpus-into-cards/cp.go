@@ -26,18 +26,19 @@ func (pp CP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func (pp CP) Translate(dictionary english.Dictionary) ([]string, error) {
+func (pp CP) Translate(dictionary english.Dictionary) ([]string,
+	*CantTranslate) {
 	l1 := []string{}
 
 	conjL1, err := dictionary.Lookup(pp.conj.Form, "conj")
 	if err != nil {
-		return nil, err
+		return nil, &CantTranslate{Message: err.Error(), Token: pp.conj}
 	}
 	l1 = append(l1, conjL1)
 
-	vpL1, err := pp.vp.Translate(dictionary)
-	if err != nil {
-		return nil, err
+	vpL1, err2 := pp.vp.Translate(dictionary)
+	if err2 != nil {
+		return nil, err2
 	}
 	l1 = append(l1, vpL1...)
 

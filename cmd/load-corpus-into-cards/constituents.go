@@ -36,9 +36,14 @@ func mustAtoi(s string) int {
 	return i
 }
 
+type CantTranslate struct {
+	Token   parsing.Token
+	Message string
+}
+
 type Constituent interface {
 	GetAllTokens() []parsing.Token
 	GetType() string
 	GetChildren() []Constituent
-	Translate(dictionary english.Dictionary) ([]string, error)
+	Translate(dictionary english.Dictionary) ([]string, *CantTranslate)
 }

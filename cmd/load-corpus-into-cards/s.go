@@ -43,7 +43,7 @@ func (s S) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func (s S) Translate(dictionary english.Dictionary) ([]string, error) {
+func (s S) Translate(dictionary english.Dictionary) ([]string, *CantTranslate) {
 	l1 := []string{}
 
 	for _, np := range s.np {

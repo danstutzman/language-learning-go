@@ -37,12 +37,13 @@ func (pp PP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func (pp PP) Translate(dictionary english.Dictionary) ([]string, error) {
+func (pp PP) Translate(dictionary english.Dictionary) ([]string,
+	*CantTranslate) {
 	l1 := []string{}
 
 	prepL1, err := dictionary.Lookup(pp.prep.Form, "prep")
 	if err != nil {
-		return nil, err
+		return nil, &CantTranslate{Message: err.Error(), Token: pp.prep}
 	}
 	l1 = append(l1, prepL1)
 

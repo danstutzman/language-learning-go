@@ -76,7 +76,7 @@ func lowercaseToken(token parsing.Token) parsing.Token {
 
 type Output2 struct {
 	Phrase parsing.Phrase
-	Error  error
+	Error  interface{}
 }
 
 func importPhrase(output parsing.Output, dictionary english.Dictionary,
@@ -137,14 +137,26 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 				continue
 			}
 
-			err = importConstituent(s, cardByTokenId, true, dictionary, memModel)
+			err2 := importConstituent(s, cardByTokenId, true, dictionary, memModel)
+			if err2 != nil {
+				output2s = append(output2s, Output2{
+					Phrase: parsing.Phrase{
+						L2:      "TODO",
+						LineNum: output.Phrase.LineNum,
+						CharNum: output.Phrase.CharNum + mustAtoi(err2.Token.Begin),
+					},
+					Error: err2,
+				})
+				continue
+			}
+
 			output2s = append(output2s, Output2{
 				Phrase: parsing.Phrase{
 					L2:      "TODO",
 					LineNum: output.Phrase.LineNum,
 					CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
 				},
-				Error: err,
+				Error: nil,
 			})
 		}
 	}
@@ -154,7 +166,7 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 func importConstituent(constituent Constituent,
 	cardByTokenId map[string]mem_model.Card,
 	isSentence bool, dictionary english.Dictionary,
-	memModel *mem_model.MemModel) error {
+	memModel *mem_model.MemModel) *CantTranslate {
 
 	tokens := constituent.GetAllTokens()
 	sort.SliceStable(tokens, func(i, j int) bool {
