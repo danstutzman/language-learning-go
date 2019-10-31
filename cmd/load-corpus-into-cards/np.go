@@ -165,7 +165,7 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string,
 }
 
 func depToNP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (NP, error) {
+	tokenById map[string]parsing.Token) (NP, *CantConvertDep) {
 	var spec []parsing.Token
 	var sa []parsing.Token
 	var sp []PP
@@ -181,7 +181,11 @@ func depToNP(dep parsing.Dependency,
 			if len(child.Children) == 0 {
 				sa = append(sa, childToken)
 			} else {
-				return NP{}, fmt.Errorf("NP child of s.a not len 0: %v", dep)
+				return NP{}, &CantConvertDep{
+					Parent:  dep,
+					Child:   child,
+					Message: "NP child of s.a not len 0",
+				}
 			}
 		} else if child.Function == "sp" || child.Function == "cc" {
 			pp, err := depToPP(child, tokenById)
@@ -190,7 +194,11 @@ func depToNP(dep parsing.Dependency,
 			}
 			sp = append(sp, pp)
 		} else {
-			return NP{}, fmt.Errorf("NP child of %s: %v", child.Function, dep)
+			return NP{}, &CantConvertDep{
+				Parent:  dep,
+				Child:   child,
+				Message: fmt.Sprintf("Unexpected function '%s'", child.Function),
+			}
 		}
 	}
 	return NP{noun: tokenById[dep.Token], spec: spec, sa: sa}, nil

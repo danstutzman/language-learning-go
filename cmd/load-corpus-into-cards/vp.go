@@ -308,7 +308,7 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string,
 }
 
 func depToVP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (VP, error) {
+	tokenById map[string]parsing.Token) (VP, *CantConvertDep) {
 	var suj []NP
 	var cdNP []NP
 	var cdVP []VP
@@ -354,8 +354,12 @@ func depToVP(dep parsing.Dependency,
 				}
 				cdPP = append(cdPP, pp)
 			} else {
-				return VP{}, fmt.Errorf(
-					"VP's child of cd has unexpected tag: %v/%s", dep, childToken.Tag)
+				return VP{}, &CantConvertDep{
+					Parent: dep,
+					Child:  child,
+					Message: fmt.Sprintf("cd child has unexpected tag %s",
+						childToken.Tag),
+				}
 			}
 		} else if child.Function == "ci" {
 			np, err := depToNP(child, tokenById)
@@ -413,8 +417,12 @@ func depToVP(dep parsing.Dependency,
 				}
 				ccCP = append(ccCP, cp)
 			} else {
-				return VP{}, fmt.Errorf(
-					"VP's cc child has unexpected Tag: %v/%s", dep, childToken.Tag)
+				return VP{}, &CantConvertDep{
+					Parent: dep,
+					Child:  child,
+					Message: fmt.Sprintf("Child cc has unexpected Tag %s",
+						childToken.Tag),
+				}
 			}
 		} else if child.Function == "v" && len(child.Children) == 0 {
 			auxVs = append(auxVs, childToken)
@@ -425,15 +433,21 @@ func depToVP(dep parsing.Dependency,
 			}
 			creg = append(creg, pp)
 		} else {
-			return VP{}, fmt.Errorf(
-				"VP child of %s: %v/%s", child.Function, dep, childToken.Tag)
+			return VP{}, &CantConvertDep{
+				Parent:  dep,
+				Child:   child,
+				Message: fmt.Sprintf("Unexpected child function %s", child.Function),
+			}
 		}
 	}
 
 	token := tokenById[dep.Token]
 	conjugations := freeling.AnalyzeVerb(token.Lemma, token.Tag)
 	if len(conjugations) == 0 {
-		return VP{}, fmt.Errorf("No conjugations of %v", dep)
+		return VP{}, &CantConvertDep{
+			Parent:  dep,
+			Message: fmt.Sprintf("No conjugations of %s/%s", token.Lemma, token.Tag),
+		}
 	}
 	conjugation := conjugations[0]
 

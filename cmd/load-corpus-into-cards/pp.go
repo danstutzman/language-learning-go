@@ -67,7 +67,7 @@ func (pp PP) Translate(dictionary english.Dictionary) ([]string,
 }
 
 func depToPP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (PP, error) {
+	tokenById map[string]parsing.Token) (PP, *CantConvertDep) {
 	var np []NP
 	var vp []VP
 	for _, child := range dep.Children {
@@ -86,7 +86,11 @@ func depToPP(dep parsing.Dependency,
 			}
 			vp = append(vp, newVp)
 		} else {
-			return PP{}, fmt.Errorf("PP child of %s: %v", child.Function, dep)
+			return PP{}, &CantConvertDep{
+				Parent:  dep,
+				Child:   child,
+				Message: fmt.Sprintf("Unexpected function %s", child.Function),
+			}
 		}
 	}
 	return PP{prep: tokenById[dep.Token], np: np, vp: vp}, nil

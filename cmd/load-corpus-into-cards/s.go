@@ -66,7 +66,7 @@ func (s S) Translate(dictionary english.Dictionary) ([]string, *CantTranslate) {
 }
 
 func depToS(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (S, error) {
+	tokenById map[string]parsing.Token) (S, *CantConvertDep) {
 	headToken := tokenById[dep.Token]
 	if headToken.IsNoun() {
 		punctuations := []parsing.Token{}
@@ -117,7 +117,9 @@ func depToS(dep parsing.Dependency,
 	} else if headToken.IsDate() && len(dep.Children) == 0 {
 		return S{date: []parsing.Token{headToken}}, nil
 	} else {
-		return S{}, fmt.Errorf("S child of tag=%s: %v",
-			tokenById[dep.Token].Tag, dep)
+		return S{}, &CantConvertDep{
+			Parent:  dep,
+			Message: fmt.Sprintf("S's token has unexpected tag %s", headToken.Tag),
+		}
 	}
 }

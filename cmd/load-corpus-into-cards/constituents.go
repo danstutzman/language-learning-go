@@ -41,6 +41,12 @@ type CantTranslate struct {
 	Message string
 }
 
+type CantConvertDep struct {
+	Parent  parsing.Dependency
+	Child   parsing.Dependency
+	Message string
+}
+
 type Constituent interface {
 	GetAllTokens() []parsing.Token
 	GetType() string

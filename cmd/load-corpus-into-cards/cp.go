@@ -3,7 +3,6 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
-	"fmt"
 )
 
 type CP struct {
@@ -46,7 +45,7 @@ func (pp CP) Translate(dictionary english.Dictionary) ([]string,
 }
 
 func depToCP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (CP, error) {
+	tokenById map[string]parsing.Token) (CP, *CantConvertDep) {
 
 	// Make a copy of VP with everything except the conjunction
 	var conj parsing.Token
@@ -70,7 +69,10 @@ func depToCP(dep parsing.Dependency,
 	}
 
 	if conj.Id == "" {
-		return CP{}, fmt.Errorf("Can't find conj child of %v", dep)
+		return CP{}, &CantConvertDep{
+			Parent:  dep,
+			Message: "Can't find conj child",
+		}
 	}
 
 	return CP{conj: conj, vp: vp}, nil

@@ -59,8 +59,39 @@ func main() {
 		output2s := importPhrase(output, dictionary, memModel)
 		for _, output2 := range output2s {
 			if output2.Error != nil {
-				fmt.Fprintf(os.Stderr, "%d:%d %s\n",
-					output2.Phrase.LineNum, output2.Phrase.CharNum, output2.Error)
+				e := output2.Error
+
+				fmt.Printf("%d:%d ", output2.Phrase.LineNum, output2.Phrase.CharNum)
+
+				if cantTranslate, ok := e.(CantTranslate); ok {
+					fmt.Printf("form=%s %s\n",
+						cantTranslate.Token.Form, cantTranslate.Message)
+				} else if cantConvertDep, ok := e.(*CantConvertDep); ok {
+					fmt.Printf("%s\n", cantConvertDep.Message)
+					fmt.Printf("        %s\n", output2.Phrase.L2)
+					fmt.Printf("        %s/%s\n",
+						cantConvertDep.Parent.Word,
+						output2.TokenById[cantConvertDep.Parent.Token].Tag)
+					for _, child := range cantConvertDep.Parent.Children {
+						if child.Token == cantConvertDep.Child.Token {
+							fmt.Printf("        ! ")
+						} else {
+							fmt.Printf("          ")
+						}
+						fmt.Printf("%s: %s/%s\n", child.Function, child.Word,
+							output2.TokenById[child.Token].Tag)
+
+						if child.Token == cantConvertDep.Child.Token {
+							for _, grandchild := range child.Children {
+								fmt.Printf("            %s: %s/%s\n",
+									grandchild.Function, grandchild.Word,
+									output2.TokenById[grandchild.Token].Tag)
+							}
+						}
+					}
+				} else {
+					fmt.Printf("%v\n", e)
+				}
 			}
 		}
 	}
@@ -75,8 +106,9 @@ func lowercaseToken(token parsing.Token) parsing.Token {
 }
 
 type Output2 struct {
-	Phrase parsing.Phrase
-	Error  interface{}
+	Phrase    parsing.Phrase
+	Error     interface{}
+	TokenById map[string]parsing.Token
 }
 
 func importPhrase(output parsing.Output, dictionary english.Dictionary,
@@ -111,7 +143,8 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 						LineNum: output.Phrase.LineNum,
 						CharNum: output.Phrase.CharNum + mustAtoi(token.Begin),
 					},
-					Error: err,
+					Error:     err,
+					TokenById: tokenById,
 				})
 				continue
 			}
@@ -128,11 +161,13 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 
 				output2s = append(output2s, Output2{
 					Phrase: parsing.Phrase{
-						L2:      "TODO",
+						L2:      output.Phrase.L2,
 						LineNum: output.Phrase.LineNum,
-						CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
+						CharNum: output.Phrase.CharNum +
+							minBeginForDep(err.Parent, tokenById),
 					},
-					Error: err,
+					Error:     err,
+					TokenById: tokenById,
 				})
 				continue
 			}
@@ -141,11 +176,12 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 			if err2 != nil {
 				output2s = append(output2s, Output2{
 					Phrase: parsing.Phrase{
-						L2:      "TODO",
+						L2:      output.Phrase.L2,
 						LineNum: output.Phrase.LineNum,
 						CharNum: output.Phrase.CharNum + mustAtoi(err2.Token.Begin),
 					},
-					Error: err2,
+					Error:     err2,
+					TokenById: tokenById,
 				})
 				continue
 			}
@@ -156,7 +192,8 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 					LineNum: output.Phrase.LineNum,
 					CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
 				},
-				Error: nil,
+				Error:     nil,
+				TokenById: tokenById,
 			})
 		}
 	}
