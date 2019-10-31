@@ -92,6 +92,9 @@ func main() {
 				} else {
 					fmt.Printf("%v\n", e)
 				}
+			} else { // If no error
+				//fmt.Printf("%d:%d ", output2.Phrase.LineNum, output2.Phrase.CharNum)
+				//fmt.Printf("%s\n", output2.Phrase.L2)
 			}
 		}
 	}
@@ -188,7 +191,7 @@ func importPhrase(output parsing.Output, dictionary english.Dictionary,
 
 			output2s = append(output2s, Output2{
 				Phrase: parsing.Phrase{
-					L2:      "TODO",
+					L2:      output.Phrase.L2,
 					LineNum: output.Phrase.LineNum,
 					CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
 				},
