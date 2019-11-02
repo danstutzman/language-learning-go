@@ -82,10 +82,11 @@ func main() {
 
 	// Gotta avoid 'llamas' since it's incorrectly tagged as a noun
 	phrases := []string{
-		"Me llamo Daniel.",
-		"Se llama Daniel.",
-		"¿Cómo me llamo?",
-		"¿Cómo se llama?",
+		"Me llamo Daniel.", // "I'm called Daniel."
+		"Se llama Daniel.", // "He/she's called Daniel."
+		"¿Cómo me llamo?",  // "What am I called?"
+		"¿Cómo me llama?",  // "What does he/she call me?" (non-reflexive)
+		"¿Cómo se llama?",  // "What is he/she called?"
 	}
 
 	tokensByPhraseNum := parseWithSpacy(phrases, python3Path)
@@ -126,19 +127,23 @@ func main() {
 		"SE LLAMAR PROPN": {
 			{"pos", "?1", "VERB"},
 			{"lemma", "?1", "llamar"},
+			{"tag", "?1", "Person", "?4"},
 
 			{"pos", "?2", "PRON"},
 			{"head", "?2", "?1", "obj"},
-			{"head", "?3", "?1", "nsubj"},
+			{"tag", "?2", "Person", "?4"},
 
 			{"pos", "?3", "PROPN"},
+			{"head", "?3", "?1", "nsubj"},
 		},
 		"Cómo SE LLAMAR": {
 			{"pos", "?1", "VERB"},
 			{"lemma", "?1", "llamar"},
+			{"tag", "?1", "Person", "?4"},
 
 			{"pos", "?2", "PRON"},
 			{"head", "?2", "?1", "obj"},
+			{"tag", "?2", "Person", "?4"},
 
 			{"pos", "?3", "PRON"},
 			{"lemma", "?3", "Cómo"},
