@@ -80,7 +80,13 @@ func main() {
 	}
 	python3Path := os.Args[1]
 
-	phrases := []string{"Me llamo Daniel.", "Se llama Daniel."}
+	// Gotta avoid 'llamas' since it's incorrectly tagged as a noun
+	phrases := []string{
+		"Me llamo Daniel.",
+		"Se llama Daniel.",
+		"¿Cómo me llamo?",
+		"¿Cómo se llama?",
+	}
 
 	tokensByPhraseNum := parseWithSpacy(phrases, python3Path)
 
@@ -116,33 +122,40 @@ func main() {
 		factsByPhraseNum = append(factsByPhraseNum, facts)
 	}
 
-	/*[pos 0 PRON]
-	[lemma 0 Se]
-	[head 0 1 obj]
-	[tag 0 Person 3]
-	[pos 1 VERB]
-	[lemma 1 llamar]
-	[head 1 1 ROOT]
-	[tag 1 Mood Ind]
-	[tag 1 Number Sing]
-	[tag 1 Person 3]
-	[tag 1 Tense Pres]
-	[tag 1 VerbForm Fin]
-	[pos 2 PROPN]
-	[lemma 2 Daniel]
-	[head 2 1 nsubj]*/
-	query := [][]string{
-		{"pos", "?1", "VERB"},
-		{"head", "?2", "?1", "obj"},
-		{"pos", "?2", "PRON"},
-		{"head", "?3", "?1", "nsubj"},
-		{"pos", "?3", "PROPN"},
+	queries := map[string][][]string{
+		"SE LLAMAR PROPN": {
+			{"pos", "?1", "VERB"},
+			{"lemma", "?1", "llamar"},
+
+			{"pos", "?2", "PRON"},
+			{"head", "?2", "?1", "obj"},
+			{"head", "?3", "?1", "nsubj"},
+
+			{"pos", "?3", "PROPN"},
+		},
+		"Cómo SE LLAMAR": {
+			{"pos", "?1", "VERB"},
+			{"lemma", "?1", "llamar"},
+
+			{"pos", "?2", "PRON"},
+			{"head", "?2", "?1", "obj"},
+
+			{"pos", "?3", "PRON"},
+			{"lemma", "?3", "Cómo"},
+			{"head", "?3", "?1", "obl"},
+		},
+		"LLAMAR": {
+			{"pos", "?1", "VERB"},
+			{"lemma", "?1", "llamar"},
+		},
 	}
 
-	for phraseNum, facts := range factsByPhraseNum {
-		if variables := factsMatchQuery(facts, query); variables != nil {
-			fmt.Printf("Phrase '%v' matches.  Variables = %v\n",
-				phrases[phraseNum], variables)
+	for queryName, query := range queries {
+		fmt.Printf("%s:\n", queryName)
+		for phraseNum, facts := range factsByPhraseNum {
+			if variables := factsMatchQuery(facts, query); variables != nil {
+				fmt.Printf("- %v\n", phrases[phraseNum])
+			}
 		}
 	}
 }
