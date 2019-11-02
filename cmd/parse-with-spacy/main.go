@@ -149,7 +149,17 @@ func main() {
 
 func factsMatchQuery(facts [][]string,
 	query [][]string) map[string]string {
+	possibleValues := gatherPossibleValues(facts, query)
+	possibilities := cartesianJoin(possibleValues)
+	for _, variables := range possibilities {
+		if allQueryFactsMatch(query, facts, variables) {
+			return variables
+		}
+	}
+	return nil
+}
 
+func gatherPossibleValues(facts, query [][]string) map[string]map[string]bool {
 	possibleValues := map[string]map[string]bool{}
 	for _, queryFact := range query {
 		for _, fact := range facts {
@@ -171,9 +181,12 @@ func factsMatchQuery(facts [][]string,
 			}
 		}
 	}
-	//fmt.Printf("PossibleValues: %v\n", possibleValues)
+	return possibleValues
+}
 
-	// Cartesian join
+func cartesianJoin(
+	possibleValues map[string]map[string]bool) []map[string]string {
+
 	possibilities := []map[string]string{map[string]string{}}
 	for variable, values := range possibleValues {
 		newPossibilities := []map[string]string{}
@@ -189,49 +202,49 @@ func factsMatchQuery(facts [][]string,
 		}
 		possibilities = newPossibilities
 	}
-	//fmt.Printf("Possibilities: %v\n", possibilities)
+	return possibilities
+}
 
-	for _, variables := range possibilities {
-		//fmt.Printf("  Trying %v\n", variables)
-		satisfiedAllQueryFacts := true
-		for _, queryFact := range query {
-			//fmt.Printf("    QueryFact %v\n", queryFact)
-			foundMatchingFact := false
-			for _, fact := range facts {
-				if queryFact[0] == fact[0] {
-					allArgsMatched := true
-					for i := 1; i < len(fact); i++ {
-						queryFactArg := queryFact[i]
-
-						var queryValue string
-						if strings.HasPrefix(queryFactArg, "?") {
-							queryValue = variables[queryFactArg]
-						} else {
-							queryValue = queryFactArg
-						}
-
-						if queryValue != fact[i] {
-							//fmt.Printf("      %v[%d] != %s\n", fact, i, queryValue)
-							allArgsMatched = false
-							break
-						}
-					}
-					if allArgsMatched {
-						foundMatchingFact = true
-						break
-					}
-				}
-			}
-			if foundMatchingFact {
-				//fmt.Printf("      QueryFact satisfied: %v\n", queryFact)
-			} else {
-				satisfiedAllQueryFacts = false
-				break
-			}
-		}
-		if satisfiedAllQueryFacts {
-			return variables
+func allQueryFactsMatch(query, facts [][]string,
+	variables map[string]string) bool {
+	for _, queryFact := range query {
+		//fmt.Printf("    QueryFact %v\n", queryFact)
+		if !hasMatch(queryFact, facts, variables) {
+			return false
 		}
 	}
-	return nil
+	return true
+}
+
+func hasMatch(queryFact []string, facts [][]string,
+	variables map[string]string) bool {
+	for _, fact := range facts {
+		if matches(queryFact, fact, variables) {
+			//fmt.Printf("      QueryFact satisfied: %v\n", queryFact)
+			return true
+		}
+	}
+	return false
+}
+
+func matches(queryFact, fact []string, variables map[string]string) bool {
+	if queryFact[0] == fact[0] {
+		for i := 1; i < len(fact); i++ {
+			queryFactArg := queryFact[i]
+
+			var queryValue string
+			if strings.HasPrefix(queryFactArg, "?") {
+				queryValue = variables[queryFactArg]
+			} else {
+				queryValue = queryFactArg
+			}
+
+			if queryValue != fact[i] {
+				//fmt.Printf("      %v[%d] != %s\n", fact, i, queryValue)
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
