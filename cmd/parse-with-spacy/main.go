@@ -246,7 +246,7 @@ func matches(queryFact, fact []string, variables map[string]string) bool {
 			queryFactArg := queryFact[i]
 
 			var queryValue string
-			if strings.HasPrefix(queryFactArg, "?") {
+			if queryFactArg[0] == '?' {
 				queryValue = variables[queryFactArg]
 			} else {
 				queryValue = queryFactArg
