@@ -1,4 +1,4 @@
-package main
+package spacy
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/freeling"
