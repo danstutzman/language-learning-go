@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/danstutzman/language-learning-go/internal/freeling"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -20,7 +21,17 @@ type Token struct {
 	Head  int    `json:"head"`
 }
 
-func parseWithSpacy(phrases []string, python3Path string) [][]Token {
+var A1VerbTags = map[string]bool{
+	"VMN0000": true, // infinitive
+	"VMIP1S0": true, // 1st sing
+	"VMIP2S0": true, // 2nd sing
+	"VMIP3S0": true, // 3rd sing
+	"VMIP1P0": true, // 1st plur
+	"VMIP3P0": true, // 3rd plur
+	"VMG0000": true, // gerund
+}
+
+func ParseWithSpacy(phrases []string, python3Path string) [][]Token {
 	cmd := exec.Command(python3Path, "-c", `import json, spacy, sys
 nlp = spacy.load('es_core_news_sm')
 for line in sys.stdin:
@@ -89,7 +100,7 @@ func main() {
 		"¿Cómo se llama?",  // "What is he/she called?"
 	}
 
-	tokensByPhraseNum := parseWithSpacy(phrases, python3Path)
+	tokensByPhraseNum := ParseWithSpacy(phrases, python3Path)
 
 	if false {
 		for _, parse := range tokensByPhraseNum {
@@ -162,7 +173,82 @@ func main() {
 				fmt.Printf("- %v\n", phrases[phraseNum])
 			}
 		}
+
+		for _, phrase := range generateVerbPhrases(queryName, query) {
+			fmt.Printf("+ %s\n", phrase)
+		}
 	}
+}
+
+func findHeadOfQuery(queryName string, query [][]string) string {
+	possibleHeads := map[string]bool{}
+	for _, fact := range query {
+		if fact[0] == "head" {
+			possibleHeads[fact[2]] = true
+		}
+	}
+
+	if len(possibleHeads) > 0 {
+		// Exclude possible heads that are a child
+		for _, fact := range query {
+			if fact[0] == "head" {
+				delete(possibleHeads, fact[1])
+			}
+		}
+	} else {
+		for _, fact := range query {
+			switch fact[0] {
+			case "pos", "lemma", "tag":
+				possibleHeads[fact[1]] = true
+			}
+		}
+	}
+
+	if len(possibleHeads) > 1 {
+		panic(fmt.Errorf("Too many possibleHeads of queryName=%s", queryName))
+	}
+	for possibleHead := range possibleHeads {
+		return possibleHead
+	}
+	panic(fmt.Errorf("Can't find head of queryName=%s", queryName))
+}
+
+func assertHasFact(queryName string, haystack [][]string, needle []string) {
+	for _, fact := range haystack {
+		matches := true
+		for i := 0; i < len(needle); i++ {
+			if fact[i] != needle[i] {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return
+		}
+	}
+	panic(fmt.Errorf("Can't find %v in %v", needle, haystack))
+}
+
+func generateVerbPhrases(queryName string, query [][]string) []string {
+	head := findHeadOfQuery(queryName, query)
+	assertHasFact(queryName, query, []string{"pos", head, "VERB"})
+
+	verbTags := []VerbTag{}
+	for _, verbTag := range allVerbTags {
+		if A1VerbTags[verbTag.TagPair.FreelingTag] {
+			verbTags = append(verbTags, verbTag)
+		}
+	}
+
+	verbs := []string{}
+	for _, verbTag := range verbTags {
+		conjugations := freeling.AnalyzeVerb("llamar", verbTag.TagPair.FreelingTag)
+		for _, conjugation := range conjugations {
+			verb := conjugation.Stem + conjugation.Suffix
+			verbs = append(verbs, verb)
+		}
+	}
+	return verbs
 }
 
 func factsMatchQuery(facts [][]string,
