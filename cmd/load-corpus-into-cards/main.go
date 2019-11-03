@@ -17,6 +17,8 @@ import (
 
 const PARSE_DIR = "db/1_parses"
 
+const FLAT = true
+
 func main() {
 	if len(os.Args) != 3+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
@@ -61,6 +63,11 @@ func main() {
 		}
 
 		parse := spacy.LoadSavedParse(phrase.L2, PARSE_DIR)
+
+		if FLAT {
+			importPhraseFlat(phrase.L2, parse, memModel)
+			continue
+		}
 
 		output2s := importPhrase(phrase.L2, parse, dictionary, memModel)
 		for _, output2 := range output2s {
@@ -116,6 +123,32 @@ type TokenError struct {
 type Output2 struct {
 	Phrase string
 	Error  interface{}
+}
+
+func importPhraseFlat(phrase string, tokens []spacy.Token,
+	memModel *mem_model.MemModel) {
+
+	cardByTokenId := map[int]mem_model.Card{}
+	for _, token := range tokens {
+		card, err := memModel.TokenToCard(token)
+		if err != nil {
+			panic(err)
+		}
+		cardByTokenId[token.Id] = card
+	}
+
+	cardMorphemes := []mem_model.CardMorpheme{}
+	for _, token := range tokens {
+		cardMorphemes = append(cardMorphemes, cardByTokenId[token.Id].Morphemes...)
+	}
+
+	memModel.InsertCardIfNotExists(mem_model.Card{
+		Type:       "Sentence",
+		L1:         "",
+		L2:         phrase,
+		IsSentence: true,
+		Morphemes:  cardMorphemes,
+	})
 }
 
 func importPhrase(phrase string, tokens []spacy.Token,
