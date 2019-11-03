@@ -62,6 +62,9 @@ func (model *Model) GetTopCards() CardList {
 			}
 		}
 
+		if stalestCardId == 0 {
+			break
+		}
 		topCard := cardById[stalestCardId]
 		cardRows = append(cardRows, topCard)
 
