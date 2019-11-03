@@ -2,23 +2,8 @@ package model
 
 import (
 	"gotest.tools/assert"
-	"log"
 	"testing"
 )
-
-func printAlignments(xRunes, yRunes []rune, alignments []Alignment) {
-	for _, alignment := range alignments {
-		xRune := ""
-		if alignment.X != -1 {
-			xRune = string(xRunes[alignment.X : alignment.X+1])
-		}
-		yRune := ""
-		if alignment.Y != -1 {
-			yRune = string(yRunes[alignment.Y : alignment.Y+1])
-		}
-		log.Printf("'%s' => '%s'", xRune, yRune)
-	}
-}
 
 func Test1(t *testing.T) {
 	xRunes := []rune("a2 a3")
@@ -33,4 +18,15 @@ func Test1(t *testing.T) {
 		{X: 3, Y: 0},
 		{X: 4, Y: 1},
 	})
+}
+
+func Test2(t *testing.T) {
+	xRunes := []rune("duvirotewell")
+	yRunes := []rune("dUW vIY rOW tIH w EH l?")
+
+	alignments := AlignRuneArrays(xRunes, yRunes)
+
+	printAlignments(xRunes, yRunes, alignments)
+
+	assert.DeepEqual(t, 1, 0)
 }

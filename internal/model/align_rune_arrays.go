@@ -1,5 +1,10 @@
 package model
 
+import (
+	"log"
+	"unicode"
+)
+
 const (
 	STOP    = 0
 	LEFT    = 1
@@ -10,6 +15,59 @@ const (
 type Alignment struct {
 	X int
 	Y int
+}
+
+var vowelRunes = map[rune]bool{
+	'a': true,
+	'e': true,
+	'i': true,
+	'o': true,
+	'u': true,
+	'y': true,
+	'á': true,
+	'é': true,
+	'í': true,
+	'ó': true,
+	'ú': true,
+	'ü': true,
+}
+
+var consonantRunes = map[rune]bool{
+	'b': true,
+	'c': true,
+	'd': true,
+	'f': true,
+	'g': true,
+	'h': true,
+	'j': true,
+	'k': true,
+	'l': true,
+	'm': true,
+	'n': true,
+	'p': true,
+	'q': true,
+	'r': true,
+	's': true,
+	't': true,
+	'w': true,
+	'x': true,
+	'y': true,
+	'z': true,
+	'ñ': true,
+}
+
+func printAlignments(xRunes, yRunes []rune, alignments []Alignment) {
+	for _, alignment := range alignments {
+		xRune := ""
+		if alignment.X != -1 {
+			xRune = string(xRunes[alignment.X : alignment.X+1])
+		}
+		yRune := ""
+		if alignment.Y != -1 {
+			yRune = string(yRunes[alignment.Y : alignment.Y+1])
+		}
+		log.Printf("'%s' => '%s'", xRune, yRune)
+	}
 }
 
 // Needleman–Wunsch algorithm
@@ -93,8 +151,24 @@ loop:
 
 func scoreRuneMatch(xRune, yRune rune) int {
 	if xRune == yRune {
-		return 1
-	} else {
-		return -1
+		return 4
 	}
+
+	xRuneLower := unicode.ToLower(xRune)
+	yRuneLower := unicode.ToLower(yRune)
+	if xRuneLower == yRuneLower {
+		return 3
+	}
+
+	if vowelRunes[xRuneLower] && vowelRunes[yRuneLower] ||
+		consonantRunes[xRuneLower] && consonantRunes[yRuneLower] {
+		return 2
+	}
+
+	if (vowelRunes[xRuneLower] || consonantRunes[xRuneLower]) &&
+		(vowelRunes[yRuneLower] || consonantRunes[yRuneLower]) {
+		return 1
+	}
+
+	return -1
 }

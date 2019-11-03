@@ -3,6 +3,7 @@ package model
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"gopkg.in/guregu/null.v3"
+	"strings"
 	"time"
 )
 
@@ -87,6 +88,9 @@ func (model *Model) ListAnswers() AnswerList {
 		"WHERE "+db.InIntList("answer_id", answerIds))
 
 	answerMorphemesById := map[int][]db.AnswerMorphemeRow{}
+	for _, answer := range answers {
+		answerMorphemesById[answer.Id] = []db.AnswerMorphemeRow{}
+	}
 	for _, answerMorpheme := range answerMorphemes {
 		answerMorphemesById[answerMorpheme.AnswerId] =
 			append(answerMorphemesById[answerMorpheme.AnswerId], answerMorpheme)
@@ -104,11 +108,17 @@ func (model *Model) ListAnswers() AnswerList {
 func gatherAnsweredL2(alignments []Alignment, answeredL2Runes []rune,
 	begin int, end int) []rune {
 	out := []rune{}
+	lastX := -1
 	for _, alignment := range alignments {
-		if alignment.X >= begin && alignment.X < end {
-			if alignment.Y != -1 {
-				out = append(out, answeredL2Runes[alignment.Y])
+		if alignment.X == -1 && lastX >= begin && lastX < end {
+			out = append(out, answeredL2Runes[alignment.Y])
+		} else {
+			if alignment.X >= begin && alignment.X < end {
+				if alignment.Y != -1 {
+					out = append(out, answeredL2Runes[alignment.Y])
+				}
 			}
+			lastX = alignment.X
 		}
 	}
 	return out
@@ -119,16 +129,50 @@ func (model *Model) InsertAnswer(answer Answer) {
 
 	card := model.GetCardJoinMorphemes(answer.CardId)
 	answeredL2Runes := []rune(answer.AnsweredL2.String)
-	alignments := AlignRuneArrays([]rune(card.L2), answeredL2Runes)
 
-	for _, cardMorpheme := range card.Morphemes {
-		db.InsertAnswerMorpheme(model.db, db.AnswerMorphemeRow{
-			AnswerId:   answerRow.Id,
-			MorphemeId: cardMorpheme.Morpheme.Id,
-			ShownAt:    answerRow.ShownAt,
-			CorrectL2:  cardMorpheme.L2,
-			AlignedL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
-				cardMorpheme.Begin, cardMorpheme.Begin+len([]rune(cardMorpheme.L2)))),
-		})
+	if card.Morphemes[0].Nonsense.Valid {
+		nonsenseRunes := []rune{}
+		newBegins := []int{}
+		for i, morpheme := range card.Morphemes {
+			if i > 0 {
+				nonsenseRunes = append(nonsenseRunes, ' ')
+			}
+
+			newBegins = append(newBegins, len(nonsenseRunes))
+
+			nonsenseRunes = append(nonsenseRunes,
+				[]rune(strings.ToLower(morpheme.Nonsense.String))...)
+		}
+
+		alignments := AlignRuneArrays(nonsenseRunes, answeredL2Runes)
+
+		if true {
+			printAlignments(nonsenseRunes, answeredL2Runes, alignments)
+		}
+
+		for i, cardMorpheme := range card.Morphemes {
+			db.InsertAnswerMorpheme(model.db, db.AnswerMorphemeRow{
+				AnswerId:   answerRow.Id,
+				MorphemeId: cardMorpheme.Morpheme.Id,
+				ShownAt:    answerRow.ShownAt,
+				CorrectL2:  cardMorpheme.Morpheme.Nonsense.String,
+				AlignedL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
+					newBegins[i],
+					newBegins[i]+len([]rune(cardMorpheme.Nonsense.String))+1)),
+			})
+		}
+	} else {
+		alignments := AlignRuneArrays([]rune(card.L2), answeredL2Runes)
+
+		for _, cardMorpheme := range card.Morphemes {
+			db.InsertAnswerMorpheme(model.db, db.AnswerMorphemeRow{
+				AnswerId:   answerRow.Id,
+				MorphemeId: cardMorpheme.Morpheme.Id,
+				ShownAt:    answerRow.ShownAt,
+				CorrectL2:  cardMorpheme.L2,
+				AlignedL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
+					cardMorpheme.Begin, cardMorpheme.Begin+len([]rune(cardMorpheme.L2)))),
+			})
+		}
 	}
 }
