@@ -11,30 +11,33 @@ import (
 var L2_WORD_REGEXP = regexp.MustCompile(`(?i)[a-zñáéíóúü]+`)
 
 type Morpheme struct {
-	Id    int         `json:"id"`
-	Type  string      `json:"type"`
-	L2    string      `json:"l2"`
-	Lemma null.String `json:"lemma"`
-	Tag   null.String `json:"tag"`
+	Id       int         `json:"id"`
+	Type     string      `json:"type"`
+	L2       string      `json:"l2"`
+	Lemma    null.String `json:"lemma"`
+	Tag      null.String `json:"tag"`
+	Nonsense null.String `json:"nonsense"`
 }
 
 func morphemeToMorphemeRow(morpheme Morpheme) db.MorphemeRow {
 	return db.MorphemeRow{
-		Id:    morpheme.Id,
-		Type:  morpheme.Type,
-		L2:    morpheme.L2,
-		Lemma: morpheme.Lemma,
-		Tag:   morpheme.Tag,
+		Id:       morpheme.Id,
+		Type:     morpheme.Type,
+		L2:       morpheme.L2,
+		Lemma:    morpheme.Lemma,
+		Tag:      morpheme.Tag,
+		Nonsense: morpheme.Nonsense,
 	}
 }
 
 func morphemeRowToMorpheme(row db.MorphemeRow) Morpheme {
 	return Morpheme{
-		Id:    row.Id,
-		Type:  row.Type,
-		L2:    row.L2,
-		Lemma: row.Lemma,
-		Tag:   row.Tag,
+		Id:       row.Id,
+		Type:     row.Type,
+		L2:       row.L2,
+		Lemma:    row.Lemma,
+		Tag:      row.Tag,
+		Nonsense: row.Nonsense,
 	}
 }
 

@@ -26,7 +26,8 @@ CREATE TABLE cards_morphemes (
   card_id      INTEGER NOT NULL,
   morpheme_id  INTEGER NOT NULL,
   num_morpheme INTEGER NOT NULL,
-  begin        INTEGER NOT NULL
+  begin        INTEGER NOT NULL,
+  nonsense     TEXT
 );
 CREATE INDEX idx_cards_morphemes_card_id ON cards_morphemes(card_id);
 CREATE INDEX idx_cards_morphemes_morpheme_id ON cards_morphemes(morpheme_id);
@@ -63,6 +64,8 @@ EOF
 #$GOPATH/bin/load-noun-cards db/corpora/nouns.csv db/db.sqlite3
 #$GOPATH/bin/load-corpus-into-cards db/corpora/spanishpod.yaml db/db.sqlite3
 #$GOPATH/bin/load-corpus-into-cards db/corpora/conjugations.txt db/db.sqlite3
-$GOPATH/bin/load-corpus-into-cards db/corpora/beginner-sentences.txt \
+#$GOPATH/bin/load-corpus-into-cards db/corpora/advanced-verbs.txt \
+#$GOPATH/bin/load-corpus-into-cards db/corpora/beginner-sentences.txt \
+$GOPATH/bin/load-corpus-into-cards db/corpora/simplest.txt \
   db/db.sqlite3 \
   "/Users/dan/Documents/language learning resources/spanish/anki-decks/dictionary/dictionary.csv"
