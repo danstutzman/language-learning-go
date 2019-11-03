@@ -10,6 +10,7 @@ popd
 mkdir -p db/1_parses
 DB_PATH=db/db.sqlite3 \
   GOOGLE_TRANSLATE_API_KEY=`cat ~/.google_translate_api_key` \
+  PYTHON3_PATH=$(which python3) \
   $GOPATH/bin/parse-corpus db/corpora/beginner-sentences.txt "$@"
   #$GOPATH/bin/parse-corpus db/corpora/spanish-in-texas.txt "$@"
   #$GOPATH/bin/parse-corpus db/corpora/advanced-verbs.txt "$@"

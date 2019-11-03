@@ -630,6 +630,10 @@ var TagPairs = []TagPair{
 
 	// Added
 	{"VMG0000", "VERB__Tense=Pres|VerbForm=Ger"},
+	{"NP00000", "PROPN___"},
+	{"AQ0FS00", "ADJ__Gender=Fem|Number=Sing"},
+	{"VA0C3S0", "AUX__Mood=Cnd|Number=Sing|Person=3|VerbForm=Fin"},
+	{"VMG0000", "VERB__VerbForm=Ger"},
 }
 
 type VerbTag struct {
@@ -654,4 +658,14 @@ func buildAllVerbTags() []VerbTag {
 		}
 	}
 	return verbTags
+}
+
+var FreelingTagBySpacyTag = buildFreelingTagBySpacyTag()
+
+func buildFreelingTagBySpacyTag() map[string]string {
+	freelingTagBySpacyTag := map[string]string{}
+	for _, tagPair := range TagPairs {
+		freelingTagBySpacyTag[tagPair.SpacyTag] = tagPair.FreelingTag
+	}
+	return freelingTagBySpacyTag
 }

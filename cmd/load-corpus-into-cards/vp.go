@@ -3,51 +3,51 @@ package main
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/freeling"
-	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 	"fmt"
 	"strings"
 )
 
 type VP struct {
-	verb            parsing.Token
+	verb            spacy.Token
 	verbConjugation freeling.Conjugation
-	suj             []NP
-	cdNP            []NP // direct object
-	cdVP            []VP // direct object
-	cdPP            []PP // direct object, probably starting with "a"
-	cdCP            []CP // direct object, probably starting with "que"
+	nsubj           []NP
+	objNP           []NP // direct object
+	objVP           []VP // direct object
+	objPP           []PP // direct object, probably starting with "a"
+	objCP           []CP // direct object, probably starting with "que"
 	ci              []NP // indirect objec
-	atrAdj          []parsing.Token
-	atrAdv          []parsing.Token
+	atrAdj          []spacy.Token
+	atrAdv          []spacy.Token
 	atrPP           []PP
 	atrNP           []NP
 	atrVP           []VP // usually a participle?
 	ccPP            []PP
 	ccCP            []CP
 	creg            []PP // "prepositional complement"
-	se              []parsing.Token
-	adverbs         []parsing.Token
-	auxVs           []parsing.Token
+	se              []spacy.Token
+	adverbs         []spacy.Token
+	auxVs           []spacy.Token
 }
 
 func (vp VP) GetType() string { return "VP" }
 
 func (vp VP) GetChildren() []Constituent {
 	children := []Constituent{}
-	for _, suj := range vp.suj {
-		children = append(children, suj)
+	for _, nsubj := range vp.nsubj {
+		children = append(children, nsubj)
 	}
-	for _, cdNP := range vp.cdNP {
-		children = append(children, cdNP)
+	for _, objNP := range vp.objNP {
+		children = append(children, objNP)
 	}
-	for _, cdVP := range vp.cdVP {
-		children = append(children, cdVP)
+	for _, objVP := range vp.objVP {
+		children = append(children, objVP)
 	}
-	for _, cdPP := range vp.cdPP {
-		children = append(children, cdPP)
+	for _, objPP := range vp.objPP {
+		children = append(children, objPP)
 	}
-	for _, cdCP := range vp.cdCP {
-		children = append(children, cdCP)
+	for _, objCP := range vp.objCP {
+		children = append(children, objCP)
 	}
 	for _, ci := range vp.ci {
 		children = append(children, ci)
@@ -73,23 +73,23 @@ func (vp VP) GetChildren() []Constituent {
 	return children
 }
 
-func (vp VP) GetAllTokens() []parsing.Token {
-	tokens := []parsing.Token{}
+func (vp VP) GetAllTokens() []spacy.Token {
+	tokens := []spacy.Token{}
 	tokens = append(tokens, vp.verb)
-	for _, suj := range vp.suj {
-		tokens = append(tokens, suj.GetAllTokens()...)
+	for _, nsubj := range vp.nsubj {
+		tokens = append(tokens, nsubj.GetAllTokens()...)
 	}
-	for _, cdNP := range vp.cdNP {
-		tokens = append(tokens, cdNP.GetAllTokens()...)
+	for _, objNP := range vp.objNP {
+		tokens = append(tokens, objNP.GetAllTokens()...)
 	}
-	for _, cdVP := range vp.cdVP {
-		tokens = append(tokens, cdVP.GetAllTokens()...)
+	for _, objVP := range vp.objVP {
+		tokens = append(tokens, objVP.GetAllTokens()...)
 	}
-	for _, cdPP := range vp.cdPP {
-		tokens = append(tokens, cdPP.GetAllTokens()...)
+	for _, objPP := range vp.objPP {
+		tokens = append(tokens, objPP.GetAllTokens()...)
 	}
-	for _, cdCP := range vp.cdCP {
-		tokens = append(tokens, cdCP.GetAllTokens()...)
+	for _, objCP := range vp.objCP {
+		tokens = append(tokens, objCP.GetAllTokens()...)
 	}
 	for _, ci := range vp.ci {
 		tokens = append(tokens, ci.GetAllTokens()...)
@@ -120,7 +120,7 @@ func (vp VP) GetAllTokens() []parsing.Token {
 	return tokens
 }
 
-func translateVerb(verb parsing.Token,
+func translateVerb(verb spacy.Token,
 	dictionary english.Dictionary) (string, *CantTranslate) {
 	if verb.Lemma == "estar" || verb.Lemma == "ser" {
 		l1, found := map[string]string{
@@ -148,10 +148,10 @@ func translateVerb(verb parsing.Token,
 			"VMII2P0": "used to be",
 			"VMII3S0": "used to be",
 			"VMII3P0": "used to be",
-		}[verb.Tag]
+		}[verb.VerbTag]
 		if !found {
 			return "", &CantTranslate{
-				Message: fmt.Sprintf("Can't find verb for tag %s", verb.Tag),
+				Message: fmt.Sprintf("Can't find verb for tag %s", verb.VerbTag),
 				Token:   verb,
 			}
 		}
@@ -162,21 +162,21 @@ func translateVerb(verb parsing.Token,
 			return "", &CantTranslate{Message: err.Error(), Token: verb}
 		}
 
-		if verb.Tense == "present" &&
-			verb.Num == "singular" &&
-			verb.Person == "3" {
+		if verb.Features["Tense"] == "Pres" &&
+			verb.Features["Number"] == "Sing" &&
+			verb.Features["Person"] == "3" {
 			en = english.ConjugateVerbPhrase(en, english.PRES_S)
-		} else if verb.Tense == "past" {
+		} else if verb.Features["Tense"] == "Past" {
 			en = english.ConjugateVerbPhrase(en, english.PAST)
-		} else if verb.Mood == "infinitive" {
+		} else if verb.Features["Mood"] == "Inf" {
 			en = "to " + en
-		} else if verb.Mood == "participle" {
-			en = english.ConjugateVerbPhrase(en, english.PAST_PART)
-		} else if verb.Tense == "conditional" {
+			//} else if verb.Mood == "participle" {
+			//	en = english.ConjugateVerbPhrase(en, english.PAST_PART)
+		} else if verb.Features["Mood"] == "Cnd" {
 			en = "would " + en
-		} else if verb.Mood == "gerund" {
+		} else if verb.Features["VerbForm"] == "Ger" {
 			en = english.ConjugateVerbPhrase(en, english.GERUND)
-		} else if verb.Tense == "imperfect" {
+		} else if verb.Features["Tense"] == "Imp" {
 			en = "used to " + en
 		}
 		return en, nil
@@ -187,23 +187,23 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string,
 	*CantTranslate) {
 	var l1 []string
 
-	for _, suj := range vp.suj {
-		sujL1, err := suj.Translate(dictionary)
+	for _, nsubj := range vp.nsubj {
+		sujL1, err := nsubj.Translate(dictionary)
 		if err != nil {
 			return nil, err
 		}
 		l1 = append(l1, sujL1...)
 	}
 
-	if len(vp.suj) == 0 {
+	if len(vp.nsubj) == 0 {
 		pronoun := map[string]string{
-			"1singular": "I",
-			"1plural":   "we",
-			"2singular": "you",
-			"2plural":   "you",
-			"3singular": "he/she/it",
-			"3plural":   "they",
-		}[vp.verb.Person+vp.verb.Num]
+			"1sing": "I",
+			"1plur": "we",
+			"2sing": "you",
+			"2plur": "you",
+			"3sing": "he/she/it",
+			"3plur": "they",
+		}[vp.verb.Features["Person"]+vp.verb.Features["Number"]]
 		if pronoun != "" {
 			l1 = append(l1, pronoun)
 		}
@@ -223,40 +223,40 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string,
 	}
 	l1 = append(l1, verbL1)
 
-	for _, cdNP := range vp.cdNP {
-		cdL1, err := cdNP.Translate(dictionary)
+	for _, objNP := range vp.objNP {
+		objL1, err := objNP.Translate(dictionary)
 		if err != nil {
 			return nil, err
 		}
-		l1 = append(l1, cdL1...)
+		l1 = append(l1, objL1...)
 	}
 
-	for _, cdVP := range vp.cdVP {
-		cdL1, err := cdVP.Translate(dictionary)
+	for _, objVP := range vp.objVP {
+		objL1, err := objVP.Translate(dictionary)
 		if err != nil {
 			return nil, err
 		}
-		l1 = append(l1, cdL1...)
+		l1 = append(l1, objL1...)
 	}
 
-	for _, cdPP := range vp.cdPP {
-		cdL1, err := cdPP.Translate(dictionary)
+	for _, objPP := range vp.objPP {
+		objL1, err := objPP.Translate(dictionary)
 		if err != nil {
 			return nil, err
 		}
-		l1 = append(l1, cdL1...)
+		l1 = append(l1, objL1...)
 	}
 
-	for _, cdCP := range vp.cdCP {
-		cdL1, err := cdCP.Translate(dictionary)
+	for _, objCP := range vp.objCP {
+		objL1, err := objCP.Translate(dictionary)
 		if err != nil {
 			return nil, err
 		}
-		l1 = append(l1, cdL1...)
+		l1 = append(l1, objL1...)
 	}
 
 	for _, atrAdj := range vp.atrAdj {
-		if atrAdj.IsAdjective() {
+		if atrAdj.Pos == "ADJ" {
 			adjL1, err := dictionary.Lookup(atrAdj.Lemma, "adj")
 			if err != nil {
 				return nil, &CantTranslate{Message: err.Error(), Token: atrAdj}
@@ -264,8 +264,8 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string,
 			l1 = append(l1, adjL1)
 		} else {
 			return nil, &CantTranslate{
-				Message: fmt.Sprintf("Don't know how to translate atrAdj with tag=%s",
-					atrAdj.Tag),
+				Message: fmt.Sprintf("Don't know how to translate atrAdj with pos=%s",
+					atrAdj.Pos),
 				Token: atrAdj,
 			}
 		}
@@ -322,119 +322,118 @@ func (vp VP) Translate(dictionary english.Dictionary) ([]string,
 	return l1, nil
 }
 
-func depToVP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (VP, *CantConvertDep) {
-	var suj []NP
-	var cdNP []NP
-	var cdVP []VP
-	var cdPP []PP
-	var cdCP []CP
+func depToVP(dep spacy.Dep) (VP, *CantConvertDep) {
+	var nsubj []NP
+	var objNP []NP
+	var objVP []VP
+	var objPP []PP
+	var objCP []CP
 	var ci []NP
-	var atrAdj []parsing.Token
-	var atrAdv []parsing.Token
+	var atrAdj []spacy.Token
+	var atrAdv []spacy.Token
 	var atrPP []PP
 	var atrNP []NP
 	var atrVP []VP
 	var ccPP []PP
 	var ccCP []CP
 	var creg []PP
-	var se []parsing.Token
-	var adverbs []parsing.Token
-	var auxVs []parsing.Token
+	var se []spacy.Token
+	var adverbs []spacy.Token
+	var auxVs []spacy.Token
 	for _, child := range dep.Children {
-		childToken := tokenById[child.Token]
-		if child.Function == "suj" {
-			np, err := depToNP(child, tokenById)
+		if child.Function == "nsubj" {
+			np, err := depToNP(child)
 			if err != nil {
 				return VP{}, err
 			}
-			suj = append(suj, np)
-		} else if child.Function == "cd" {
-			if childToken.IsNoun() || childToken.IsPronoun() {
-				np, err := depToNP(child, tokenById)
+			nsubj = append(nsubj, np)
+		} else if child.Function == "obj" {
+			if child.Token.Pos == "NOUN" || child.Token.Pos == "PRON" {
+				np, err := depToNP(child)
 				if err != nil {
 					return VP{}, err
 				}
-				cdNP = append(cdNP, np)
-			} else if childToken.IsVerb() {
+				objNP = append(objNP, np)
+			} else if child.Token.Pos == "VERB" {
 				if hasConjChild(child) {
-					cp, err := depToCP(child, tokenById)
+					cp, err := depToCP(child)
 					if err != nil {
 						return VP{}, err
 					}
-					cdCP = append(cdCP, cp)
+					objCP = append(objCP, cp)
 				} else {
-					vp, err := depToVP(child, tokenById)
+					vp, err := depToVP(child)
 					if err != nil {
 						return VP{}, err
 					}
-					cdVP = append(cdVP, vp)
+					objVP = append(objVP, vp)
 				}
-			} else if childToken.IsPreposition() {
-				pp, err := depToPP(child, tokenById)
+			} else if child.Token.Pos == "ADV" {
+				pp, err := depToPP(child)
 				if err != nil {
 					return VP{}, err
 				}
-				cdPP = append(cdPP, pp)
+				objPP = append(objPP, pp)
 			} else {
 				return VP{}, &CantConvertDep{
 					Parent: dep,
 					Child:  child,
-					Message: fmt.Sprintf("cd child has unexpected tag %s",
-						childToken.Tag),
+					Message: fmt.Sprintf("obj child has unexpected pos %s",
+						child.Token.Pos),
 				}
 			}
 		} else if child.Function == "ci" {
-			np, err := depToNP(child, tokenById)
+			np, err := depToNP(child)
 			if err != nil {
 				return VP{}, err
 			}
 			ci = append(ci, np)
-		} else if child.Function == "atr" && childToken.Tag == "SP" {
-			pp, err := depToPP(child, tokenById)
+			/*} else if child.Function == "atr" && childToken.Pos == "SP" {
+			pp, err := depToPP(child)
 			if err != nil {
 				return VP{}, err
 			}
-			atrPP = append(atrPP, pp)
-		} else if child.Function == "atr" && childToken.IsNoun() {
-			np, err := depToNP(child, tokenById)
+			atrPP = append(atrPP, pp)*/
+		} else if child.Function == "atr" && child.Token.Pos == "NOUN" {
+			np, err := depToNP(child)
 			if err != nil {
 				return VP{}, err
 			}
 			atrNP = append(atrNP, np)
 		} else if child.Function == "atr" && len(child.Children) == 0 &&
-			childToken.IsAdjective() {
-			atrAdj = append(atrAdj, childToken)
-		} else if child.Function == "atr" && childToken.IsVerb() {
-			vp, err := depToVP(child, tokenById)
+			child.Token.Pos == "ADJ" {
+			atrAdj = append(atrAdj, child.Token)
+		} else if child.Function == "atr" && child.Token.Pos == "VERB" {
+			vp, err := depToVP(child)
 			if err != nil {
 				return VP{}, err
 			}
 			atrVP = append(atrVP, vp)
 		} else if child.Function == "atr" && len(child.Children) == 0 &&
-			childToken.IsAdverb() {
-			atrAdj = append(atrAdv, childToken)
+			child.Token.Pos == "ADV" {
+			atrAdj = append(atrAdv, child.Token)
 		} else if child.Function == "cpred" &&
-			(childToken.IsAdjective() || childToken.IsNoun()) {
+			(child.Token.Pos == "ADV" || child.Token.Pos == "NOUN") {
 			// Treat an adjective (chino) as a noun
-			np, err := depToNP(child, tokenById)
+			np, err := depToNP(child)
 			if err != nil {
 				return VP{}, err
 			}
-			cdNP = append(cdNP, np)
-		} else if child.Function == "pass" && strings.ToLower(child.Word) == "se" {
-			se = append(se, childToken)
+			objNP = append(objNP, np)
+		} else if child.Function == "pass" &&
+			strings.ToLower(child.Token.Text) == "se" {
+			se = append(se, child.Token)
 		} else if child.Function == "cc" {
-			if childToken.IsAdverb() {
-				adverbs = append(adverbs, childToken)
-			} else if childToken.IsPreposition() {
-				pp, err := depToPP(child, tokenById)
+			if child.Token.Pos == "ADV" {
+				adverbs = append(adverbs, child.Token)
+			} else if child.Token.Pos == "ADP" {
+				pp, err := depToPP(child)
 				if err != nil {
 					return VP{}, err
 				}
 				ccPP = append(ccPP, pp)
-			} else if childToken.IsVerb() {
-				cp, err := depToCP(child, tokenById)
+			} else if child.Token.Pos == "VERB" {
+				cp, err := depToCP(child)
 				if err != nil {
 					return VP{}, err
 				}
@@ -443,14 +442,14 @@ func depToVP(dep parsing.Dependency,
 				return VP{}, &CantConvertDep{
 					Parent: dep,
 					Child:  child,
-					Message: fmt.Sprintf("Child cc has unexpected Tag %s",
-						childToken.Tag),
+					Message: fmt.Sprintf("Child cc has unexpected Pos %s",
+						child.Token.Pos),
 				}
 			}
 		} else if child.Function == "v" && len(child.Children) == 0 {
-			auxVs = append(auxVs, childToken)
-		} else if child.Function == "creg" && childToken.IsPreposition() {
-			pp, err := depToPP(child, tokenById)
+			auxVs = append(auxVs, child.Token)
+		} else if child.Function == "creg" && child.Token.Pos == "ADP" {
+			pp, err := depToPP(child)
 			if err != nil {
 				return VP{}, err
 			}
@@ -464,23 +463,25 @@ func depToVP(dep parsing.Dependency,
 		}
 	}
 
-	token := tokenById[dep.Token]
-	conjugations := freeling.AnalyzeVerb(token.Lemma, token.Tag)
+	token := dep.Token
+	conjugations := freeling.AnalyzeVerb(token.Lemma, token.VerbTag)
 	if len(conjugations) == 0 {
 		return VP{}, &CantConvertDep{
-			Parent:  dep,
-			Message: fmt.Sprintf("No conjugations of %s/%s", token.Lemma, token.Tag),
+			Parent: dep,
+			Message: fmt.Sprintf("No conjugations of %s/%s",
+				token.Lemma, token.VerbTag),
 		}
 	}
 	conjugation := conjugations[0]
 
-	return VP{verb: tokenById[dep.Token], verbConjugation: conjugation,
-		suj: suj, cdNP: cdNP, cdVP: cdVP, cdPP: cdPP, cdCP: cdCP, ci: ci, se: se,
+	return VP{verb: dep.Token, verbConjugation: conjugation,
+		nsubj: nsubj,
+		objNP: objNP, objVP: objVP, objPP: objPP, objCP: objCP, ci: ci, se: se,
 		atrAdj: atrAdj, atrNP: atrNP, atrPP: atrPP, atrVP: atrVP, adverbs: adverbs,
 		ccPP: ccPP, ccCP: ccCP, creg: creg, auxVs: auxVs}, nil
 }
 
-func hasConjChild(dep parsing.Dependency) bool {
+func hasConjChild(dep spacy.Dep) bool {
 	for _, child := range dep.Children {
 		if child.Function == "conj" {
 			return true

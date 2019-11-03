@@ -2,16 +2,16 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
-	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 	"fmt"
 	"strings"
 )
 
 type NP struct {
-	noun parsing.Token
-	spec []parsing.Token
-	sa   []parsing.Token // function = "s.a"
-	sp   []PP
+	noun  spacy.Token
+	det   []spacy.Token
+	amods []spacy.Token
+	sp    []PP
 }
 
 func (np NP) GetType() string { return "NP" }
@@ -24,14 +24,14 @@ func (np NP) GetChildren() []Constituent {
 	return constituents
 }
 
-func (np NP) GetAllTokens() []parsing.Token {
-	tokens := []parsing.Token{}
+func (np NP) GetAllTokens() []spacy.Token {
+	tokens := []spacy.Token{}
 	tokens = append(tokens, np.noun)
-	for _, spec := range np.spec {
-		tokens = append(tokens, spec)
+	for _, det := range np.det {
+		tokens = append(tokens, det)
 	}
-	for _, sa := range np.sa {
-		tokens = append(tokens, sa)
+	for _, amod := range np.amods {
+		tokens = append(tokens, amod)
 	}
 	for _, sp := range np.sp {
 		tokens = append(tokens, sp.GetAllTokens()...)
@@ -125,7 +125,7 @@ func translateSpecPronoun(form, enNoun string) (string, *CantTranslate) {
 	l1, ok := L2_SPEC_PRONOUN_TO_L1[formLower]
 	if !ok {
 		return "", &CantTranslate{
-			Message: fmt.Sprintf("Can't find spec pronoun %s", formLower),
+			Message: fmt.Sprintf("Can't find det pronoun %s", formLower),
 		}
 	}
 	return l1, nil
@@ -136,8 +136,8 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string,
 	l1 := []string{}
 
 	var nounEn string
-	if np.noun.IsProperNoun() {
-		nounEn = np.noun.Form // Leave proper nouns untranslated
+	if np.noun.Pos == "PROPN" {
+		nounEn = np.noun.Text // Leave proper nouns untranslated
 	} else {
 		var err error
 		nounEn, err = translateNoun(np.noun, dictionary)
@@ -145,15 +145,15 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string,
 			return nil, &CantTranslate{Message: err.Error(), Token: np.noun}
 		}
 
-		if np.noun.Num == "plural" {
+		if np.noun.Features["Number"] == "Plur" {
 			nounEn = english.PluralizeNoun(nounEn)
 		}
 	}
 
-	for _, spec := range np.spec {
-		en, err := translateSpecPronoun(spec.Form, nounEn)
+	for _, det := range np.det {
+		en, err := translateSpecPronoun(det.Text, nounEn)
 		if err != nil {
-			err.Token = spec
+			err.Token = det
 			return nil, err
 		}
 		l1 = append(l1, en)
@@ -164,54 +164,53 @@ func (np NP) Translate(dictionary english.Dictionary) ([]string,
 	return l1, nil
 }
 
-func depToNP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (NP, *CantConvertDep) {
-	var spec []parsing.Token
-	var sa []parsing.Token
+func depToNP(dep spacy.Dep) (NP, *CantConvertDep) {
+	var det []spacy.Token
+	var amods []spacy.Token
 	var sp []PP
 	for _, child := range dep.Children {
-		childToken := tokenById[child.Token]
-		if child.Function == "spec" && len(child.Children) == 0 {
-			spec = append(spec, childToken)
-		} else if child.Function == "spec" && len(child.Children) == 1 &&
-			child.Children[0].Function == "d" {
-			spec = append(spec, childToken)
-			spec = append(spec, tokenById[child.Children[0].Token])
-		} else if child.Function == "s.a" {
+		if child.Function == "det" && len(child.Children) == 0 {
+			det = append(det, child.Token)
+		} else if child.Function == "det" && len(child.Children) == 1 &&
+			child.Children[0].Function == "det" {
+			det = append(det, child.Token)
+			det = append(det, child.Children[0].Token)
+		} else if child.Function == "amod" {
 			if len(child.Children) == 0 {
-				sa = append(sa, childToken)
+				amods = append(amods, child.Token)
 			} else {
 				return NP{}, &CantConvertDep{
 					Parent:  dep,
 					Child:   child,
-					Message: "NP child of s.a not len 0",
+					Message: "NP child of amod not len 0",
 				}
 			}
 		} else if child.Function == "sp" || child.Function == "cc" {
-			pp, err := depToPP(child, tokenById)
+			pp, err := depToPP(child)
 			if err != nil {
 				return NP{}, err
 			}
 			sp = append(sp, pp)
 		} else {
 			return NP{}, &CantConvertDep{
-				Parent:  dep,
-				Child:   child,
-				Message: fmt.Sprintf("Unexpected function '%s'", child.Function),
+				Parent: dep,
+				Child:  child,
+				Message: fmt.Sprintf("NP child has unexpected function '%s'",
+					child.Function),
 			}
 		}
 	}
-	return NP{noun: tokenById[dep.Token], spec: spec, sa: sa}, nil
+	return NP{noun: dep.Token, det: det, amods: amods}, nil
 }
 
-func translateNoun(noun parsing.Token,
+func translateNoun(noun spacy.Token,
 	dictionary english.Dictionary) (string, error) {
-	if noun.IsNoun() {
+	if noun.Pos == "NOUN" {
 		return dictionary.Lookup(noun.Lemma, "n")
-	} else if noun.IsPronoun() {
-		return translateMainPronoun(noun.Form)
+	} else if noun.Pos == "PRON" {
+		return translateMainPronoun(noun.Text)
 	} else {
-		return "", fmt.Errorf("Don't know how to translateNoun '%s' with tag %s",
-			noun.Form, noun.Tag)
+		return "", fmt.Errorf("Don't know how to translateNoun '%s' with pos %s",
+			noun.Text, noun.Pos)
 	}
 }

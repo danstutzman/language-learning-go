@@ -2,17 +2,17 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
-	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 	"fmt"
 )
 
 type S struct {
-	punctuations []parsing.Token
-	mods         []parsing.Token
+	punctuations []spacy.Token
+	mods         []spacy.Token
 	np           []NP
 	vp           []VP
-	number       []parsing.Token
-	date         []parsing.Token
+	number       []spacy.Token
+	date         []spacy.Token
 }
 
 func (s S) GetType() string { return "S" }
@@ -28,8 +28,8 @@ func (s S) GetChildren() []Constituent {
 	return constituents
 }
 
-func (s S) GetAllTokens() []parsing.Token {
-	tokens := []parsing.Token{}
+func (s S) GetAllTokens() []spacy.Token {
+	tokens := []spacy.Token{}
 	tokens = append(tokens, s.punctuations...)
 	tokens = append(tokens, s.mods...)
 	for _, np := range s.np {
@@ -65,61 +65,51 @@ func (s S) Translate(dictionary english.Dictionary) ([]string, *CantTranslate) {
 	return l1, nil
 }
 
-func depToS(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (S, *CantConvertDep) {
-	headToken := tokenById[dep.Token]
-	if headToken.IsNoun() {
-		punctuations := []parsing.Token{}
-		mods := []parsing.Token{}
-		nonPunctuationsOrMods := []parsing.Dependency{}
+func depToS(dep spacy.Dep) (S, *CantConvertDep) {
+	if dep.Token.Pos == "NOUN" {
+		punctuations := []spacy.Token{}
+		mods := []spacy.Token{}
+		nonPunctuationsOrMods := []spacy.Dep{}
 		for _, child := range dep.Children {
-			childToken := tokenById[child.Token]
-			if childToken.IsPunctuation() {
-				punctuations = append(punctuations, childToken)
+			if child.Token.Pos == "PUNCT" {
+				punctuations = append(punctuations, child.Token)
 			} else if child.Function == "mod" {
-				mods = append(mods, childToken)
+				mods = append(mods, child.Token)
 			} else {
 				nonPunctuationsOrMods = append(nonPunctuationsOrMods, child)
 			}
 		}
-		newDep := parsing.Dependency{
+		newDep := spacy.Dep{
 			Token:    dep.Token,
 			Function: dep.Function,
-			Word:     dep.Word,
 			Children: nonPunctuationsOrMods,
 		}
-		np, err := depToNP(newDep, tokenById)
+		np, err := depToNP(newDep)
 		return S{punctuations: punctuations, mods: mods, np: []NP{np}}, err
-	} else if headToken.IsVerb() {
-		punctuations := []parsing.Token{}
-		mods := []parsing.Token{}
-		nonPunctuationsOrMods := []parsing.Dependency{}
+	} else if dep.Token.Pos == "VERB" {
+		punctuations := []spacy.Token{}
+		mods := []spacy.Token{}
+		nonPunctuationsOrMods := []spacy.Dep{}
 		for _, child := range dep.Children {
-			childToken := tokenById[child.Token]
-			if childToken.IsPunctuation() {
-				punctuations = append(punctuations, childToken)
+			if child.Token.Pos == "PUNCT" {
+				punctuations = append(punctuations, child.Token)
 			} else if child.Function == "mod" {
-				mods = append(mods, childToken)
+				mods = append(mods, child.Token)
 			} else {
 				nonPunctuationsOrMods = append(nonPunctuationsOrMods, child)
 			}
 		}
-		newDep := parsing.Dependency{
+		newDep := spacy.Dep{
 			Token:    dep.Token,
 			Function: dep.Function,
-			Word:     dep.Word,
 			Children: nonPunctuationsOrMods,
 		}
-		vp, err := depToVP(newDep, tokenById)
+		vp, err := depToVP(newDep)
 		return S{punctuations: punctuations, mods: mods, vp: []VP{vp}}, err
-	} else if headToken.IsNumber() && len(dep.Children) == 0 {
-		return S{number: []parsing.Token{headToken}}, nil
-	} else if headToken.IsDate() && len(dep.Children) == 0 {
-		return S{date: []parsing.Token{headToken}}, nil
 	} else {
 		return S{}, &CantConvertDep{
 			Parent:  dep,
-			Message: fmt.Sprintf("S's token has unexpected tag %s", headToken.Tag),
+			Message: fmt.Sprintf("S's token has unexpected pos %s", dep.Token.Pos),
 		}
 	}
 }

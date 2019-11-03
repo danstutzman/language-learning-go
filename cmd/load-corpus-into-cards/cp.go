@@ -2,11 +2,11 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
-	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 )
 
 type CP struct {
-	conj parsing.Token
+	conj spacy.Token
 	vp   VP
 }
 
@@ -18,8 +18,8 @@ func (pp CP) GetChildren() []Constituent {
 	return children
 }
 
-func (pp CP) GetAllTokens() []parsing.Token {
-	tokens := []parsing.Token{}
+func (pp CP) GetAllTokens() []spacy.Token {
+	tokens := []spacy.Token{}
 	tokens = append(tokens, pp.conj)
 	tokens = append(tokens, pp.vp.GetAllTokens()...)
 	return tokens
@@ -29,7 +29,7 @@ func (pp CP) Translate(dictionary english.Dictionary) ([]string,
 	*CantTranslate) {
 	l1 := []string{}
 
-	conjL1, err := dictionary.Lookup(pp.conj.Form, "conj")
+	conjL1, err := dictionary.Lookup(pp.conj.Text, "conj")
 	if err != nil {
 		return nil, &CantTranslate{Message: err.Error(), Token: pp.conj}
 	}
@@ -44,36 +44,34 @@ func (pp CP) Translate(dictionary english.Dictionary) ([]string,
 	return l1, nil
 }
 
-func depToCP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (CP, *CantConvertDep) {
+func depToCP(dep spacy.Dep) (CP, *CantConvertDep) {
 
 	// Make a copy of VP with everything except the conjunction
-	var conj parsing.Token
-	nonConjs := []parsing.Dependency{}
+	var conj *spacy.Token
+	nonConjs := []spacy.Dep{}
 	for _, child := range dep.Children {
 		if child.Function == "conj" {
-			conj = tokenById[child.Token]
+			conj = &child.Token
 		} else {
 			nonConjs = append(nonConjs, child)
 		}
 	}
-	newDep := parsing.Dependency{
+	newDep := spacy.Dep{
 		Token:    dep.Token,
 		Function: dep.Function,
-		Word:     dep.Word,
 		Children: nonConjs,
 	}
-	vp, err := depToVP(newDep, tokenById)
+	vp, err := depToVP(newDep)
 	if err != nil {
 		return CP{}, err
 	}
 
-	if conj.Id == "" {
+	if conj == nil {
 		return CP{}, &CantConvertDep{
 			Parent:  dep,
 			Message: "Can't find conj child",
 		}
 	}
 
-	return CP{conj: conj, vp: vp}, nil
+	return CP{conj: *conj, vp: vp}, nil
 }

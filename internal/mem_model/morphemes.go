@@ -3,12 +3,11 @@ package mem_model
 import (
 	dbPkg "bitbucket.org/danstutzman/language-learning-go/internal/db"
 	"bitbucket.org/danstutzman/language-learning-go/internal/freeling"
-	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 	"context"
 	"database/sql"
 	"fmt"
 	"gopkg.in/guregu/null.v3"
-	"strconv"
 	"strings"
 )
 
@@ -31,8 +30,8 @@ func (memModel *MemModel) getNextMorphemeId() int {
 	return id
 }
 
-func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
-	conjugations := freeling.AnalyzeVerb(token.Lemma, token.Tag)
+func (memModel *MemModel) VerbTokenToCard(token spacy.Token) (Card, error) {
+	conjugations := freeling.AnalyzeVerb(token.Lemma, token.VerbTag)
 	if len(conjugations) == 0 {
 		return Card{}, fmt.Errorf("Can't conjugate verb %v", token)
 	}
@@ -40,21 +39,21 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 
 	var cardMorphemes []CardMorpheme
 	if conjugation.Suffix == "" {
-		morpheme, exists := memModel.morphemeByL2Tag[conjugation.Stem+token.Tag]
+		morpheme, exists := memModel.morphemeByL2Tag[conjugation.Stem+token.VerbTag]
 		if !exists {
 			morpheme = Morpheme{
 				Id:    memModel.getNextMorphemeId(),
 				Type:  "VERB_UNIQUE",
 				L2:    conjugation.Stem,
 				Lemma: null.StringFrom(token.Lemma),
-				Tag:   null.StringFrom(token.Tag),
+				Tag:   null.StringFrom(token.VerbTag),
 			}
 			memModel.morphemes = append(memModel.morphemes, morpheme)
-			memModel.morphemeByL2Tag[conjugation.Stem+token.Tag] = morpheme
+			memModel.morphemeByL2Tag[conjugation.Stem+token.VerbTag] = morpheme
 		}
 		cardMorphemes = []CardMorpheme{{
 			Morpheme: morpheme,
-			Begin:    mustAtoi(token.Begin),
+			Begin:    token.Idx,
 		}}
 	} else {
 		stemMorpheme, exists := memModel.morphemeByL2Tag[conjugation.Stem+""]
@@ -64,85 +63,84 @@ func (memModel *MemModel) VerbTokenToCard(token parsing.Token) (Card, error) {
 				Type:  "VERB_STEM",
 				L2:    conjugation.Stem,
 				Lemma: null.StringFrom(token.Lemma),
-				Tag:   null.StringFrom(token.Tag),
+				Tag:   null.StringFrom(token.VerbTag),
 			}
 			memModel.morphemes = append(memModel.morphemes, stemMorpheme)
 			memModel.morphemeByL2Tag[conjugation.Stem+""] = stemMorpheme
 		}
 
 		suffixMorpheme, exists :=
-			memModel.morphemeByL2Tag[conjugation.Suffix+token.Tag]
+			memModel.morphemeByL2Tag[conjugation.Suffix+token.VerbTag]
 		if !exists {
 			suffixMorpheme = Morpheme{
 				Id:    memModel.getNextMorphemeId(),
 				Type:  "VERB_SUFFIX",
 				L2:    conjugation.Suffix,
 				Lemma: null.String{},
-				Tag:   null.StringFrom(token.Tag),
+				Tag:   null.StringFrom(token.VerbTag),
 			}
 			memModel.morphemes = append(memModel.morphemes, suffixMorpheme)
-			memModel.morphemeByL2Tag[conjugation.Suffix+token.Tag] = suffixMorpheme
+			memModel.morphemeByL2Tag[conjugation.Suffix+token.VerbTag] = suffixMorpheme
 		}
 		cardMorphemes = []CardMorpheme{
-			{Morpheme: stemMorpheme, Begin: mustAtoi(token.Begin)},
+			{Morpheme: stemMorpheme, Begin: token.Idx},
 			{Morpheme: suffixMorpheme,
-				Begin: mustAtoi(token.Begin) + len([]rune(conjugation.Stem))},
+				Begin: token.Idx + len([]rune(conjugation.Stem))},
 		}
 	}
 
-	card, exists := memModel.cardByL2[token.Form]
+	card, exists := memModel.cardByL2[token.Text]
 	if !exists {
 		card = Card{
 			Id:        memModel.getNextCardId(),
 			Type:      "VERB",
-			L2:        token.Form,
+			L2:        token.Text,
 			Morphemes: cardMorphemes,
 		}
+		memModel.cards = append(memModel.cards, card)
+		memModel.cardByL2[token.Text] = card
 	}
 	return card, nil
 }
 
-func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
+func (memModel *MemModel) NounOrAdjectiveTokenToCard(token spacy.Token) (Card,
 	error) {
 	var gender string
 	var number string
-	if token.Tag[0:1] == "A" { // adjective
-		gender = token.Tag[3:4] // "F" or "M" or "C" (common)
-		number = token.Tag[4:5] // "P" or "S"
-	} else if token.Tag[0:1] == "N" { // noun
-		gender = token.Tag[2:3] // "F" or "M" or "C" (common)
-		number = token.Tag[3:4] // "P" or "S" or "N" (invariable)
+	if token.Pos == "ADJ" || token.Pos == "NOUN" {
+		gender = token.Features["Gender"] // "Masc", "Fem", or ""
+		number = token.Features["Number"] // "Sing" or "Plur" or ""
 	}
 
-	form := token.Form
+	text := token.Text
 
 	var stem string
 	var suffix string
-	if gender == "M" {
-		if number == "S" && strings.HasSuffix(form, "o") {
-			stem = form[0 : len(form)-1]
+	if gender == "Masc" {
+		if number == "Sing" && strings.HasSuffix(text, "o") {
+			stem = text[0 : len(text)-1]
 			suffix = "o"
-		} else if number == "P" && strings.HasSuffix(form, "os") {
-			stem = form[0 : len(form)-2]
+		} else if number == "Plur" && strings.HasSuffix(text, "os") {
+			stem = text[0 : len(text)-2]
 			suffix = "os"
-		} else if number == "P" && strings.HasSuffix(form, "es") {
-			stem = form[0 : len(form)-2]
+		} else if number == "Plur" && strings.HasSuffix(text, "es") {
+			stem = text[0 : len(text)-2]
 			suffix = "es"
 		}
-	} else if gender == "F" {
-		if number == "S" && strings.HasSuffix(form, "a") {
-			stem = form[0 : len(form)-1]
+	} else if gender == "Fem" {
+		if number == "Sing" && strings.HasSuffix(text, "a") {
+			stem = text[0 : len(text)-1]
 			suffix = "a"
-		} else if number == "P" && strings.HasSuffix(form, "as") {
-			stem = form[0 : len(form)-2]
+		} else if number == "Plur" && strings.HasSuffix(text, "as") {
+			stem = text[0 : len(text)-2]
 			suffix = "as"
 		}
-	} else if gender == "C" {
-		if number == "P" && strings.HasSuffix(form, "os") {
-			stem = form[0 : len(form)-2]
+	} else if gender == "" {
+		if number == "Plur" && strings.HasSuffix(text, "os") {
+			stem = text[0 : len(text)-2]
 			suffix = "os"
-		} else if number == "P" && strings.HasSuffix(form, "es") {
-			stem = form[0 : len(form)-2]
+		} else if number == "Plur" && strings.HasSuffix(text, "es") {
+			stem = text[0 : len(text)-2]
 			suffix = "es"
 		}
 	}
@@ -163,107 +161,82 @@ func (memModel *MemModel) NounOrAdjectiveTokenToCard(token parsing.Token) (Card,
 		}
 
 		suffixMorpheme, exists :=
-			memModel.morphemeByL2Tag[suffix+token.Tag]
+			memModel.morphemeByL2Tag[suffix+token.VerbTag]
 		if !exists {
 			suffixMorpheme = Morpheme{
 				Id:    memModel.getNextMorphemeId(),
 				Type:  "NOUN_OR_ADJ_SUFFIX",
 				L2:    suffix,
 				Lemma: null.String{},
-				Tag:   null.StringFrom(token.Tag),
+				Tag:   null.StringFrom(token.VerbTag),
 			}
 			memModel.morphemes = append(memModel.morphemes, suffixMorpheme)
-			memModel.morphemeByL2Tag[suffix+token.Tag] = suffixMorpheme
+			memModel.morphemeByL2Tag[suffix+token.VerbTag] = suffixMorpheme
 		}
 
 		cardMorphemes = []CardMorpheme{
-			{Morpheme: stemMorpheme, Begin: mustAtoi(token.Begin)},
-			{Morpheme: suffixMorpheme,
-				Begin: mustAtoi(token.Begin) + len([]rune(stem))},
+			{Morpheme: stemMorpheme, Begin: token.Idx},
+			{Morpheme: suffixMorpheme, Begin: token.Idx + len([]rune(stem))},
 		}
 	} else {
-		morpheme, exists := memModel.morphemeByL2Tag[form+token.Tag]
+		morpheme, exists := memModel.morphemeByL2Tag[text+token.VerbTag]
 		if !exists {
 			morpheme = Morpheme{
 				Id:    memModel.getNextMorphemeId(),
 				Type:  "NOUN_OR_ADJECTIVE",
-				L2:    form,
+				L2:    text,
 				Lemma: null.StringFrom(token.Lemma),
-				Tag:   null.StringFrom(token.Tag),
+				Tag:   null.StringFrom(token.VerbTag),
 			}
 			memModel.morphemes = append(memModel.morphemes, morpheme)
-			memModel.morphemeByL2Tag[form+token.Tag] = morpheme
+			memModel.morphemeByL2Tag[text+token.VerbTag] = morpheme
 		}
-		cardMorphemes = []CardMorpheme{{
-			Morpheme: morpheme, Begin: mustAtoi(token.Begin),
-		}}
+		cardMorphemes = []CardMorpheme{{Morpheme: morpheme, Begin: token.Idx}}
 	}
 
-	card, exists := memModel.cardByL2[form]
+	card, exists := memModel.cardByL2[text]
 	if !exists {
 		card = Card{
 			Id:        memModel.getNextCardId(),
 			Type:      "NOUN_OR_ADJECTIVE",
-			L2:        token.Form,
+			L2:        token.Text,
 			Morphemes: cardMorphemes,
 		}
+		memModel.cards = append(memModel.cards, card)
+		memModel.cardByL2[token.Text] = card
 	}
 	return card, nil
 }
 
-func (memModel *MemModel) TokenToCard(token parsing.Token) (Card, error) {
-	if token.IsVerb() {
+func (memModel *MemModel) TokenToCard(token spacy.Token) (Card, error) {
+	if token.Pos == "VERB" {
 		return memModel.VerbTokenToCard(token)
-	} else if token.IsNoun() || token.IsAdjective() {
+	} else if token.Pos == "NOUN" || token.Pos == "ADJ" {
 		return memModel.NounOrAdjectiveTokenToCard(token)
 	} else {
-		var type_ string
-		if token.IsAdverb() {
-			type_ = "ADVERB"
-		} else if token.IsConjunction() {
-			type_ = "CONJUNCTION"
-		} else if token.IsDate() {
-			type_ = "DATE"
-		} else if token.IsDeterminer() {
-			type_ = "DETERMINER"
-		} else if token.IsInterjection() {
-			type_ = "INTERJECTION"
-		} else if token.IsNumber() {
-			type_ = "NUMBER"
-		} else if token.IsPreposition() {
-			type_ = "PREPOSITION"
-		} else if token.IsPronoun() {
-			type_ = "PRONOUN"
-		} else if token.IsPunctuation() {
-			type_ = "PUNCTUATION"
-		} else {
-			return Card{}, fmt.Errorf("Unknown token tag %s for form '%s'",
-				token.Tag, token.Form)
-		}
-
-		morpheme, exists := memModel.morphemeByL2Tag[token.Form+token.Tag]
+		morpheme, exists := memModel.morphemeByL2Tag[token.Text+token.VerbTag]
 		if !exists {
 			morpheme = Morpheme{
 				Id:    memModel.getNextMorphemeId(),
-				Type:  type_,
-				L2:    token.Form,
+				Type:  token.Pos,
+				L2:    token.Text,
 				Lemma: null.StringFrom(token.Lemma),
-				Tag:   null.StringFrom(token.Tag),
+				Tag:   null.StringFrom(token.VerbTag),
 			}
 			memModel.morphemes = append(memModel.morphemes, morpheme)
-			memModel.morphemeByL2Tag[token.Form+token.Tag] = morpheme
+			memModel.morphemeByL2Tag[token.Text+token.VerbTag] = morpheme
 		}
 
-		card, exists := memModel.cardByL2[token.Form]
+		card, exists := memModel.cardByL2[token.Text]
 		if !exists {
 			card = Card{
-				Type: type_,
-				L2:   token.Form,
-				Morphemes: []CardMorpheme{{
-					Morpheme: morpheme,
-					Begin:    mustAtoi(token.Begin),
-				}},
+				Id:        memModel.getNextCardId(),
+				Type:      token.Pos,
+				L2:        token.Text,
+				Morphemes: []CardMorpheme{{Morpheme: morpheme, Begin: token.Idx}},
 			}
+			memModel.cards = append(memModel.cards, card)
+			memModel.cardByL2[token.Text] = card
 		}
 		return card, nil
 	}
@@ -300,12 +273,4 @@ func (memModel *MemModel) SaveMorphemesToDb(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func mustAtoi(s string) int {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
-	}
-	return i
 }

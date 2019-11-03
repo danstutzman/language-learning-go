@@ -2,12 +2,12 @@ package main
 
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
-	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 	"fmt"
 )
 
 type PP struct {
-	prep parsing.Token
+	prep spacy.Token
 	np   []NP
 	vp   []VP
 }
@@ -25,8 +25,8 @@ func (pp PP) GetChildren() []Constituent {
 	return children
 }
 
-func (pp PP) GetAllTokens() []parsing.Token {
-	tokens := []parsing.Token{}
+func (pp PP) GetAllTokens() []spacy.Token {
+	tokens := []spacy.Token{}
 	tokens = append(tokens, pp.prep)
 	for _, np := range pp.np {
 		tokens = append(tokens, np.GetAllTokens()...)
@@ -41,7 +41,7 @@ func (pp PP) Translate(dictionary english.Dictionary) ([]string,
 	*CantTranslate) {
 	l1 := []string{}
 
-	prepL1, err := dictionary.Lookup(pp.prep.Form, "prep")
+	prepL1, err := dictionary.Lookup(pp.prep.Text, "prep")
 	if err != nil {
 		return nil, &CantTranslate{Message: err.Error(), Token: pp.prep}
 	}
@@ -66,21 +66,18 @@ func (pp PP) Translate(dictionary english.Dictionary) ([]string,
 	return l1, nil
 }
 
-func depToPP(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) (PP, *CantConvertDep) {
+func depToPP(dep spacy.Dep) (PP, *CantConvertDep) {
 	var np []NP
 	var vp []VP
 	for _, child := range dep.Children {
-		childToken := tokenById[child.Token]
-
 		if child.Function == "sn" {
-			newNp, err := depToNP(child, tokenById)
+			newNp, err := depToNP(child)
 			if err != nil {
 				return PP{}, err
 			}
 			np = append(np, newNp)
-		} else if child.Function == "S" && childToken.IsVerb() {
-			newVp, err := depToVP(child, tokenById)
+		} else if child.Function == "S" && child.Token.Pos == "VERB" {
+			newVp, err := depToVP(child)
 			if err != nil {
 				return PP{}, err
 			}
@@ -93,5 +90,5 @@ func depToPP(dep parsing.Dependency,
 			}
 		}
 	}
-	return PP{prep: tokenById[dep.Token], np: np, vp: vp}, nil
+	return PP{prep: dep.Token, np: np, vp: vp}, nil
 }

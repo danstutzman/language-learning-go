@@ -3,22 +3,26 @@ package spacy
 import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/freeling"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
+	"unicode"
 )
 
 type Token struct {
-	Text  string `json:"text"`
-	Lemma string `json:"lemma"`
-	Pos   string `json:"pos"`
-	Tag   string `json:"tag"`
-	Dep   string `json:"dep"`
-	Head  int    `json:"head"`
+	Id       int    `json:"id"`
+	Text     string `json:"text"`
+	Lemma    string `json:"lemma"`
+	Pos      string `json:"pos"`
+	SpacyTag string `json:"spacy_tag"`
+	Dep      string `json:"dep"`
+	Head     int    `json:"head"`
+	Idx      int    `json:"idx"`
+
+	VerbTag  string            // Freeling tag, only for VERB or AUX
+	Features map[string]string // Unpacked copy of SpacyTag's key-value pairs
 }
 
 var A1VerbTags = map[string]bool{
@@ -31,18 +35,20 @@ var A1VerbTags = map[string]bool{
 	"VMG0000": true, // gerund
 }
 
-func ParseWithSpacy(phrases []string, python3Path string) [][]Token {
+func ParseWithSpacy(phrases []string, python3Path string) []string {
+	fmt.Fprintf(os.Stderr, "Parsing with Spacy...")
 	cmd := exec.Command(python3Path, "-c", `import json, spacy, sys
 nlp = spacy.load('es_core_news_sm')
 for line in sys.stdin:
 	print(json.dumps([
-		{'text':  token.text,
- 		 'lemma': token.lemma_,
-		 'pos':   token.pos_,
-		 'tag':   token.tag_,
-		 'dep':   token.dep_,
-		 'head':  token.head.i,
-		 'idx':   token.idx,
+  	{'id':        token.i,
+		 'text':      token.text,
+ 		 'lemma':     token.lemma_,
+		 'pos':       token.pos_,
+		 'spacy_tag': token.tag_,
+		 'dep':       token.dep_,
+		 'head':      token.head.i,
+		 'idx':       token.idx,
 	  } for token in nlp(line.rstrip())]))`)
 
 	stdin, err := cmd.StdinPipe()
@@ -64,24 +70,18 @@ for line in sys.stdin:
 		}
 		panic(err)
 	}
+	fmt.Fprintf(os.Stderr, "completed.\n")
 
-	parses := [][]Token{}
+	parses := []string{}
 	for _, jsonLine := range bytes.Split(jsonLines, []byte{'\n'}) {
-		if len(jsonLine) == 0 {
-			continue
+		if len(jsonLine) > 0 {
+			parses = append(parses, string(jsonLine))
 		}
-
-		var tokenList []Token
-		err = json.Unmarshal(jsonLine, &tokenList)
-		if err != nil {
-			panic(err)
-		}
-
-		parses = append(parses, tokenList)
 	}
 	return parses
 }
 
+/*
 func main() {
 	if len(os.Args) != 1+1 {
 		fmt.Fprintf(os.Stderr, `Usage:
@@ -122,8 +122,8 @@ func main() {
 			facts = append(facts,
 				[]string{"head", iStr, strconv.Itoa(token.Head), token.Dep})
 
-			if !strings.HasSuffix(token.Tag, "___") {
-				part2 := strings.Split(token.Tag, "__")[1]
+			if !strings.HasSuffix(token.SpacyTag, "___") {
+				part2 := strings.Split(token.SpacyTag, "__")[1]
 				for _, pair := range strings.Split(part2, "|") {
 					parts := strings.Split(pair, "=")
 					facts = append(facts, []string{"tag", iStr, parts[0], parts[1]})
@@ -179,6 +179,7 @@ func main() {
 		}
 	}
 }
+*/
 
 func findHeadOfQuery(queryName string, query [][]string) string {
 	possibleHeads := map[string]bool{}
@@ -351,4 +352,14 @@ func matches(queryFact, fact []string, variables map[string]string) bool {
 		return true
 	}
 	return false
+}
+
+func Uncapitalize1stLetter(s string) string {
+	runes := []rune(s)
+	if runes[0] == '¿' {
+		runes[1] = unicode.To(unicode.LowerCase, runes[1])
+	} else {
+		runes[0] = unicode.To(unicode.LowerCase, runes[0])
+	}
+	return string(runes)
 }

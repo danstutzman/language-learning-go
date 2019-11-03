@@ -5,6 +5,7 @@ import (
 	"bitbucket.org/danstutzman/language-learning-go/internal/english"
 	"bitbucket.org/danstutzman/language-learning-go/internal/mem_model"
 	"bitbucket.org/danstutzman/language-learning-go/internal/parsing"
+	"bitbucket.org/danstutzman/language-learning-go/internal/spacy"
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
@@ -47,45 +48,49 @@ func main() {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}
 
+	phraseL2s := []string{}
+	for _, phrase := range phrases {
+		phraseL2s = append(phraseL2s, spacy.Uncapitalize1stLetter(phrase.L2))
+	}
+
 	dictionary := english.LoadDictionary(dictionaryDbPath)
 
-	for _, phrase := range phrases {
-		if phrase.L2 != "Ella manejaba un auto verde cuando la vi." {
+	for phraseNum, phrase := range phrases {
+		if phrase.L2 != "Él vende fruta." {
 			//continue
 		}
 
-		output := parsing.LoadSavedParse(phrase, PARSE_DIR)
+		parse := spacy.LoadSavedParse(phrase.L2, PARSE_DIR)
 
-		output2s := importPhrase(output, dictionary, memModel)
+		output2s := importPhrase(phrase.L2, parse, dictionary, memModel)
 		for _, output2 := range output2s {
 			if output2.Error != nil {
+				fmt.Printf("%d ", phraseNum+1)
+
 				e := output2.Error
-
-				fmt.Printf("%d:%d ", output2.Phrase.LineNum, output2.Phrase.CharNum)
-
 				if cantTranslate, ok := e.(CantTranslate); ok {
-					fmt.Printf("form=%s %s\n",
-						cantTranslate.Token.Form, cantTranslate.Message)
+					fmt.Printf("text=%s %s\n",
+						cantTranslate.Token.Text, cantTranslate.Message)
 				} else if cantConvertDep, ok := e.(*CantConvertDep); ok {
 					fmt.Printf("%s\n", cantConvertDep.Message)
-					fmt.Printf("        %s\n", output2.Phrase.L2)
+					fmt.Printf("        %s\n", phrase.L2)
 					fmt.Printf("        %s/%s\n",
-						cantConvertDep.Parent.Word,
-						output2.TokenById[cantConvertDep.Parent.Token].Tag)
+						cantConvertDep.Parent.Token.Text,
+						cantConvertDep.Parent.Token.Pos)
 					for _, child := range cantConvertDep.Parent.Children {
-						if child.Token == cantConvertDep.Child.Token {
+						if child.Token.Id == cantConvertDep.Child.Token.Id {
 							fmt.Printf("        ! ")
 						} else {
 							fmt.Printf("          ")
 						}
-						fmt.Printf("%s: %s/%s\n", child.Function, child.Word,
-							output2.TokenById[child.Token].Tag)
+						fmt.Printf("%s: %s/%s\n", child.Function, child.Token.Text,
+							child.Token.Pos)
 
-						if child.Token == cantConvertDep.Child.Token {
+						if child.Token.Id == cantConvertDep.Child.Token.Id {
 							for _, grandchild := range child.Children {
 								fmt.Printf("            %s: %s/%s\n",
-									grandchild.Function, grandchild.Word,
-									output2.TokenById[grandchild.Token].Tag)
+									grandchild.Function, grandchild.Token.Text,
+									grandchild.Token.Pos)
 							}
 						}
 					}
@@ -93,8 +98,8 @@ func main() {
 					fmt.Printf("%v\n", e)
 				}
 			} else { // If no error
-				//fmt.Printf("%d:%d ", output2.Phrase.LineNum, output2.Phrase.CharNum)
-				//fmt.Printf("%s\n", output2.Phrase.L2)
+				//fmt.Printf("%d ", phraseNum+1)
+				//fmt.Printf("%s\n", output2.Phrase)
 			}
 		}
 	}
@@ -103,119 +108,77 @@ func main() {
 	memModel.SaveCardsToDb(dbConn)
 }
 
-func lowercaseToken(token parsing.Token) parsing.Token {
-	token.Form = strings.ToLower(token.Form)
-	return token
+type TokenError struct {
+	Token spacy.Token
+	Error interface{}
 }
 
 type Output2 struct {
-	Phrase    parsing.Phrase
-	Error     interface{}
-	TokenById map[string]parsing.Token
+	Phrase string
+	Error  interface{}
 }
 
-func importPhrase(output parsing.Output, dictionary english.Dictionary,
-	memModel *mem_model.MemModel) []Output2 {
+func importPhrase(phrase string, tokens []spacy.Token,
+	dictionary english.Dictionary, memModel *mem_model.MemModel) []Output2 {
+
+	tokenErrors := []TokenError{}
+
+	cardByTokenId := map[int]mem_model.Card{}
+	for _, token := range tokens {
+		card, err := memModel.TokenToCard(token)
+		if err != nil {
+			tokenErrors = append(tokenErrors, TokenError{Token: token, Error: err})
+			continue
+		}
+		cardByTokenId[token.Id] = card
+	}
 
 	output2s := []Output2{}
-	for _, sentence := range output.Parse.Sentences {
-		tokenById := map[string]parsing.Token{}
-		allTokens := []parsing.Token{}
-		for _, token := range sentence.Tokens {
-			tokenById[token.Id] = token
-			allTokens = append(allTokens, token)
-		}
-
-		// Uncapitalize first token
-		for i, token := range sentence.Tokens {
-			if !token.IsPunctuation() {
-				if !token.IsProperNoun() {
-					sentence.Tokens[i] = lowercaseToken(token)
-				}
-				break
-			}
-		}
-
-		cardByTokenId := map[string]mem_model.Card{}
-		for _, token := range sentence.Tokens {
-			card, err := memModel.TokenToCard(token)
-			if err != nil {
-				output2s = append(output2s, Output2{
-					Phrase: parsing.Phrase{
-						L2:      token.Form,
-						LineNum: output.Phrase.LineNum,
-						CharNum: output.Phrase.CharNum + mustAtoi(token.Begin),
-					},
-					Error:     err,
-					TokenById: tokenById,
-				})
-				continue
-			}
-			cardByTokenId[token.Id] = card
-		}
-
-		for _, dep := range sentence.Dependencies {
-			s, err := depToS(dep, tokenById)
-			if err != nil {
-				if false {
-					printTokensInOrder(os.Stderr, allTokens)
-					fmt.Fprintf(os.Stderr, "\\ %s\n", err)
-				}
-
-				output2s = append(output2s, Output2{
-					Phrase: parsing.Phrase{
-						L2:      output.Phrase.L2,
-						LineNum: output.Phrase.LineNum,
-						CharNum: output.Phrase.CharNum +
-							minBeginForDep(err.Parent, tokenById),
-					},
-					Error:     err,
-					TokenById: tokenById,
-				})
-				continue
-			}
-
-			err2 := importConstituent(s, cardByTokenId, true, dictionary, memModel)
-			if err2 != nil {
-				output2s = append(output2s, Output2{
-					Phrase: parsing.Phrase{
-						L2:      output.Phrase.L2,
-						LineNum: output.Phrase.LineNum,
-						CharNum: output.Phrase.CharNum + mustAtoi(err2.Token.Begin),
-					},
-					Error:     err2,
-					TokenById: tokenById,
-				})
-				continue
+	for _, dep := range spacy.TokensToDeps(tokens) {
+		s, err := depToS(dep)
+		if err != nil {
+			if false {
+				printTokensInOrder(os.Stderr, tokens)
+				fmt.Fprintf(os.Stderr, "\\ %v\n", err)
 			}
 
 			output2s = append(output2s, Output2{
-				Phrase: parsing.Phrase{
-					L2:      output.Phrase.L2,
-					LineNum: output.Phrase.LineNum,
-					CharNum: output.Phrase.CharNum + minBeginForDep(dep, tokenById),
-				},
-				Error:     nil,
-				TokenById: tokenById,
+				Phrase: phrase,
+				Error:  err,
 			})
+			continue
 		}
+
+		err2 := importConstituent(s, cardByTokenId, true, dictionary, memModel)
+		if err2 != nil {
+			output2s = append(output2s, Output2{
+				Phrase: phrase,
+				Error:  err2,
+			})
+			continue
+		}
+
+		output2s = append(output2s, Output2{
+			Phrase: phrase,
+			Error:  nil,
+		})
 	}
 	return output2s
 }
 
 func importConstituent(constituent Constituent,
-	cardByTokenId map[string]mem_model.Card,
+	cardByTokenId map[int]mem_model.Card,
 	isSentence bool, dictionary english.Dictionary,
 	memModel *mem_model.MemModel) *CantTranslate {
 
 	tokens := constituent.GetAllTokens()
 	sort.SliceStable(tokens, func(i, j int) bool {
-		return mustAtoi(tokens[i].Begin) < mustAtoi(tokens[j].Begin)
+		return tokens[i].Idx < tokens[j].Idx
 	})
 
 	hasBlankToken := false
 	for _, token := range tokens {
-		if token.Form == "" {
+		if token.Text == "" {
 			hasBlankToken = true
 		}
 	}
@@ -225,10 +188,10 @@ func importConstituent(constituent Constituent,
 
 	l2 := ""
 	for i, token := range tokens {
-		if i > 0 && mustAtoi(token.Begin) > mustAtoi(tokens[i-1].End) {
+		if i > 0 && token.Idx > (tokens[i-1].Idx+len([]rune(tokens[i-1].Text))) {
 			l2 += " "
 		}
-		l2 += token.Form
+		l2 += token.Text
 	}
 
 	cardMorphemes := []mem_model.CardMorpheme{}
@@ -258,13 +221,11 @@ func importConstituent(constituent Constituent,
 	return nil
 }
 
-func minBeginForDep(dep parsing.Dependency,
-	tokenById map[string]parsing.Token) int {
-
-	minBegin := mustAtoi(tokenById[dep.Token].Begin)
+func minBeginForDep(dep spacy.Dep) int {
+	minBegin := dep.Token.Idx
 
 	for _, child := range dep.Children {
-		childMinBegin := minBeginForDep(child, tokenById)
+		childMinBegin := minBeginForDep(child)
 		if childMinBegin < minBegin {
 			minBegin = childMinBegin
 		}
