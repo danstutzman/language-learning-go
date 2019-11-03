@@ -14,7 +14,7 @@ const PARSE_DIR = "db/1_parses"
 func main() {
 	if len(os.Args) != 1+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to corpus (.txt file)`)
+		Argument 1: path to corpus (.txt or .csv file)`)
 	}
 	corpusPath := os.Args[1]
 
@@ -26,6 +26,8 @@ func main() {
 	var phrases []parsing.Phrase
 	if strings.HasSuffix(corpusPath, ".txt") {
 		phrases = parsing.ListPhrasesInCorpusTxt(corpusPath)
+	} else if strings.HasSuffix(corpusPath, ".csv") {
+		phrases = parsing.ListPhrasesInCorpusCsv(corpusPath)
 	} else {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}

@@ -22,7 +22,7 @@ const FLAT = true
 func main() {
 	if len(os.Args) != 3+1 { // Args[0] is name of program
 		log.Fatalf(`Usage:
-		Argument 1: path to corpus (.txt file)
+		Argument 1: path to corpus (.txt or .csv file)
 		Argument 2: path to sqlite3 database file
 		Argument 3: path to dictionary sqlite3 database file`)
 	}
@@ -46,6 +46,8 @@ func main() {
 	var phrases []parsing.Phrase
 	if strings.HasSuffix(corpusPath, ".txt") {
 		phrases = parsing.ListPhrasesInCorpusTxt(corpusPath)
+	} else if strings.HasSuffix(corpusPath, ".csv") {
+		phrases = parsing.ListPhrasesInCorpusCsv(corpusPath)
 	} else {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}
@@ -65,7 +67,7 @@ func main() {
 		parse := spacy.LoadSavedParse(phrase.L2, PARSE_DIR)
 
 		if FLAT {
-			importPhraseFlat(phrase.L2, parse, memModel)
+			importPhraseFlat(phrase, parse, memModel)
 			continue
 		}
 
@@ -125,7 +127,7 @@ type Output2 struct {
 	Error  interface{}
 }
 
-func importPhraseFlat(phrase string, tokens []spacy.Token,
+func importPhraseFlat(phrase parsing.Phrase, tokens []spacy.Token,
 	memModel *mem_model.MemModel) {
 
 	cardByTokenId := map[int]mem_model.Card{}
@@ -144,8 +146,8 @@ func importPhraseFlat(phrase string, tokens []spacy.Token,
 
 	memModel.InsertCardIfNotExists(mem_model.Card{
 		Type:       "Sentence",
-		L1:         "",
-		L2:         phrase,
+		L1:         phrase.L1,
+		L2:         phrase.L2,
 		IsSentence: true,
 		Morphemes:  cardMorphemes,
 	})

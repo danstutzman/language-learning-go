@@ -11,6 +11,7 @@ import (
 )
 
 type Phrase struct {
+	L1      string
 	L2      string
 	LineNum int
 	CharNum int
@@ -51,7 +52,7 @@ func ListPhrasesInCorpusYaml(path string) []string {
 	return phrases
 }
 
-func ListPhrasesInCorpusCsv(path string) []string {
+func ListPhrasesInCorpusCsv(path string) []Phrase {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -64,10 +65,14 @@ func ListPhrasesInCorpusCsv(path string) []string {
 	if err != nil {
 		panic(err)
 	}
+	l1Index := indexOf("l1", columnNames)
 	l2Index := indexOf("l2", columnNames)
 
-	phrases := []string{}
+	phrases := []Phrase{}
+	lineNum := 0
 	for {
+		lineNum += 1
+
 		values, err := reader.Read()
 		if err == io.EOF {
 			break
@@ -79,8 +84,14 @@ func ListPhrasesInCorpusCsv(path string) []string {
 			continue
 		}
 
+		l1 := values[l1Index]
 		l2 := values[l2Index]
-		phrases = append(phrases, l2)
+		phrases = append(phrases, Phrase{
+			L1:      l1,
+			L2:      l2,
+			LineNum: lineNum,
+			CharNum: 1,
+		})
 	}
 	return phrases
 }
