@@ -48,6 +48,30 @@ func SaveParse(phrase string, parseTxt, parseDir string) {
 	if err != nil {
 		panic(err)
 	}
+
+	tokens := unmarshalParseTxt([]byte(parseTxt))
+	deps := TokensToDeps(tokens)
+	lines := stringifyDeps(deps, 0)
+	yamlPath := parseDir + "/" + phrase + ".yaml"
+	err = ioutil.WriteFile(yamlPath, []byte(strings.Join(lines, "\n")), 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func stringifyDeps(deps []Dep, indentation int) []string {
+	lines := []string{}
+	for _, dep := range deps {
+		line := ""
+		for i := 0; i < indentation; i++ {
+			line += "  "
+		}
+		line += dep.Function + ": " + dep.Token.Text + "/" + dep.Token.SpacyTag
+		lines = append(lines, line)
+
+		lines = append(lines, stringifyDeps(dep.Children, indentation+1)...)
+	}
+	return lines
 }
 
 func LoadSavedParse(phrase string, parseDir string) []Token {
