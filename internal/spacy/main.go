@@ -35,10 +35,13 @@ var A1VerbTags = map[string]bool{
 	"VMG0000": true, // gerund
 }
 
-func ParseWithSpacy(phrases []string, python3Path string) []string {
+func ParseWithSpacy(phrases []string, python3Path, language string) []string {
+	modelName := map[string]string{
+		"es": "es_core_news_sm", "en": "en_core_web_sm"}[language]
+
 	fmt.Fprintf(os.Stderr, "Parsing with Spacy...")
 	cmd := exec.Command(python3Path, "-c", `import json, spacy, sys
-nlp = spacy.load('es_core_news_sm')
+nlp = spacy.load('`+modelName+`')
 for line in sys.stdin:
 	print(json.dumps([
   	{'id':        token.i,

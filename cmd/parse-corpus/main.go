@@ -32,10 +32,19 @@ func main() {
 		log.Fatalf("Unrecognized extension for path '%s'", corpusPath)
 	}
 
+	var phraseL1s []string
+	for _, phrase := range phrases {
+		phraseL1s = append(phraseL1s, spacy.Uncapitalize1stLetter(phrase.L1))
+	}
+	if len(phraseL1s) > 0 {
+		spacy.ParsePhrasesWithSpacyCached(phraseL1s, python3Path, PARSE_DIR, "en")
+	}
+
 	var phraseL2s []string
 	for _, phrase := range phrases {
 		phraseL2s = append(phraseL2s, spacy.Uncapitalize1stLetter(phrase.L2))
 	}
-
-	spacy.ParsePhrasesWithSpacyCached(phraseL2s, python3Path, PARSE_DIR)
+	if len(phraseL2s) > 0 {
+		spacy.ParsePhrasesWithSpacyCached(phraseL2s, python3Path, PARSE_DIR, "es")
+	}
 }

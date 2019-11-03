@@ -1,5 +1,6 @@
 /db/db.sqlite3
-/db/1_parses
+/db/1_parses_en
+/db/1_parses_es
 /db/1_parses_freeling
 /db/4_corpus_scrapes
 /db/freeling/dicc.src

@@ -64,7 +64,7 @@ func main() {
 			//continue
 		}
 
-		parse := spacy.LoadSavedParse(phrase.L2, PARSE_DIR)
+		parse := spacy.LoadSavedParse(phrase.L2, PARSE_DIR, "es")
 
 		if FLAT {
 			importPhraseFlat(phrase, parse, memModel)

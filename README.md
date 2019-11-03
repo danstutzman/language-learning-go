@@ -20,3 +20,8 @@
 - cd build
 - cmake ..
 - make
+
+# How to setup Spacy
+- pip3 install -U spacy
+- python3 -m spacy download es_core_news_sm
+- python3 -m spacy download en_core_web_sm

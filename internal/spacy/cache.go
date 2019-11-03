@@ -10,49 +10,51 @@ import (
 
 const BATCH_SIZE = 100
 
-func unmarshalParseTxt(jsonLine []byte) []Token {
+func unmarshalParseTxt(jsonLine []byte, language string) []Token {
 	var tokens []Token
 	err := json.Unmarshal(jsonLine, &tokens)
 	if err != nil {
 		panic(err)
 	}
 
-	for i, token := range tokens {
-		if token.Pos == "VERB" || token.Pos == "AUX" {
-			freelingTag := FreelingTagBySpacyTag[token.SpacyTag]
-			if freelingTag == "" {
-				fmt.Fprintf(os.Stderr,
-					"Can't find freelingTag for %v\n", token.SpacyTag)
+	if language == "es" {
+		for i, token := range tokens {
+			if token.Pos == "VERB" || token.Pos == "AUX" {
+				freelingTag := FreelingTagBySpacyTag[token.SpacyTag]
+				if freelingTag == "" {
+					fmt.Fprintf(os.Stderr,
+						"Can't find freelingTag for %v\n", token.SpacyTag)
+				}
+				tokens[i].VerbTag = freelingTag
 			}
-			tokens[i].VerbTag = freelingTag
-		}
 
-		if !strings.HasSuffix(token.SpacyTag, "___") {
-			part2 := strings.Split(token.SpacyTag, "__")[1]
+			if !strings.HasSuffix(token.SpacyTag, "___") {
+				part2 := strings.Split(token.SpacyTag, "__")[1]
 
-			features := map[string]string{}
-			for _, pair := range strings.Split(part2, "|") {
-				parts := strings.Split(pair, "=")
-				features[parts[0]] = parts[1]
+				features := map[string]string{}
+				for _, pair := range strings.Split(part2, "|") {
+					parts := strings.Split(pair, "=")
+					features[parts[0]] = parts[1]
+				}
+				tokens[i].Features = features
 			}
-			tokens[i].Features = features
 		}
 	}
 
 	return tokens
 }
 
-func SaveParse(phrase string, parseTxt, parseDir string) {
-	path := parseDir + "/" + phrase
+func SaveParse(phrase string, parseTxt, parseDir, language string) {
+	path := parseDir + "_" + language + "/" + phrase
 	err := ioutil.WriteFile(path, []byte(parseTxt), 0644)
 	if err != nil {
 		panic(err)
 	}
 
-	tokens := unmarshalParseTxt([]byte(parseTxt))
+	tokens := unmarshalParseTxt([]byte(parseTxt), language)
 	deps := TokensToDeps(tokens)
 	lines := stringifyDeps(deps, 0)
-	yamlPath := parseDir + "/" + phrase + ".yaml"
+	yamlPath := parseDir + "_" + language + "/" + phrase + ".yaml"
 	err = ioutil.WriteFile(yamlPath, []byte(strings.Join(lines, "\n")), 0644)
 	if err != nil {
 		panic(err)
@@ -74,30 +76,30 @@ func stringifyDeps(deps []Dep, indentation int) []string {
 	return lines
 }
 
-func LoadSavedParse(phrase string, parseDir string) []Token {
-	path := parseDir + "/" + phrase
+func LoadSavedParse(phrase string, parseDir, language string) []Token {
+	path := parseDir + "_" + language + "/" + phrase
 	parseTxt, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
 
-	return unmarshalParseTxt(parseTxt)
+	return unmarshalParseTxt(parseTxt, language)
 }
 
 func ParsePhrasesWithSpacyCached(phrases []string,
-	python3Path, parseDir string) {
+	python3Path, parseDir, language string) {
 	newPhrases := []string{}
 	for i, phrase := range phrases {
-		if !fileExists(parseDir + "/" + phrase) {
+		if !fileExists(parseDir + "_" + language + "/" + phrase) {
 			newPhrases = append(newPhrases, phrase)
 		}
 
 		if len(newPhrases) >= BATCH_SIZE || i == len(phrases)-1 {
-			parseTxts := ParseWithSpacy(newPhrases, python3Path)
+			parseTxts := ParseWithSpacy(newPhrases, python3Path, language)
 
 			for j, parseTxt := range parseTxts {
-				SaveParse(newPhrases[j], parseTxt, parseDir)
-				fmt.Fprintf(os.Stderr, "%s\n", parseDir+"/"+newPhrases[j])
+				SaveParse(newPhrases[j], parseTxt, parseDir, language)
+				fmt.Fprintf(os.Stderr, "%s\n", parseDir+"_"+language+"/"+newPhrases[j])
 			}
 
 			newPhrases = []string{}
