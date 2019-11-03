@@ -1,12 +1,17 @@
 #!/usr/bin/env ruby
 require 'sqlite3'
 
-ONSETS = %w[b C d D f g h J k l m n p r s S t T v w y z Z] # removed N
-RIMES = %w[AE EY AO AX IY EH IH AY IX AA UW UH UX OW AW OY]
+# Onset N ("ng") was removed
+ONSET_PHONES = %w[b C  d D  f g h J k l m n p r s S  t  T v w y z Z]
+ONSET_L2S    = %w[b ch d dh f g h j k l m n p r s sh t th v w y z zh]
+
+RIME_PHONES = %w[AE EY AO AX IY EH IH AY IX AA UW UH UX OW AW OY]
+RIME_L2S    = %w[aa ei  a  a  i  e  i ai  i  a  u  u  a  o au oi]
 
 db = SQLite3::Database.new("#{__dir__}/../db/db.sqlite3")
 
-nonsense_by_morpheme_id = {}
+nonsense_l2_by_morpheme_id = {}
+nonsense_phones_by_morpheme_id = {}
 db.execute('select id, l2 from morphemes') do |row|
   id = row[0]
   pattern = row[1]
@@ -14,27 +19,30 @@ db.execute('select id, l2 from morphemes') do |row|
     .gsub(/[aeiouáéíóú]+/, 'V')
     .gsub(/[bcdfghjklmnpqrstvwyz]+/, 'C')
 
-  nonsense = ''
+  nonsense_l2 = ''
+  nonsense_phones = ''
   pattern.each_char do |char|
     if char == 'C'
-      nonsense += ' ' + ONSETS[rand(ONSETS.size)]
+      onset_num = rand(ONSET_PHONES.size)
+      nonsense_phones += '-' if nonsense_phones.size > 0
+      nonsense_phones += ONSET_PHONES[onset_num]
+      nonsense_l2 += ONSET_L2S[onset_num]
     elsif char == 'V'
-      nonsense += RIMES[rand(RIMES.size)]
+      rime_num = rand(RIME_PHONES.size)
+      nonsense_phones += RIME_PHONES[rime_num]
+      nonsense_l2 += RIME_L2S[rime_num]
     else
-      nonsense += char # punctuation
+      nonsense_l2 += char # punctuation
     end
   end
 
-  nonsense_by_morpheme_id[id] = nonsense.strip
+  nonsense_l2_by_morpheme_id[id] = nonsense_l2
+  nonsense_phones_by_morpheme_id[id] = nonsense_phones
 end
 
-#begin
-#  db.execute("alter table morphemes add column nonsense TEXT")
-#rescue SQLite3::SQLException => e
-#  raise unless e.message == 'duplicate column name: nonsense'
-#end
-
-for morpheme_id, nonsense in nonsense_by_morpheme_id
-  db.execute("update morphemes set nonsense='#{nonsense.gsub("'", "''")}'
+for morpheme_id, nonsense_l2 in nonsense_l2_by_morpheme_id
+  nonsense_phones = nonsense_phones_by_morpheme_id[morpheme_id]
+  db.execute("update morphemes set nonsense_l2='#{nonsense_l2.gsub("'", "''")}',
+             nonsense_phones='#{nonsense_phones.gsub("'", "''")}'
              where id = #{morpheme_id}")
 end

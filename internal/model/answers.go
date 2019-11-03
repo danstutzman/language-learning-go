@@ -130,7 +130,7 @@ func (model *Model) InsertAnswer(answer Answer) {
 	card := model.GetCardJoinMorphemes(answer.CardId)
 	answeredL2Runes := []rune(answer.AnsweredL2.String)
 
-	if card.Morphemes[0].Nonsense.Valid {
+	if card.Morphemes[0].Morpheme.NonsenseL2.Valid {
 		nonsenseRunes := []rune{}
 		newBegins := []int{}
 		for i, morpheme := range card.Morphemes {
@@ -141,7 +141,7 @@ func (model *Model) InsertAnswer(answer Answer) {
 			newBegins = append(newBegins, len(nonsenseRunes))
 
 			nonsenseRunes = append(nonsenseRunes,
-				[]rune(strings.ToLower(morpheme.Nonsense.String))...)
+				[]rune(strings.ToLower(morpheme.Morpheme.NonsenseL2.String))...)
 		}
 
 		alignments := AlignRuneArrays(nonsenseRunes, answeredL2Runes)
@@ -155,10 +155,10 @@ func (model *Model) InsertAnswer(answer Answer) {
 				AnswerId:   answerRow.Id,
 				MorphemeId: cardMorpheme.Morpheme.Id,
 				ShownAt:    answerRow.ShownAt,
-				CorrectL2:  cardMorpheme.Morpheme.Nonsense.String,
+				CorrectL2:  cardMorpheme.Morpheme.NonsenseL2.String,
 				AlignedL2: string(gatherAnsweredL2(alignments, answeredL2Runes,
 					newBegins[i],
-					newBegins[i]+len([]rune(cardMorpheme.Nonsense.String))+1)),
+					newBegins[i]+len([]rune(cardMorpheme.Morpheme.NonsenseL2.String))+1)),
 			})
 		}
 	} else {

@@ -8,16 +8,17 @@ import (
 )
 
 type MorphemeRow struct {
-	Id       int
-	Type     string
-	L2       string
-	Lemma    null.String
-	Tag      null.String
-	Nonsense null.String
+	Id             int
+	Type           string
+	L2             string
+	Lemma          null.String
+	Tag            null.String
+	NonsenseL2     null.String
+	NonsensePhones null.String
 }
 
 func AssertMorphemesHasCorrectSchema(db *sql.DB) {
-	query := "SELECT id, type, l2, lemma, tag, nonsense " +
+	query := "SELECT id, type, l2, lemma, tag, nonsense_l2, nonsense_phones " +
 		"FROM morphemes LIMIT 1"
 	if LOG {
 		log.Println(query)
@@ -30,7 +31,7 @@ func AssertMorphemesHasCorrectSchema(db *sql.DB) {
 }
 
 func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
-	query := "SELECT id, type, l2, lemma, ta, nonsense  " +
+	query := "SELECT id, type, l2, lemma, tag, nonsense_l2, nonsense_phones " +
 		"FROM morphemes " + where
 	if LOG {
 		log.Println(query)
@@ -43,7 +44,8 @@ func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
 		&row.L2,
 		&row.Lemma,
 		&row.Tag,
-		&row.Nonsense); err {
+		&row.NonsenseL2,
+		&row.NonsensePhones); err {
 	case sql.ErrNoRows:
 		return nil
 	case nil:
@@ -54,7 +56,7 @@ func OneFromMorphemes(db *sql.DB, where string) *MorphemeRow {
 }
 
 func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
-	query := "SELECT id, type, l2, lemma, tag, nonsense " +
+	query := "SELECT id, type, l2, lemma, tag, nonsense_l2, nonsense_phones " +
 		"FROM morphemes " + whereLimit
 	if LOG {
 		log.Println(query)
@@ -70,7 +72,7 @@ func FromMorphemes(db *sql.DB, whereLimit string) []MorphemeRow {
 	for rset.Next() {
 		var row MorphemeRow
 		err = rset.Scan(&row.Id, &row.Type, &row.L2, &row.Lemma, &row.Tag,
-			&row.Nonsense)
+			&row.NonsenseL2, &row.NonsensePhones)
 		if err != nil {
 			panic(err)
 		}
