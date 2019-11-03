@@ -6,7 +6,7 @@ ONSET_PHONES = %w[b C  d D  f g h J k l m n p r s S  t  T v w y z Z]
 ONSET_L2S    = %w[b ch d dh f g h j k l m n p r s sh t th v w y z zh]
 
 RIME_PHONES = %w[AE EY AO AX IY EH IH AY IX AA UW UH UX OW AW OY]
-RIME_L2S    = %w[aa ei  a  a  i  e  i ai  i  a  u  u  a  o au oi]
+RIME_L2S    = %w[ a ei  a  a  i  e  i ai  i  a  u  u  a  o au oi]
 
 L2_BY_NONSENSE_L2 = {}
 
@@ -17,6 +17,13 @@ nonsense_phones_by_morpheme_id = {}
 db.execute('select id, l2 from morphemes') do |row|
   id = row[0]
   l2 = row[1]
+
+  if l2 == 'Dan'
+    nonsense_l2_by_morpheme_id[id] = l2
+    nonsense_phones_by_morpheme_id[id] = 'dEHAEn'
+    next
+  end
+
   pattern = l2
     .downcase
     .gsub(/[aeiouáéíóú]+/, 'V')
