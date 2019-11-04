@@ -93,6 +93,12 @@ func (api *Api) HandleApiRequest(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	} else if r.URL.Path == "/api/predict-text" {
+		if r.Method == "POST" {
+			api.HandlePredictTextRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	} else {
 		http.Error(w, "Not found", http.StatusNotFound)
 	}

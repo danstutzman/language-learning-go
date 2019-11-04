@@ -5,9 +5,11 @@ import (
 )
 
 type Model struct {
-	db *sql.DB
+	db                *sql.DB
+	languageModelPath string
+	probWords         []ProbWord
 }
 
-func NewModel(db *sql.DB) *Model {
-	return &Model{db: db}
+func NewModel(db *sql.DB, languageModelPath string) *Model {
+	return &Model{db: db, languageModelPath: languageModelPath}
 }

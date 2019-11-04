@@ -33,7 +33,7 @@ func main() {
 	db.AssertCardsHasCorrectSchema(dbConn)
 	db.AssertCardsMorphemesHasCorrectSchema(dbConn)
 	db.AssertMorphemesHasCorrectSchema(dbConn)
-	theModel := model.NewModel(dbConn)
+	theModel := model.NewModel(dbConn, "")
 
 	csvFile, err := os.Open(csvPath)
 	if err != nil {
