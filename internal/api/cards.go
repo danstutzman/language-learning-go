@@ -61,15 +61,13 @@ func (api *Api) HandleCreateCardRequest(w http.ResponseWriter, r *http.Request) 
 		panic(err)
 	}
 
-	/*
-		savedCard := api.model.InsertCard(unsavedCard)
+	savedCard := api.model.InsertCard(unsavedCard)
 
-		bytes, err := json.Marshal(savedCard)
-		if err != nil {
-			log.Fatalf("Error from json.Marshal: %s", err)
-		}
-		w.Write(bytes)
-	*/
+	bytes, err := json.Marshal(savedCard)
+	if err != nil {
+		log.Fatalf("Error from json.Marshal: %s", err)
+	}
+	w.Write(bytes)
 }
 
 func (api *Api) HandleUpdateCardRequest(w http.ResponseWriter, r *http.Request,
